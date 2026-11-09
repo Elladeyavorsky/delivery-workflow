@@ -1,0 +1,65 @@
+# Cambios respecto a `staging`
+
+El paquete sale de dos piezas de `staging` en el commit `73e25550`:
+
+- **La plantilla de git**, `exercises/git-workflow-agent-template`, con lo que entró hasta #1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
+- **El ciclo de agentes**, `exercises/ChromaDB` (`AGENTS.md`, `agents/` y `templates/specs/`).
+
+Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto, con Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
+
+## Estructura
+
+| En `staging` | Ahora | Por qué |
+|---|---|---|
+| `agents/create-issue.md`, `create-branch.md`, `create-commit.md`, `launch-push.md`, `create-pr.md` | `.apm/agents/<nombre>.agent.md` | APM busca los subagentes en `.apm/agents/` con la extensión `.agent.md`. |
+| `ChromaDB/agents/concept-developer.md`, `code-developer.md`, `code-tester.md`, `concept-tester.md` | `.apm/agents/<nombre>.agent.md` | Igual. Los nombres pasan a guiones (`code_developer` → `code-developer`). |
+| `agents/git-workflow-agent.md` y `ChromaDB/AGENTS.md` | `.apm/skills/delivery-workflow/SKILL.md` | Un solo orquestador para el flujo de git y el ciclo. Es una skill porque tiene que poder preguntar a la persona ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). Se invoca como `/delivery-workflow`. |
+| `agents/help-me-to-think.md` | `.apm/skills/help-me-to-think/SKILL.md` | Pasa de subagente a skill: la entrevista espera las respuestas en la conversación ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). |
+| `skills/grill-with-docs/`, `skills/grill-me/` | `.apm/skills/entrevista-con-repo/`, `entrevista-libre/` | Renombradas: con el nombre de la skill de Matt Pocock, la del usuario (`~/.claude/skills/`) gana a la del proyecto y la tapa. |
+| `skills/create-branch-from-staging/` y `skills/create-branch/` | `.apm/skills/create-branch/` | Fusionadas: la rama base se detecta y la base pasa a ser opcional ([ADR 0002](docs/adr/0002-rama-base-detectada.md)). |
+| `skills/create-pr-base-staging/` | `.apm/skills/create-pr-base/` | La base ya no es siempre `staging`. |
+| `tools/<script>` | `.apm/skills/<skill>/scripts/<script>` | APM copia cada carpeta de skill entera, pero no una carpeta `tools/` suelta. |
+| `templates/issues/*_issue.md` | `.apm/skills/create-issue/assets/` | La plantilla viaja con la skill que la usa. |
+| `templates/pull-request/*-pull-request.md` | `.apm/skills/create-pr-base/assets/` | Igual. |
+| `ChromaDB/templates/specs/spec.md`, `plan.md`, `tasks.md` | `.apm/skills/issue-spec/assets/` | Igual, y pasan a ser secciones de la issue (ver Spec en la issue). |
+| `MCPS/github-mcp-server/mcp.txt` | `dependencies.mcp` en `apm.yml` (servidor `github`) | APM escribe el servidor remoto de GitHub en la configuración de cada herramienta, con `Authorization: Bearer ${GITHUB_TOKEN}` y la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral` que `mcp.txt` explica para Cursor. Va declarado a mano (`registry: false`): la entrada del registro de APM pedía un token de forma interactiva y lo dejaba sin cabecera (APM 0.35.0). |
+| — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
+| — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/adr/`, `tests/` | Manifiesto, documentación y tests del paquete. |
+
+## Plantilla de git
+
+- **Rama base detectada.** Donde ponía `staging`, ahora se usa la rama base: `GIT_WORKFLOW_BASE`, si no `staging` si existe en `origin`, y si no la rama por defecto del remoto. En el repositorio del curso sigue siendo `staging`. Afecta a `pull-changes`, `create-branch`, `create-pr-base` y al orquestador ([ADR 0002](docs/adr/0002-rama-base-detectada.md)).
+- **`create-branch.sh`.** Los argumentos pasan de `BASE NUMERO TIPO DESCRIPCION` a `NUMERO TIPO DESCRIPCION [BASE]`. La rama nueva no sigue a la rama base remota (`--no-track`).
+- **Se mantiene la comprobación del tipo.** `staging` la quitó de los scripts de rama. Aquí se mantiene con los siete tipos, `knowledge` incluido, porque la etiqueta se crea con el nombre del tipo: un tipo mal escrito dejaría una etiqueta suelta en el repositorio. `create-issue` también rechaza un tipo que no sea uno de los siete.
+- **Etiquetas por tipo.** Nuevo. `create-issue` y `create-pr-base` ponen a la issue y a la pull request una etiqueta con el nombre exacto del tipo, y la crean con `ensure-label.sh` si no existe. Si la cuenta no puede crear etiquetas, siguen sin ella y lo dicen.
+- **`create-pr-base.sh`.** Es el `create-pr-base-staging.sh` de `staging` con la base detectada (o la que se le pase), la etiqueta del tipo y la comprobación de una PR abierta de esa rama, que devuelve su URL sin tocarla.
+- **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio del curso; en `.git/` git nunca la ve. El resto del script no cambia.
+- **Revisores desde la issue.** Como en `exercises/ChromaDB`, si la issue nombra revisores (una línea `Revisan:` al final de la parte de arriba), el orquestador los pide al acabar el ciclo. ChromaDB solo los pide si son dos personas; aquí basta con uno. Si la issue no nombra a nadie, la PR sigue en draft hasta «que la revisen», como en la plantilla de git.
+- **Nombre de revisor ambiguo.** En `staging`, `create-pr` pide aclaración. Aquí `create-pr` es un subagente y no puede preguntar: devuelve el nombre y los candidatos al orquestador, que pregunta y lo vuelve a llamar.
+- **`check-status.sh`.** Escribe además la rama base, si `GITHUB_TOKEN` está definida (sin mostrar su valor), si `gh` tiene sesión y la versión de Node. El orquestador para antes de los pasos que los necesitan.
+- **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.
+- **Entrevistas.** Hacen las preguntas en tandas con respuesta recomendada, como en `staging` desde #925, pero esperan las respuestas en la conversación en vez de devolverlas al orquestador ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). Se llaman tandas para no confundirlas con las rondas del ciclo. Quitan la línea de instalación de las skills de Matt Pocock y la cambian por un enlace de inspiración.
+- **Rutas.** Las skills llaman a sus scripts y plantillas desde la carpeta de la skill (`<carpeta de esta skill>/…`) en vez de `./tools/…` o `exercises/git-workflow-agent-template/tools/…`, y dicen cuál es esa carpeta en cada herramienta: `${CLAUDE_SKILL_DIR}` en Claude Code y `.agents/skills/<skill>` en Cursor y Codex.
+- **Frontmatter.** Cada skill y cada subagente lleva `name` y `description` en español. Los subagentes precargan sus skills con `skills:`. Codex descarta ese campo al instalar (APM lo avisa), pero sus subagentes heredan las skills igualmente.
+
+## Ciclo de ChromaDB
+
+- **Spec en la issue.** La spec, el plan y las tasks se escriben en la issue, en `## Spec`, `## Plan` y `## Tasks`, debajo de la plantilla del tipo, en vez de en `docs/specs/<cambio>/`. Es un requisito del curso ([ADR 0005](docs/adr/0005-la-spec-vive-en-la-issue.md)). `issue-spec` lee el cuerpo antes de cada escritura, sustituye solo esas secciones y para si la parte de arriba cambió desde que empezó el ciclo, si el texto parece un secreto o si el cuerpo pasaría de 65 536 caracteres.
+- **Plantillas de spec generalizadas.** Sin Python ni ChromaDB: «Traducción a pytest» pasa a «Traducción a tests», con el framework del proyecto; «Capas» y «Estilo» remiten a `docs/ARCHITECTURE.md` y `docs/STYLE.md` si existen; las reglas fijas de estilo de ChromaDB (sin clases, `RuntimeError`) desaparecen. La spec pierde «Contexto y objetivo» y «Fuera de alcance», que ya están arriba en la plantilla del tipo, y gana la línea `Estado · Creada · Aprobada` de las specs de `asistenciapp` y una sección «Huecos».
+- **Rondas comentadas.** Cada ronda deja un comentario en la issue con la task, los ficheros y los dos veredictos. El `report.md` de una novena ronda fallida pasa a ser un comentario de informe, y el estado de la spec pasa a Fallida.
+- **Otra pasada sin contraseña.** En ChromaDB, otra pasada solo arranca si el mensaje trae una contraseña. Aquí el orquestador es una skill en la conversación: basta con que la persona la confirme en el chat. No hay que manejar ningún secreto.
+- **`code-developer` siempre nuevo.** ChromaDB reanuda el mismo `code_developer` en las rondas 2 y 3, 5 y 6, y 8 y 9. Aquí cada ronda abre uno nuevo, porque no está claro que Cursor y Codex puedan reanudar un subagente. Lo que necesita de rondas anteriores está en la issue.
+- **Tests.** `code-tester` cubre tests unitarios, de lógica de negocio (los escenarios de la spec), de UI y de punta a punta, los que diga el plan, con los frameworks del proyecto. Si el plan propone uno que el proyecto no tiene, lo añade. En ChromaDB es pytest.
+- **Documentos del proyecto.** Los agentes leen los que existan (`README.md`, `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/STYLE.md`, `docs/COMMANDS.md`) y no crean los que faltan. Los comandos salen de `docs/COMMANDS.md` o del manifiesto del proyecto. Se quitan `skills/python-docs`, Black, Ruff y el puerto 8000.
+- **Secretos.** La «llave» de ChromaDB pasa a una regla general: si un subagente encuentra una credencial en un fichero que toca o necesita una para seguir, el ciclo para sin commit ni revisión y nombra el fichero, no el valor.
+- **Al terminar.** «Para lo que hayas arrancado» deja de ser el servidor de Chroma: cualquier servidor, navegador o proceso que el ciclo arrancó se para antes del informe.
+- **Huecos.** Como en ChromaDB, `concept-developer` marca como hueco lo que el proyecto no responde y para. Aquí el orquestador pregunta a la persona y lo vuelve a llamar con las respuestas antes de la ronda 1.
+- **Sin aprobación humana.** Como en ChromaDB, el ciclo no espera a que nadie apruebe la spec ([ADR 0004](docs/adr/0004-el-ciclo-corre-sin-aprobacion-humana.md)).
+- **Commit final.** Como en ChromaDB, un solo commit con los ficheros del ciclo al terminar, con el desglose y el pie de `commit-changes` (`Refs #N`).
+
+## Sin cambios
+
+- Los textos en español de los subagentes y las skills de git, salvo lo descrito arriba.
+- `commit-changes.sh`, `launch-push.sh` y `pull-changes.sh`, salvo la ruta y la rama base.
+- Las plantillas de issue y de pull request por tipo, copiadas tal cual.
+- `github-cache.mjs`, salvo la carpeta del fichero.
