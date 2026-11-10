@@ -60,11 +60,12 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 
 ## Publicar una versión
 
-Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar, sube `version` en `apm.yml`, haz merge de `staging` en `main` y etiqueta ese commit de `main` con `v<versión>`:
+Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
+1. En `staging`, sube `version` en `apm.yml` con un commit `chore: release X.Y.Z`, por pull request como cualquier otro cambio. Quien prepara la versión elige el número.
+2. Abre la pull request de `staging` a `main`. La comprobación *Comprobar la versión* falla si `vX.Y.Z` ya existe o es menor que la última etiqueta.
+3. Al hacer merge, el workflow `.github/workflows/release.yml` crea la etiqueta `vX.Y.Z` en ese commit de `main` y la release con las notas que genera GitHub. No hace falta etiquetar a mano.
 
-Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles ([ADR 0006](adr/0006-el-paquete-vive-en-su-propio-repositorio.md)).
+Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
+
+Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles ([ADR 0006](adr/0006-el-paquete-vive-en-su-propio-repositorio.md), [ADR 0008](adr/0008-la-version-de-apm-yml-crea-la-etiqueta.md)).
