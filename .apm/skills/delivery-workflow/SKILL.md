@@ -27,7 +27,7 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 3. **Procesamiento:** Llama y continúa. No espera un sí. Confirma el éxito de cada paso antes de ejecutar el siguiente.
    - **Pensar la tarea:** la skill `help-me-to-think`.
    - **Dejarla escrita**, en este orden y sin esperar entre pasos:
-     1. El subagente `create-issue` con el tipo, el título y el cuerpo.
+     1. El subagente `create-issue` con el tipo, el título y el cuerpo. El tipo es uno de los siete: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. Si la persona dice otra palabra, tradúcela al que corresponda («feature» es `feat`, «bug» es `fix`). Si no está claro cuál, pregúntalo antes de llamar.
      2. `issue-spec top-hash N`. Guarda esa huella: va en cada encargo del ciclo.
      3. La skill `pull-changes`, que adelanta la rama base.
      4. El subagente `create-branch` con el número, el tipo y una descripción corta.
@@ -37,10 +37,10 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
      8. La skill `link-pr-to-issue`. El orquestador siempre enlaza la issue.
      9. Si la persona pidió «solo git», para aquí: la pull request queda en draft y enlazada para trabajar a mano.
      10. El ciclo, en la sección siguiente.
-     11. El subagente `create-commit` con los ficheros que listaron los subagentes del ciclo y el tipo de la issue, con `Refs #N` en el pie. Después, `launch-push`.
-     12. Si la parte de arriba de la issue tiene una línea `Revisan:`, el subagente `create-pr`, encargo de revisión, con esos nombres. Si no, para con la pull request en draft y dilo: la revisión se pide con «que la revisen».
+     11. El subagente `create-commit` con los ficheros que listaron los subagentes del ciclo y el tipo de la issue, con `Refs #N` en el pie. Después, `launch-push`. Cuando el push termine, marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-commit`.
+     12. Si la parte de arriba de la issue tiene una línea `Revisan:`, el subagente `create-pr`, encargo de revisión, con esos nombres. Si no, para con la pull request en draft y dilo: la revisión se pide con «que la revisen». La task de la fase Pull request cuyo agente es `create-pr` se marca solo cuando las revisiones quedan pedidas.
    - **Guardar un trozo:** el subagente `create-commit` con los ficheros de ese trozo y el subagente `launch-push`.
-   - **Que la revisen:** la persona nombra revisores. Delega la PR y los nombres en el subagente `create-pr`, encargo de revisión, y espera su resultado.
+   - **Que la revisen:** la persona nombra revisores. Delega la PR y los nombres en el subagente `create-pr`, encargo de revisión, y espera su resultado. Si la PR tiene issue con tasks, toma una huella nueva con `issue-spec top-hash` y marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-pr`.
    - **Otra pasada:** solo si la última pasada falló en la ronda 9 y la persona lo confirma en este chat con palabras propias («otra pasada», «sí, otra»). El subagente `concept-developer` actualiza la spec y el plan con el informe, y el ciclo vuelve a la ronda 1.
 4. **Formateo:** Responde con lo que hizo cada paso: número de issue y etiqueta, nombre de rama, URL de la pull request, rondas con su veredicto, mensaje del commit final y revisores pedidos.
 
