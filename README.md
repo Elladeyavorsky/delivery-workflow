@@ -53,8 +53,6 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 4. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
 
-5. Abre tu herramienta como siempre y escribe `/check-status` (en Codex, `$check-status`). Tiene que mostrar la rama base, `Token de GitHub: GITHUB_TOKEN en .env`, `GitHub CLI: cuenta tu-login` y Node 20 o más. En Codex, marca antes el proyecto como de confianza.
-
 ## Instalación en Windows
 
 Los scripts del paquete son de `bash`, así que en Windows hacen falta una terminal y un entorno de tipo Unix. Elige una opción.
@@ -109,18 +107,6 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 ```json
 { "permissions": { "allow": ["Bash(bash:*)", "Bash(node:*)", "Bash(git:*)", "Bash(gh:*)"] } }
 ```
-
-## Proyecto en equipo
-
-Si en el proyecto cada persona usa una herramienta distinta, **una sola persona** instala para las tres, en una pull request `chore`:
-
-```bash
-apm install venturars/delivery-workflow#v0.1.0 --target claude,cursor,codex
-```
-
-Añade `.env` y `.claude/settings.local.json` a `.gitignore`, y haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
-
-El resto solo hace pull: no necesita APM, pero sí `gh`, Node y su propio `.env` con su token. Nadie más lanza `apm install`, porque reescribiría el lockfile.
 
 ## Actualizar y desinstalar
 
