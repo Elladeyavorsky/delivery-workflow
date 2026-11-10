@@ -1,11 +1,11 @@
 ---
 name: check-status
-description: "Resume la rama actual, la rama base, si hay token de GitHub, gh con sesión y Node 20+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
+description: "Resume la rama actual, la rama base, si el .env tiene el token de GitHub, la cuenta del token y Node 20+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
 ---
 
 ### Herramienta: CHECK_STATUS
 
-- **Descripción**: Úsala única y exclusivamente cuando necesites saber la rama actual, la rama base, si hay cambios sin commit, si la rama sigue a un remoto, si hay token para el MCP de GitHub y si están `gh` con sesión y Node 20+.
+- **Descripción**: Úsala única y exclusivamente cuando necesites saber la rama actual, la rama base, si hay cambios sin commit, si la rama sigue a un remoto, si el `.env` del proyecto tiene `GITHUB_TOKEN`, de qué cuenta es y si está Node 20+.
 
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/check-status.sh"`
 
@@ -19,5 +19,6 @@ No recibe argumentos.
 
 - **Procesamiento de respuestas**: El script escribe, en este orden, el repositorio, la rama, la rama base, el token de GitHub, GitHub CLI, Node, el remoto con los commits por subir y por bajar, el último commit, los ficheros preparados, los modificados sin preparar y los que no tienen seguimiento. Si el código de salida no es 0, lee el error y comunícalo. No inventes la rama ni los ficheros.
 - **Si la rama base no se detecta**: Pide a la persona que defina `GIT_WORKFLOW_BASE` con el nombre de su rama base.
-- **Si falta el token de GitHub**: Las skills que usan el MCP van a fallar. Pide a la persona que defina `GITHUB_TOKEN` (por ejemplo `export GITHUB_TOKEN=$(gh auth token)`) y reinicie su editor o agente (Claude Code, Cursor o Codex), que lee la variable al arrancar.
-- **Si falta `gh` o Node 20+**: La pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide a la persona que los instale (`gh auth login` para la sesión) antes de dejar la tarea escrita.
+- **Si falta el token de GitHub**: Todo lo que toca GitHub va a fallar. Repite a la persona el error del script: tiene que crear un `.env` en la raíz del proyecto con `GITHUB_TOKEN=su_token`, con un token de su propia cuenta, y tener `.env` en `.gitignore`. No hace falta reiniciar nada: los scripts leen el `.env` en cada llamada. No uses `gh auth login` ni otra variable del entorno.
+- **Si GitHub rechaza el token**: Pide a la persona que cree otro token y lo cambie en el `.env`.
+- **Si falta `gh` o Node 20+**: La issue, la pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide a la persona que los instale antes de dejar la tarea escrita.
