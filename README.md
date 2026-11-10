@@ -1,52 +1,101 @@
 # delivery-workflow
 
-Paquete [APM](https://github.com/microsoft/apm) con un flujo de entrega para **Claude Code, Cursor y Codex**. Lleva una tarea desde la idea hasta la revisión: la entrevista, la issue con su etiqueta, la rama, la pull request en draft enlazada, la spec en la issue y un ciclo de código y tests por rondas.
+Paquete [APM](https://github.com/microsoft/apm) con un flujo de entrega para **Claude Code, Cursor y Codex**. Lleva una tarea desde la idea hasta la revisión sin salir del chat del agente.
 
-Une la plantilla de git de [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template) y el ciclo de agentes de [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB), del repositorio de origen, [venturars/neoland-102026](https://github.com/venturars/neoland-102026), generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
+## Qué hace
+
+- **Piensa la tarea contigo.** Una entrevista en tandas de preguntas, cada una con su respuesta recomendada, hasta que la tarea está clara.
+- **La deja escrita en GitHub.** Crea la issue con la plantilla y la etiqueta de su tipo, la rama `número-tipo-descripcion`, el commit `chore: open #N` y la pull request en draft enlazada a la issue.
+- **Escribe la spec en la issue.** La spec, el plan y las tasks van en la propia issue, debajo de su plantilla, y las tasks se marcan a medida que se cumplen.
+- **La implementa por rondas.** Hasta nueve rondas en las que un subagente escribe el código, otro escribe y ejecuta los tests y otro compara la documentación con el código. Cada ronda deja un comentario en la issue.
+- **La cierra.** Un commit final con un mensaje convencional, el push y, si la issue nombra revisores, la petición de revisión.
+
+Para solo cuando hace falta: si a la spec le falta un dato, si aparece un secreto o si la novena ronda falla. También tiene momentos sueltos: guardar un trozo en un commit, pedir revisión o lanzar otra pasada. Los detalles están en [Uso](#uso).
+
+Sale de la plantilla de git de [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template) y el ciclo de agentes de [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB), del repositorio de origen, [venturars/neoland-102026](https://github.com/venturars/neoland-102026), generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
 
 > **Estado de las pruebas:** probado de punta a punta en Claude Code. En Cursor y Codex se ha comprobado la instalación, pero el flujo está sin probar. Si usas una de esas herramientas, sigue [Probar el paquete](#probar-el-paquete) y cuenta qué pasa.
 
 ## Requisitos
 
-- Un proyecto con git y un remoto `origin` en GitHub.
+- Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
 - Claude Code, Cursor o Codex.
-- La CLI de GitHub (`gh`) con sesión iniciada (`gh auth login`). Abre las pull requests, crea las etiquetas, lee y escribe la spec en la issue, y enlaza la pull request en Development.
+- La CLI de GitHub (`gh`). Abre las pull requests, crea las etiquetas, lee y escribe la spec en la issue y enlaza la pull request en Development.
 - Node 20 o superior, para la spec en la issue y la caché de revisores.
-- APM: `brew install apm` (o `curl -sSL https://aka.ms/apm-unix | sh`).
-- Un token de GitHub en la variable `GITHUB_TOKEN` cuando arrancas el editor o el agente, para el MCP de GitHub. Con la CLI de GitHub:
+- APM, para instalar el paquete. En un [repositorio compartido](#repositorio-compartido) solo lo necesita quien instala.
+- Un token de GitHub en la variable `GITHUB_TOKEN`, para el MCP de GitHub.
 
-  ```bash
-  export GITHUB_TOKEN=$(gh auth token)
-  ```
+## Guía de instalación
 
-  Si GitHub rechaza ese token, crea un token clásico con el permiso `repo` en <https://github.com/settings/tokens> y úsalo en su lugar. Añade el `export` a tu `~/.zshrc` para que esté en cada sesión. Si la variable falta, `check-status` lo avisa.
+### 1. Prepara tu equipo
 
-> **Cuidado con el token al instalar.** Si `GITHUB_TOKEN` está definida cuando lanzas `apm install`, APM escribe el valor del token en la configuración del MCP (`.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`). Sin la variable, escribe una referencia (`${GITHUB_TOKEN}`) que se resuelve al arrancar la herramienta. Instala con `env -u GITHUB_TOKEN apm install …` y no subas nunca esos ficheros al repositorio.
+Una sola vez por ordenador. En macOS, con Homebrew:
 
-## Instalación
+```bash
+brew install gh node apm
+gh auth login
+```
 
-Desde la raíz de tu proyecto, con la herramienta que uses en `--target`:
+Sin Homebrew, APM se instala con `curl -sSL https://aka.ms/apm-unix | sh`. Comprueba las versiones con `gh --version`, `node --version` (20 o más) y `apm --version`.
+
+Después, añade el token a tu `~/.zshrc` (o `~/.bashrc`) para que esté en cada sesión:
+
+```bash
+export GITHUB_TOKEN=$(gh auth token)
+```
+
+Si GitHub rechaza ese token, crea un token clásico con el permiso `repo` en <https://github.com/settings/tokens> y úsalo en su lugar.
+
+### 2. Instala el paquete en el proyecto
+
+Desde la raíz del proyecto, con la herramienta que uses en `--target`:
 
 ```bash
 env -u GITHUB_TOKEN apm install venturars/delivery-workflow#v0.1.0 --target claude
 ```
 
-`--target` acepta `claude`, `cursor` o `codex`, y varios separados por comas (`--target claude,cursor`). Mientras no exista la etiqueta `v0.1.0`, usa `#staging`.
+- `--target` acepta `claude`, `cursor` o `codex`, y varios separados por comas (`--target claude,cursor,codex`).
+- Mientras no exista la etiqueta `v0.1.0`, usa `#staging`.
+- `env -u GITHUB_TOKEN` quita el token solo para ese comando. Si `GITHUB_TOKEN` está definida al instalar, APM escribe el valor del token en la configuración del MCP. Sin ella, escribe una referencia (`${GITHUB_TOKEN}`) que la herramienta resuelve al arrancar.
 
-APM añade el paquete a tu `apm.yml`, fija la versión en `apm.lock.yaml` y deja:
+APM añade el paquete a `apm.yml`, fija la versión en `apm.lock.yaml` y deja:
 
 | | Claude Code | Cursor | Codex |
 |---|---|---|---|
-| Skills | `.claude/skills/` | `.agents/skills/` | `.agents/skills/` |
-| Subagentes | `.claude/agents/` | `.cursor/agents/` | `.codex/agents/` |
+| 18 skills | `.claude/skills/` | `.agents/skills/` | `.agents/skills/` |
+| 8 subagentes | `.claude/agents/` | `.cursor/agents/` | `.codex/agents/` |
 | MCP `github` | `.mcp.json` | `.cursor/mcp.json` | `.codex/config.toml` |
 
-Haz commit de `apm.yml` y `apm.lock.yaml`. Quien clone el proyecto solo tiene que lanzar `env -u GITHUB_TOKEN apm install`. Si en el proyecto trabaja más gente, mira [Repositorio compartido](#repositorio-compartido).
+Comprueba que la configuración del MCP lleva la referencia y no el token:
 
-Lo que pide cada herramienta además:
+```bash
+grep -nE 'gh[pousr]_|github_pat_' .mcp.json .cursor/mcp.json .codex/config.toml 2>/dev/null || echo "Sin tokens."
+```
 
-- **Cursor:** comprueba en *Settings → MCP* que el servidor `github` está activado. El paquete le añade la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral`: sin ella, crear o editar una issue o una pull request abre un formulario sin botón de enviar y la llamada se queda esperando. Si lo abres desde el Dock y no ve `GITHUB_TOKEN`, ábrelo desde la terminal con `cursor .`.
-- **Codex:** Codex solo lee `.codex/config.toml` si el proyecto es de confianza (*trusted*). Acepta la confianza cuando Codex la pida al abrir el proyecto. `/mcp` muestra si el servidor `github` está conectado. Codex solo delega en subagentes cuando una skill se lo pide: el orquestador los nombra uno a uno.
+Haz commit de `apm.yml` y `apm.lock.yaml`. Si en el proyecto trabaja más gente, sigue [Repositorio compartido](#repositorio-compartido) en vez de este paso.
+
+### 3. Abre tu herramienta
+
+Ábrela desde una terminal en la que esté `GITHUB_TOKEN`, para que la herede.
+
+- **Claude Code:** `claude`. Acepta el servidor `github` del proyecto cuando lo pregunte.
+- **Cursor:** `cursor .`. Si lo abres desde el Dock, puede no ver `GITHUB_TOKEN`. En *Settings → MCP*, activa el servidor `github`. El paquete le añade la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral`: sin ella, crear o editar una issue o una pull request abre un formulario sin botón de enviar y la llamada se queda esperando.
+- **Codex:** `codex`. Acepta la confianza en el proyecto (*trusted*): sin ella, Codex no lee `.codex/config.toml`. `/mcp` muestra si el servidor `github` está conectado. Codex solo delega en subagentes cuando una skill se lo pide: el orquestador los nombra uno a uno.
+
+### 4. Da los permisos
+
+La primera vez que el flujo lanza cada script, la herramienta pide permiso. Acéptalos o apruébalos de una vez como explica [Permisos](#permisos).
+
+### 5. Comprueba que funciona
+
+En el chat del agente, escribe `/check-status` (en Codex, `$check-status`). Tiene que decir la rama base, `GITHUB_TOKEN definido`, `GitHub CLI: con sesión` y `Node: 20` o más. Si falta algo, lo dice y el flujo no arranca.
+
+Después, pide tu primera tarea: `/delivery-workflow Crea la issue y hazla: …`.
+
+### Actualizar y desinstalar
+
+- **Otra versión:** cambia la etiqueta en `apm.yml` (por ejemplo, `#v0.1.0` por `#v0.2.0`), lanza `env -u GITHUB_TOKEN apm install` y haz commit de `apm.yml`, `apm.lock.yaml` y lo que haya cambiado.
+- **Desinstalar:** `apm uninstall venturars/delivery-workflow` quita las skills, los subagentes y la entrada de `apm.yml`. El servidor `github` se queda en la configuración del MCP: bórralo a mano si ya no lo usas.
 
 ## Permisos
 
