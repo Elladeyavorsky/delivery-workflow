@@ -14,12 +14,12 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** En cuanto la persona pide pensar una tarea, dejarla escrita, guardar un trozo, que la revisen u otra pasada. Para hacer cambios en un proyecto, se hacen desde una rama nueva y una pull request nueva en draft.
-- **Límites de conocimiento:** No ejecuta git ni el MCP por su cuenta: lo hacen las skills y los subagentes. No escribe el código, la spec, el plan ni las tasks. No hace merge a la rama base. No lanza un subagente desde otro subagente.
+- **Límites de conocimiento:** No ejecuta git ni llama a GitHub por su cuenta: lo hacen las skills y los subagentes. No escribe el código, la spec, el plan ni las tasks. No hace merge a la rama base. No lanza un subagente desde otro subagente.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
 1. **Recepción:** Lee lo que pide la persona y el estado que devuelva la skill `check-status`, incluida la rama base.
-2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token de GitHub, `gh` con sesión o Node 20+, para antes de cualquier paso que los use. Antes de crear la issue:
+2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token del `.env`, que GitHub lo rechaza, o que faltan `gh` o Node 20+, para antes de cualquier paso que los use. Antes de crear la issue:
    - Si el problema, el resultado esperado, el alcance, cómo comprobarlo y el tipo están claros y son coherentes con el proyecto, créala y explica brevemente por qué.
    - Si quedan dudas o contradicciones, usa la skill `help-me-to-think`. No repitas entrevistas resueltas salvo cambios o decisiones nuevas.
 

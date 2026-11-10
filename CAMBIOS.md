@@ -23,7 +23,8 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | `templates/issues/*_issue.md` | `.apm/skills/create-issue/assets/` | La plantilla viaja con la skill que la usa. |
 | `templates/pull-request/*-pull-request.md` | `.apm/skills/create-pr-base/assets/` | Igual. |
 | `ChromaDB/templates/specs/spec.md`, `plan.md`, `tasks.md` | `.apm/skills/issue-spec/assets/` | Igual, y pasan a ser secciones de la issue (ver Spec en la issue). |
-| `MCPS/github-mcp-server/mcp.txt` | `dependencies.mcp` en `apm.yml` (servidor `github`) | APM escribe el servidor remoto de GitHub en la configuración de cada herramienta, con `Authorization: Bearer ${GITHUB_TOKEN}` y la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral` que `mcp.txt` explica para Cursor. Va declarado a mano (`registry: false`): la entrada del registro de APM pedía un token de forma interactiva y lo dejaba sin cabecera (APM 0.35.0). |
+| `MCPS/github-mcp-server/mcp.txt` | — | Se quita. El paquete no usa el MCP de GitHub: todo va por `gh` con el token del `.env` ([ADR 0007](docs/adr/0007-el-token-sale-del-env.md)). |
+| — | `.apm/skills/<skill>/scripts/gh.sh` | Nuevo, igual en cada skill que llama a GitHub: lanza `gh` con el `GITHUB_TOKEN` del `.env`. |
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/MANTENIMIENTO.md`, `docs/adr/`, `tests/` | Manifiesto, documentación y tests del paquete. |
 
@@ -38,7 +39,8 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **Revisores desde la issue.** Como en `exercises/ChromaDB`, si la issue nombra revisores (una línea `Revisan:` al final de la parte de arriba), el orquestador los pide al acabar el ciclo. ChromaDB solo los pide si son dos personas; aquí basta con uno. Si la issue no nombra a nadie, la PR sigue en draft hasta «que la revisen», como en la plantilla de git.
 - **`launch-push` es una skill.** En `staging` es un subagente que solo lanza su skill. Aquí el orquestador lanza la skill directamente: un push no hace ninguna pregunta, su salida es una línea y un subagente solo añadía una llamada más.
 - **Nombre de revisor ambiguo.** En `staging`, `create-pr` pide aclaración. Aquí `create-pr` es un subagente y no puede preguntar: devuelve el nombre y los candidatos al orquestador, que pregunta y lo vuelve a llamar.
-- **`check-status.sh`.** Escribe además la rama base, si `GITHUB_TOKEN` está definida (sin mostrar su valor), si `gh` tiene sesión y la versión de Node. El orquestador para antes de los pasos que los necesitan.
+- **`check-status.sh`.** Escribe además la rama base, si el `.env` tiene `GITHUB_TOKEN` (sin mostrar su valor), de qué cuenta es el token y la versión de Node. El orquestador para antes de los pasos que los necesitan.
+- **Sin MCP de GitHub.** Todo lo que el MCP hacía (crear la issue, asignar, pasar a draft, editar el cuerpo) lo hace `gh` a través de `gh.sh`, que lee el token del `.env` del proyecto ([ADR 0007](docs/adr/0007-el-token-sale-del-env.md)).
 - **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.
 - **Entrevistas.** Hacen las preguntas en tandas con respuesta recomendada, como en `staging` desde #925, pero esperan las respuestas en la conversación en vez de devolverlas al orquestador ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). Se llaman tandas para no confundirlas con las rondas del ciclo. Quitan la línea de instalación de las skills de Matt Pocock y la cambian por un enlace de inspiración.
 - **Rutas.** Las skills llaman a sus scripts y plantillas desde la carpeta de la skill (`<carpeta de esta skill>/…`) en vez de `./tools/…` o `exercises/git-workflow-agent-template/tools/…`, y dicen cuál es esa carpeta en cada herramienta: `${CLAUDE_SKILL_DIR}` en Claude Code y `.agents/skills/<skill>` en Cursor y Codex.

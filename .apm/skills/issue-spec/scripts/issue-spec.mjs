@@ -3,8 +3,8 @@ import { execFile } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, writeFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 const exec = promisify(execFile);
@@ -147,9 +147,11 @@ function parseArgs(args) {
   return { command, number, options };
 }
 
+// gh.sh lanza gh con el token del .env del proyecto, nunca con la sesión de gh.
 function gh() {
-  const binary = process.env.ISSUE_SPEC_GH || "gh";
-  return async (args) => (await exec(binary, args, { maxBuffer: 8 * 1024 * 1024 })).stdout;
+  const binary = process.env.ISSUE_SPEC_GH;
+  const [command, prefix] = binary ? [binary, []] : ["bash", [join(dirname(fileURLToPath(import.meta.url)), "gh.sh")]];
+  return async (args) => (await exec(command, [...prefix, ...args], { maxBuffer: 8 * 1024 * 1024 })).stdout;
 }
 
 async function withTemporary(text, action) {

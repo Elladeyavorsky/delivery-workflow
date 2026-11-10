@@ -15,8 +15,23 @@ Solo se para si a la spec le falta un dato, si aparece un secreto o si falla la 
 ## Requisitos
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
-- [GitHub CLI](https://cli.github.com) (`gh`) con sesión, Node 20 o superior y APM.
-- Un token de GitHub en la variable `GITHUB_TOKEN`.
+- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión.
+- **Un `.env` en la raíz del proyecto con tu token de GitHub**, y `.env` en `.gitignore`. Sin eso, el flujo no arranca.
+
+## El token de GitHub
+
+Todo lo que el paquete hace en GitHub (issues, pull requests, etiquetas, revisiones) lo hace con el token del `.env`, nunca con la sesión de `gh` ni con variables de tu terminal. Por eso no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
+
+1. Crea un token **clásico** con el permiso `repo` en <https://github.com/settings/tokens/new?scopes=repo>. Que sea de tu cuenta: todo lo que haga el flujo aparecerá a tu nombre. Los tokens *fine-grained* no sirven en repositorios personales de otra persona.
+2. En la raíz del proyecto, crea o abre el fichero `.env` con tu editor y añade esta línea, con tu token:
+
+   ```
+   GITHUB_TOKEN=ghp_tu_token
+   ```
+
+3. Comprueba que `.env` está en `.gitignore`. Si no, añádelo: `echo .env >> .gitignore`.
+
+Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nunca. El push sigue usando tus credenciales de git.
 
 ## Instalación en macOS y Linux
 
@@ -24,26 +39,21 @@ Solo se para si a la spec le falta un dato, si aparece un secreto o si falla la 
 
    ```bash
    brew install gh node apm          # sin Homebrew: curl -sSL https://aka.ms/apm-unix | sh
-   gh auth login
-   echo 'export GITHUB_TOKEN=$(gh auth token)' >> ~/.zshrc   # o ~/.bashrc
    ```
 
 2. Instala el paquete desde la raíz del proyecto. En `--target` pon tu herramienta: `claude`, `cursor`, `codex` o varias separadas por comas.
 
    ```bash
-   env -u GITHUB_TOKEN apm install venturars/delivery-workflow#v0.1.0 --target claude
+   apm install venturars/delivery-workflow#v0.1.0 --target claude
    ```
 
-   `env -u GITHUB_TOKEN` evita que el valor del token acabe escrito en la configuración del MCP. Mientras no exista `v0.1.0`, usa `#staging`.
+   Mientras no exista `v0.1.0`, usa `#staging`.
 
 3. Haz commit de `apm.yml` y `apm.lock.yaml`.
 
-4. Abre tu herramienta **desde la terminal**, para que vea `GITHUB_TOKEN`:
-   - **Claude Code:** `claude` y acepta el servidor `github`.
-   - **Cursor:** `cursor .` y activa el servidor `github` en *Settings → MCP*.
-   - **Codex:** `codex` y marca el proyecto como de confianza.
+4. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
 
-5. Escribe `/check-status` (en Codex, `$check-status`). Tiene que mostrar la rama base, el token, la sesión de `gh` y Node 20 o más.
+5. Abre tu herramienta como siempre y escribe `/check-status` (en Codex, `$check-status`). Tiene que mostrar la rama base, `Token de GitHub: GITHUB_TOKEN en .env`, `GitHub CLI: cuenta tu-login` y Node 20 o más. En Codex, marca antes el proyecto como de confianza.
 
 ## Instalación en Windows
 
@@ -61,7 +71,7 @@ Los scripts del paquete son de `bash`, así que en Windows hacen falta una termi
    curl -sSL https://aka.ms/apm-unix | sh
    ```
 
-3. Abre la herramienta desde la terminal de Ubuntu: `claude`, `codex` o `cursor .` (Cursor abre el proyecto conectado a WSL).
+3. Abre la herramienta desde la terminal de Ubuntu: `claude`, `codex` o `cursor .` (Cursor abre el proyecto conectado a WSL). El `.env` va en la raíz del proyecto, dentro de WSL.
 
 ### Opción B: Git Bash (solo Claude Code)
 
@@ -74,7 +84,7 @@ Los scripts del paquete son de `bash`, así que en Windows hacen falta una termi
    winget install --id Microsoft.APM --exact --source winget
    ```
 
-3. Abre **Git Bash** y sigue los pasos de [Instalación en macOS y Linux](#instalación-en-macos-y-linux) desde el paso 1, saltándote `brew`. El token va en `~/.bashrc`.
+3. Abre **Git Bash** y sigue los pasos de [Instalación en macOS y Linux](#instalación-en-macos-y-linux) desde el paso 2.
 
 ## Uso
 
@@ -105,18 +115,17 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 Si en el proyecto cada persona usa una herramienta distinta, **una sola persona** instala para las tres, en una pull request `chore`:
 
 ```bash
-env -u GITHUB_TOKEN apm install venturars/delivery-workflow#v0.1.0 --target claude,cursor,codex
-grep -nE 'gh[pousr]_|github_pat_' .mcp.json .cursor/mcp.json .codex/config.toml || echo "Sin tokens."
+apm install venturars/delivery-workflow#v0.1.0 --target claude,cursor,codex
 ```
 
-Si el `grep` encuentra un token, no hagas commit. Si no, añade `.claude/settings.local.json` a `.gitignore` y haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.mcp.json`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
+Añade `.env` y `.claude/settings.local.json` a `.gitignore`, y haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
 
-El resto solo hace pull: no necesita APM, pero sí `gh`, Node y `GITHUB_TOKEN`. Nadie más lanza `apm install`, porque reescribiría el lockfile.
+El resto solo hace pull: no necesita APM, pero sí `gh`, Node y su propio `.env` con su token. Nadie más lanza `apm install`, porque reescribiría el lockfile.
 
 ## Actualizar y desinstalar
 
-- **Actualizar:** cambia la versión en `apm.yml` (por ejemplo, `#v0.2.0`), lanza `env -u GITHUB_TOKEN apm install` y haz commit.
-- **Desinstalar:** `apm uninstall venturars/delivery-workflow`. El servidor `github` se queda en la configuración del MCP: bórralo a mano si no lo usas.
+- **Actualizar:** cambia la versión en `apm.yml` (por ejemplo, `#v0.2.0`), lanza `apm install` y haz commit.
+- **Desinstalar:** `apm uninstall venturars/delivery-workflow`. El `.env` es tuyo: bórralo o déjalo.
 
 ## Más información
 

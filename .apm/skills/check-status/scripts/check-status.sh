@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resume la rama, la rama base, el token de GitHub, gh, Node, el remoto y los cambios locales.
+# Resume la rama, la rama base, el token del .env, gh, Node, el remoto y los cambios locales.
 
 set -euo pipefail
 
@@ -75,18 +75,24 @@ else
   echo "Rama base: no detectada. Defínela con GIT_WORKFLOW_BASE."
 fi
 
-if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-  echo "Token de GitHub: GITHUB_TOKEN definido"
+source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
+token=no
+if token_error=$(load_github_token 2>&1); then
+  load_github_token
+  token=yes
+  echo "Token de GitHub: GITHUB_TOKEN en .env"
 else
-  echo "Token de GitHub: falta. Define GITHUB_TOKEN y reinicia tu editor o agente."
+  echo "Token de GitHub: ${token_error}"
 fi
 
 if ! command -v gh >/dev/null 2>&1; then
-  echo "GitHub CLI: no instalado. Hace falta para la pull request, las etiquetas y la spec."
-elif gh auth status --hostname "${GH_HOST:-github.com}" >/dev/null 2>&1; then
-  echo "GitHub CLI: con sesión"
+  echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
+elif [[ "$token" == no ]]; then
+  echo "GitHub CLI: instalado, sin token"
+elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
+  echo "GitHub CLI: cuenta ${login}"
 else
-  echo "GitHub CLI: sin sesión. Ejecuta gh auth login."
+  echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
 fi
 
 if ! command -v node >/dev/null 2>&1; then
