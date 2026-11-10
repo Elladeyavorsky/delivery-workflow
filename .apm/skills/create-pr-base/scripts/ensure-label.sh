@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Deja lista la etiqueta del tipo en el repositorio de origin. La crea si falta.
+# GitHub no distingue mayúsculas en las etiquetas: «Knowledge» ya vale para knowledge.
 # Sale con 2 si la cuenta no puede crearla: la issue o la PR siguen sin etiqueta.
 
 set -euo pipefail
@@ -25,7 +26,7 @@ case "$type" in
     ;;
 esac
 
-if gh label list --search "$type" --limit 100 --json name --jq '.[].name' | grep -qx -- "$type"; then
+if gh label list --search "$type" --limit 100 --json name --jq '.[].name' | grep -qix -- "$type"; then
   echo "Etiqueta ${type}: ya existe."
   exit 0
 fi

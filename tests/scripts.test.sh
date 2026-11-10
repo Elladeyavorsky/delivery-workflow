@@ -67,6 +67,7 @@ label="${skills}/create-issue/scripts/ensure-label.sh"
 FAKE_GH_LABELS=feat check "ensure-label con la etiqueta ya creada" "$label" feat
 check "ensure-label crea la que falta" "$label" knowledge
 check "ensure-label creó knowledge" grep -q "label create knowledge" "$FAKE_GH_LOG"
+FAKE_GH_LABELS=Knowledge FAKE_GH_LABEL_DENIED=1 check "ensure-label acepta la etiqueta con otras mayúsculas" "$label" knowledge
 FAKE_GH_LABEL_DENIED=1 "$label" fix >/dev/null 2>&1
 check "ensure-label sin permiso sale con 2" test $? -eq 2
 "$label" feta >/dev/null 2>&1
