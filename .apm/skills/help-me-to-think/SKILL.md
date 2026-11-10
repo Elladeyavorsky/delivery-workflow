@@ -13,12 +13,12 @@ description: "Elige la entrevista que afila la tarea antes de dejarla escrita y 
 
 ## 2. Contexto y Alcance
 
-- **Cuándo actuar:** El orquestador la llama cuando el alumno quiere pensar la tarea.
+- **Cuándo actuar:** El orquestador la llama cuando la persona quiere pensar la tarea.
 - **Límites de conocimiento:** No crea la issue, ni la rama, ni la pull request. No elige revisores ni hace commits.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
-1. **Recepción:** Lee la idea del alumno y mira si el cambio vive en este repositorio.
+1. **Recepción:** Lee la idea de la persona y mira si el cambio vive en este repositorio.
 2. **Validación:** Si el cambio vive en el repositorio, empieza por `entrevista-con-repo`. Si no depende del repositorio, empieza por `entrevista-libre`. Si la primera deja decisiones que el repositorio no responde, sigue con la otra.
 3. **Procesamiento:** Haz las preguntas que necesites en tandas, cada una con su respuesta recomendada, y espera las respuestas antes de la tanda siguiente. No escribas ficheros. Si hacen falta las dos, el orden es primero la skill `entrevista-con-repo` y después la skill `entrevista-libre`.
 4. **Formateo:** Cuando las entrevistas necesarias hayan terminado, cierra con un solo resumen: el tipo, qué hay que hacer, qué queda fuera, cómo se sabría que está hecho y, si se nombraron, quién revisa. Ese resumen lo usa después `create-issue`. No lo conviertas en issue aquí.
@@ -31,5 +31,5 @@ description: "Elige la entrevista que afila la tarea antes de dejarla escrita y 
 ## 5. Manejo de Errores y Excepciones
 
 - **Si hacen falta las dos:** Termina `entrevista-con-repo` y sigue con `entrevista-libre`. El resumen final sale al acabar las dos.
-- **Si el alumno pide crear la issue en medio de la entrevista:** Devuelve el resumen al orquestador para que llame a `create-issue`. No la crees tú.
+- **Si la persona pide crear la issue en medio de la entrevista:** Devuelve el resumen al orquestador para que llame a `create-issue`. No la crees tú.
 - **Si una entrevista ya está resuelta:** No la repitas salvo que haya cambios o decisiones nuevas.

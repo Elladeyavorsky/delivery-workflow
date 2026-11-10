@@ -153,7 +153,7 @@ Son reglas del paquete, no opciones:
 | `delivery-workflow` | skill | Orquestador: reconoce el momento, llama a quien toca y lleva el ciclo. |
 | `help-me-to-think` | skill | Elige la entrevista y cierra con un resumen. |
 | `entrevista-con-repo`, `entrevista-libre` | skills | Las dos entrevistas. |
-| `create-issue`, `create-branch`, `create-commit`, `launch-push`, `create-pr` | subagentes | Un paso de git o de GitHub cada uno. |
+| `create-issue`, `create-branch`, `create-commit`, `create-pr` | subagentes | Un paso de git o de GitHub cada uno. |
 | `concept-developer`, `code-developer`, `code-tester`, `concept-tester` | subagentes | El ciclo: spec y docs, código, tests y comprobación de concepto. |
 | `check-status`, `pull-changes`, `create-branch`, `create-empty-commit`, `commit-changes`, `launch-push` | skills con script | Los pasos de git. |
 | `create-issue`, `create-pr-base`, `assign-author`, `assign-reviewers`, `create-draft`, `link-pr-to-issue` | skills con MCP o `gh` | Los pasos de GitHub. |
@@ -196,8 +196,8 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    Para Codex, `--target codex`. Para probar una copia local del paquete, pasa su ruta en vez de `venturars/…#staging`.
 
 3. Comprueba que están las piezas:
-   - **Cursor:** `ls .agents/skills .cursor/agents` (18 skills y 9 subagentes) y `cat .cursor/mcp.json` (servidor `github` con `Bearer ${env:GITHUB_TOKEN}` y `X-MCP-Features`).
-   - **Codex:** `ls .agents/skills .codex/agents` (18 skills y 9 subagentes `.toml`) y `cat .codex/config.toml` (`[mcp_servers.github]` con `bearer_token_env_var = "GITHUB_TOKEN"` y `X-MCP-Features` en `http_headers`).
+   - **Cursor:** `ls .agents/skills .cursor/agents` (18 skills y 8 subagentes) y `cat .cursor/mcp.json` (servidor `github` con `Bearer ${env:GITHUB_TOKEN}` y `X-MCP-Features`).
+   - **Codex:** `ls .agents/skills .codex/agents` (18 skills y 8 subagentes `.toml`) y `cat .codex/config.toml` (`[mcp_servers.github]` con `bearer_token_env_var = "GITHUB_TOKEN"` y `X-MCP-Features` en `http_headers`).
 
 4. Abre la herramienta desde esa misma terminal, para que herede `GITHUB_TOKEN`: `cursor .` o `codex`. En Codex, acepta la confianza en el proyecto.
 

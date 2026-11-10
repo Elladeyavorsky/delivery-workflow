@@ -11,7 +11,8 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 
 | En `staging` | Ahora | Por qué |
 |---|---|---|
-| `agents/create-issue.md`, `create-branch.md`, `create-commit.md`, `launch-push.md`, `create-pr.md` | `.apm/agents/<nombre>.agent.md` | APM busca los subagentes en `.apm/agents/` con la extensión `.agent.md`. |
+| `agents/create-issue.md`, `create-branch.md`, `create-commit.md`, `create-pr.md` | `.apm/agents/<nombre>.agent.md` | APM busca los subagentes en `.apm/agents/` con la extensión `.agent.md`. |
+| `agents/launch-push.md` | — | El orquestador usa directamente la skill `launch-push` ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). |
 | `ChromaDB/agents/concept-developer.md`, `code-developer.md`, `code-tester.md`, `concept-tester.md` | `.apm/agents/<nombre>.agent.md` | Igual. Los nombres pasan a guiones (`code_developer` → `code-developer`). |
 | `agents/git-workflow-agent.md` y `ChromaDB/AGENTS.md` | `.apm/skills/delivery-workflow/SKILL.md` | Un solo orquestador para el flujo de git y el ciclo. Es una skill porque tiene que poder preguntar a la persona ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). Se invoca como `/delivery-workflow`. |
 | `agents/help-me-to-think.md` | `.apm/skills/help-me-to-think/SKILL.md` | Pasa de subagente a skill: la entrevista espera las respuestas en la conversación ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). |
@@ -35,6 +36,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **`create-pr-base.sh`.** Es el `create-pr-base-staging.sh` de `staging` con la base detectada (o la que se le pase), la etiqueta del tipo y la comprobación de una PR abierta de esa rama, que devuelve su URL sin tocarla.
 - **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio del curso; en `.git/` git nunca la ve. El resto del script no cambia.
 - **Revisores desde la issue.** Como en `exercises/ChromaDB`, si la issue nombra revisores (una línea `Revisan:` al final de la parte de arriba), el orquestador los pide al acabar el ciclo. ChromaDB solo los pide si son dos personas; aquí basta con uno. Si la issue no nombra a nadie, la PR sigue en draft hasta «que la revisen», como en la plantilla de git.
+- **`launch-push` es una skill.** En `staging` es un subagente que solo lanza su skill. Aquí el orquestador lanza la skill directamente: un push no hace ninguna pregunta, su salida es una línea y un subagente solo añadía una llamada más.
 - **Nombre de revisor ambiguo.** En `staging`, `create-pr` pide aclaración. Aquí `create-pr` es un subagente y no puede preguntar: devuelve el nombre y los candidatos al orquestador, que pregunta y lo vuelve a llamar.
 - **`check-status.sh`.** Escribe además la rama base, si `GITHUB_TOKEN` está definida (sin mostrar su valor), si `gh` tiene sesión y la versión de Node. El orquestador para antes de los pasos que los necesitan.
 - **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.

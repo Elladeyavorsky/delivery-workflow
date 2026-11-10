@@ -32,14 +32,14 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
      3. La skill `pull-changes`, que adelanta la rama base.
      4. El subagente `create-branch` con el número, el tipo y una descripción corta.
      5. El subagente `create-commit` con la skill `create-empty-commit`.
-     6. El subagente `launch-push`.
+     6. La skill `launch-push`.
      7. El subagente `create-pr`, encargo de creación, con el título, el tipo y la rama. Este subagente no enlaza la issue.
      8. La skill `link-pr-to-issue`. El orquestador siempre enlaza la issue.
      9. Si la persona pidió «solo git», para aquí: la pull request queda en draft y enlazada para trabajar a mano.
      10. El ciclo, en la sección siguiente.
-     11. El subagente `create-commit` con los ficheros que listaron los subagentes del ciclo y el tipo de la issue, con `Refs #N` en el pie. Después, `launch-push`. Cuando el push termine, marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-commit`.
+     11. El subagente `create-commit` con los ficheros que listaron los subagentes del ciclo y el tipo de la issue, con `Refs #N` en el pie. Después, la skill `launch-push`. Cuando el push termine, marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-commit`.
      12. Si la parte de arriba de la issue tiene una línea `Revisan:`, el subagente `create-pr`, encargo de revisión, con esos nombres. Si no, para con la pull request en draft y dilo: la revisión se pide con «que la revisen». La task de la fase Pull request cuyo agente es `create-pr` se marca solo cuando las revisiones quedan pedidas.
-   - **Guardar un trozo:** el subagente `create-commit` con los ficheros de ese trozo y el subagente `launch-push`.
+   - **Guardar un trozo:** el subagente `create-commit` con los ficheros de ese trozo y la skill `launch-push`.
    - **Que la revisen:** la persona nombra revisores. Delega la PR y los nombres en el subagente `create-pr`, encargo de revisión, y espera su resultado. Si la PR tiene issue con tasks, toma una huella nueva con `issue-spec top-hash` y marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-pr`.
    - **Otra pasada:** solo si la última pasada falló en la ronda 9 y la persona lo confirma en este chat con palabras propias («otra pasada», «sí, otra»). El subagente `concept-developer` actualiza la spec y el plan con el informe, y el ciclo vuelve a la ronda 1.
 4. **Formateo:** Responde con lo que hizo cada paso: número de issue y etiqueta, nombre de rama, URL de la pull request, rondas con su veredicto, mensaje del commit final y revisores pedidos.
@@ -66,12 +66,12 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
 - **Skill `help-me-to-think`:** Pensar la tarea antes de dejarla escrita.
 - **Skill `check-status`:** Saber la rama, la rama base, si hay token, `gh` y Node, y si hay cambios, antes de elegir el momento.
 - **Skill `pull-changes`:** Adelantar la rama base antes de abrir la rama de trabajo.
+- **Skill `launch-push`:** Subir la rama de trabajo después de cada commit.
 - **Skill `link-pr-to-issue`:** Enlazar la pull request con la issue y dejar `Closes #N` en el cuerpo. La llama el orquestador, no `create-pr`.
 - **Skill `issue-spec`:** La huella de la parte de arriba, las casillas, el estado y los comentarios de cada ronda.
 - **Subagente `create-issue`:** Crear la issue con su etiqueta.
 - **Subagente `create-branch`:** Crear la rama desde la rama base.
 - **Subagente `create-commit`:** Hacer el commit vacío, el final o el de un trozo.
-- **Subagente `launch-push`:** Subir la rama.
 - **Subagente `create-pr`:** Crear la pull request y pedir revisiones. Es el único que las crea.
 - **Subagente `concept-developer`:** Spec, plan, tasks y documentación.
 - **Subagente `code-developer`:** El código de la ronda. Siempre nuevo.

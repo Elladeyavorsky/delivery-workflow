@@ -18,6 +18,6 @@ No recibe argumentos.
 #### Reglas de Invocación Críticas
 
 - **Procesamiento de respuestas**: El script escribe, en este orden, el repositorio, la rama, la rama base, el token de GitHub, GitHub CLI, Node, el remoto con los commits por subir y por bajar, el último commit, los ficheros preparados, los modificados sin preparar y los que no tienen seguimiento. Si el código de salida no es 0, lee el error y comunícalo. No inventes la rama ni los ficheros.
-- **Si la rama base no se detecta**: Pide al alumno que defina `GIT_WORKFLOW_BASE` con el nombre de su rama base.
-- **Si falta el token de GitHub**: Las skills que usan el MCP van a fallar. Pide al alumno que defina `GITHUB_TOKEN` (por ejemplo `export GITHUB_TOKEN=$(gh auth token)`) y reinicie su editor o agente (Claude Code, Cursor o Codex), que lee la variable al arrancar.
-- **Si falta `gh` o Node 20+**: La pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide al alumno que los instale (`gh auth login` para la sesión) antes de dejar la tarea escrita.
+- **Si la rama base no se detecta**: Pide a la persona que defina `GIT_WORKFLOW_BASE` con el nombre de su rama base.
+- **Si falta el token de GitHub**: Las skills que usan el MCP van a fallar. Pide a la persona que defina `GITHUB_TOKEN` (por ejemplo `export GITHUB_TOKEN=$(gh auth token)`) y reinicie su editor o agente (Claude Code, Cursor o Codex), que lee la variable al arrancar.
+- **Si falta `gh` o Node 20+**: La pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide a la persona que los instale (`gh auth login` para la sesión) antes de dejar la tarea escrita.

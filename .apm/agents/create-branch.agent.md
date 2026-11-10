@@ -20,9 +20,9 @@ skills:
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
-1. **Recepción:** Recibe el número de la issue, el tipo y una descripción corta en inglés. La base es la rama base, salvo que el alumno nombre otra.
+1. **Recepción:** Recibe el número de la issue, el tipo y una descripción corta en inglés. La base es la rama base, salvo que la persona nombre otra.
 2. **Validación:** El tipo es el de la issue: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. La descripción va en minúsculas y con guiones.
-3. **Procesamiento:** Ejecuta la skill `create-branch`. Sin base, el script usa la rama base detectada. Si el alumno nombró otra base, pásala como cuarto argumento. El nombre queda `número-tipo-descripcion`, por ejemplo `184-feat-count-users-by-gender`.
+3. **Procesamiento:** Ejecuta la skill `create-branch`. Sin base, el script usa la rama base detectada. Si la persona nombró otra base, pásala como cuarto argumento. El nombre queda `número-tipo-descripcion`, por ejemplo `184-feat-count-users-by-gender`.
 4. **Formateo:** Responde con el nombre de la rama y la base utilizada.
 
 ## 4. Herramientas y APIs Asignadas

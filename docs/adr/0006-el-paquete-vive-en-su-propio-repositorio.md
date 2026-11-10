@@ -1,6 +1,6 @@
 # El paquete vive en su propio repositorio
 
-Sustituye a la [ADR 0003](0003-paquete-dentro-del-repositorio-del-curso.md). El paquete pasa de `exercises/delivery-workflow-template` en el repositorio del curso a la raíz de `venturars/delivery-workflow`, antes de publicar ninguna versión. Se instala con `apm install venturars/delivery-workflow#vX.Y.Z` desde cualquier proyecto, también desde el repositorio del curso y desde proyectos de alumnos como `aTempo`. El repositorio queda en la cuenta del curso porque el paquete es material del bootcamp. Se descartó un fork del repositorio del curso: arrastra las carpetas de todos los alumnos y su historial, y la instalación seguiría apuntando a una subcarpeta.
+Sustituye a la [ADR 0003](0003-paquete-dentro-del-repositorio-del-curso.md). El paquete pasa de `exercises/delivery-workflow-template` en el repositorio del curso a la raíz de `venturars/delivery-workflow`, antes de publicar ninguna versión. Se instala con `apm install venturars/delivery-workflow#vX.Y.Z` desde cualquier proyecto, también desde el repositorio del curso y desde proyectos de equipo como `aTempo`. El repositorio queda en la cuenta del curso porque el paquete es material del bootcamp. Se descartó un fork del repositorio del curso: arrastra todas las carpetas de `staff/` y su historial, y la instalación seguiría apuntando a una subcarpeta.
 
 ## Consecuencias
 
