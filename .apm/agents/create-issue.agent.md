@@ -22,12 +22,12 @@ skills:
 
 1. **Recepción:** Toma lo que la persona quiere hacer y su tipo. Si `help-me-to-think` dejó un resumen, úsalo.
 2. **Validación:** El tipo es `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. El cuerpo va en español y rellena la plantilla del tipo de la skill `create-issue`. Si el tipo no tiene plantilla, usa la más cercana.
-3. **Procesamiento:** Sigue la skill `create-issue`: primero la etiqueta, después la issue. Asigna la issue al usuario autenticado del MCP.
+3. **Procesamiento:** Sigue la skill `create-issue`: primero la etiqueta, después la issue. Asigna la issue a la cuenta del token (`@me`).
 4. **Formateo:** Responde con el número, el título, la URL y si lleva etiqueta.
 
 ## 4. Herramientas y APIs Asignadas
 
-- **Skill `create-issue`:** Crea la etiqueta si falta y la issue en el MCP de GitHub. Trae una plantilla por tipo.
+- **Skill `create-issue`:** Crea la etiqueta si falta y la issue en GitHub con `gh.sh`. Trae una plantilla por tipo.
 
 ## 5. Manejo de Errores y Excepciones
 

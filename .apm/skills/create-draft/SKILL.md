@@ -6,7 +6,10 @@ description: "Pasa a draft una pull request que ya existe. La usa create-pr al a
 ### Herramienta: CREATE_DRAFT
 
 - **Descripción**: Pasa una pull request a draft.
-- **MCP**: El servidor MCP `github`, declarado en `apm.yml`.
+- **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. No llames a `gh` directamente: usaría otra cuenta.
+- **Comando**: `bash "<carpeta de esta skill>/scripts/gh.sh" pr ready N --undo`. Para saber si ya está en draft: `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json isDraft`.
+
+La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/create-draft`.
 
 #### Especificación de Argumentos
 

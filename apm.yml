@@ -5,12 +5,3 @@ author: Ventura Rodríguez
 repository: https://github.com/venturars/delivery-workflow
 keywords: [git, github, workflow, spec, agents, claude-code, cursor, codex]
 targets: [claude, cursor, codex]
-dependencies:
-  mcp:
-    - name: github
-      registry: false
-      transport: http
-      url: https://api.githubcopilot.com/mcp/
-      headers:
-        Authorization: "Bearer ${GITHUB_TOKEN}"
-        X-MCP-Features: mcp_apps_disable_form_deferral
