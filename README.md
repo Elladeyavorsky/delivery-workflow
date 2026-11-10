@@ -2,9 +2,9 @@
 
 Paquete [APM](https://github.com/microsoft/apm) con el flujo de entrega del bootcamp Neoland AI (10/2026) para **Claude Code, Cursor y Codex**. Lleva una tarea desde la idea hasta la revisión: la entrevista, la issue con su etiqueta, la rama, la pull request en draft enlazada, la spec en la issue y un ciclo de código y tests por rondas.
 
-Une la plantilla de git de `exercises/git-workflow-agent-template` y el ciclo de agentes de `exercises/ChromaDB`, generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
+Une la plantilla de git de [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template) y el ciclo de agentes de [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB), del [repositorio del curso](https://github.com/venturars/neoland-102026), generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
 
-> **Estado de las pruebas:** probado de punta a punta en Claude Code. En Cursor y Codex se ha comprobado la instalación, pero el flujo está sin probar. Si usas una de esas herramientas, sigue [Probar el paquete](#probar-el-paquete) y cuenta qué pasa.
+> **Estado de las pruebas:** en las tres herramientas se ha comprobado la instalación. La prueba de punta a punta en Claude Code está en curso; en Cursor y Codex el flujo está sin probar. Si usas una de esas herramientas, sigue [Probar el paquete](#probar-el-paquete) y cuenta qué pasa.
 
 ## Requisitos
 
@@ -28,10 +28,10 @@ Une la plantilla de git de `exercises/git-workflow-agent-template` y el ciclo de
 Desde la raíz de tu proyecto, con la herramienta que uses en `--target`:
 
 ```bash
-env -u GITHUB_TOKEN apm install venturars/neoland-102026/exercises/delivery-workflow-template#delivery-workflow--v0.1.0 --target claude
+env -u GITHUB_TOKEN apm install venturars/delivery-workflow#v0.1.0 --target claude
 ```
 
-`--target` acepta `claude`, `cursor` o `codex`, y varios separados por comas (`--target claude,cursor`). Mientras no exista la etiqueta `delivery-workflow--v0.1.0`, usa `#staging`.
+`--target` acepta `claude`, `cursor` o `codex`, y varios separados por comas (`--target claude,cursor`). Mientras no exista la etiqueta `v0.1.0`, usa `#staging`.
 
 APM añade el paquete a tu `apm.yml`, fija la versión en `apm.lock.yaml` y deja:
 
@@ -41,7 +41,7 @@ APM añade el paquete a tu `apm.yml`, fija la versión en `apm.lock.yaml` y deja
 | Subagentes | `.claude/agents/` | `.cursor/agents/` | `.codex/agents/` |
 | MCP `github` | `.mcp.json` | `.cursor/mcp.json` | `.codex/config.toml` |
 
-Haz commit de `apm.yml` y `apm.lock.yaml`. Quien clone el proyecto solo tiene que lanzar `apm install`.
+Haz commit de `apm.yml` y `apm.lock.yaml`. Quien clone el proyecto solo tiene que lanzar `env -u GITHUB_TOKEN apm install`. Si en el proyecto trabaja más gente, mira [Repositorio compartido](#repositorio-compartido).
 
 Lo que pide cada herramienta además:
 
@@ -50,40 +50,31 @@ Lo que pide cada herramienta además:
 
 ## Repositorio compartido
 
-En un repositorio donde trabajan muchas personas, como el del curso, conviene instalar el paquete una sola vez para todo el repositorio en vez de que cada persona lance su propio `apm install <paquete>` en la raíz. Si cada persona instala por su cuenta, en la raíz quedan ficheros sin seguimiento (`.agents/`, `apm.yml`, `apm.lock.yaml`, `.apm-local/`) y cada `apm.yml` y cada `apm.lock.yaml` salen distintos, así que las pull requests que los incluyan chocan entre sí.
+En un proyecto donde cada persona usa una herramienta distinta, una sola persona instala el paquete para Claude Code, Cursor y Codex y sube lo que genera. El resto no necesita APM: al hacer pull ya tiene las skills, los subagentes y el MCP de su herramienta. Si cada persona instalara por su cuenta, cada `apm.lock.yaml` saldría distinto y las pull requests que lo incluyan chocarían entre sí.
 
-Instalación única, en una sola pull request de quien mantiene el repositorio:
+Instalación única, en una pull request de tipo `chore`:
 
-1. En la raíz, instala el paquete desde su carpeta del propio repositorio:
+1. En la raíz, desde una rama de trabajo, instala para las tres herramientas sin el token en el entorno:
 
    ```bash
-   env -u GITHUB_TOKEN apm install ./exercises/delivery-workflow-template --target claude
+   env -u GITHUB_TOKEN apm install venturars/delivery-workflow#v0.1.0 --target claude,cursor,codex
    ```
 
-   `apm.yml` guarda la ruta relativa, así que cada copia del repositorio usa la versión del paquete que tiene en su propia carpeta, sin etiquetas.
+   APM añade `apm_modules/` a `.gitignore`.
 
-2. Añade a `.gitignore` lo que genera cada instalación:
+2. Comprueba que la configuración del MCP lleva la referencia a la variable y no el valor del token:
 
-   ```gitignore
-   .claude/
-   .mcp.json
-   .cursor/
-   .codex/
-   .agents/
-   .apm-local/
-   apm_modules/
-   apm.lock.yaml
+   ```bash
+   grep -nE 'gh[pousr]_|github_pat_' .mcp.json .cursor/mcp.json .codex/config.toml || echo "Sin tokens."
    ```
 
-   El lockfile también se ignora: apunta a una carpeta del mismo repositorio y cambia según la herramienta de cada persona.
+   Si sale una línea, no hagas commit: borra esos tres ficheros y repite el paso 1 en una terminal sin `GITHUB_TOKEN`.
 
-3. Haz commit solo de `apm.yml` y de `.gitignore`.
+3. Haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.mcp.json`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
 
-Después, cada persona, al hacer pull, instala para su herramienta sin nombrar el paquete:
+Cada persona sigue necesitando lo de [Requisitos](#requisitos) salvo APM: `gh` con sesión, Node 20 o superior y `GITHUB_TOKEN` al abrir su herramienta. En Cursor tiene que activar el servidor `github` y en Codex confiar en el proyecto.
 
-```bash
-env -u GITHUB_TOKEN apm install --target cursor
-```
+Para cambiar de versión, la misma persona repite los tres pasos con la etiqueta nueva, en otra pull request `chore`. Nadie más lanza `apm install` en ese proyecto: reescribiría el lockfile solo para su herramienta.
 
 ## Uso
 
@@ -181,7 +172,7 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 2. Instala el paquete sin el token en el entorno (ver Requisitos) y define el token después:
 
    ```bash
-   env -u GITHUB_TOKEN apm install venturars/neoland-102026/exercises/delivery-workflow-template#staging --target cursor
+   env -u GITHUB_TOKEN apm install venturars/delivery-workflow#staging --target cursor
    export GITHUB_TOKEN=$(gh auth token)
    ```
 
@@ -206,17 +197,17 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 
    Compruébalo también fuera del chat: `git log --oneline`, `gh issue view 1 --comments` y `gh pr view --web`.
 
-7. Anota lo que falle: la herramienta, el paso, lo que escribiste y el error. Ábrelo como issue en el repositorio del curso con el tipo `fix`.
+7. Anota lo que falle: la herramienta, el paso, lo que escribiste y el error. Ábrelo como issue en [este repositorio](https://github.com/venturars/delivery-workflow/issues) con el tipo `fix`.
 
 8. Borra el repositorio de prueba: `gh auth refresh -s delete_repo` y después `gh repo delete delivery-test --yes`.
 
 ## Publicar una versión
 
-Para quien mantiene el paquete: sube `version` en `apm.yml`, haz merge en `staging` y etiqueta ese commit con `delivery-workflow--v<versión>`:
+Para quien mantiene el paquete. Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar, sube `version` en `apm.yml`, haz merge de `staging` en `main` y etiqueta ese commit de `main` con `v<versión>`:
 
 ```bash
-git tag delivery-workflow--v0.1.0
-git push origin delivery-workflow--v0.1.0
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
-El prefijo hace falta porque las etiquetas son de todo el repositorio del curso ([ADR 0003](docs/adr/0003-paquete-dentro-del-repositorio-del-curso.md)).
+Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles ([ADR 0006](docs/adr/0006-el-paquete-vive-en-su-propio-repositorio.md)).

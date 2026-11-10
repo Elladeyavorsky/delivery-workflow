@@ -1,9 +1,9 @@
 # Cambios respecto a `staging`
 
-El paquete sale de dos piezas de `staging` en el commit `73e25550`:
+El paquete sale de dos piezas de la rama `staging` del [repositorio del curso](https://github.com/venturars/neoland-102026), en el commit `73e25550`:
 
-- **La plantilla de git**, `exercises/git-workflow-agent-template`, con lo que entró hasta #1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
-- **El ciclo de agentes**, `exercises/ChromaDB` (`AGENTS.md`, `agents/` y `templates/specs/`).
+- **La plantilla de git**, [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template), con lo que entró hasta venturars/neoland-102026#1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
+- **El ciclo de agentes**, [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB) (`AGENTS.md`, `agents/` y `templates/specs/`).
 
 Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto, con Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
 
