@@ -19,7 +19,7 @@ case "$type" in
   refactor) color=fbca04; description="Cambia el código sin cambiar el comportamiento" ;;
   test) color=0e8a16; description="Tests" ;;
   chore) color=cfd3d7; description="Mantenimiento" ;;
-  knowledge) color=7057ff; description="Conocimiento del curso" ;;
+  knowledge) color=7057ff; description="Conocimiento del equipo" ;;
   *)
     echo "El tipo tiene que ser feat, fix, docs, refactor, test, chore o knowledge." >&2
     exit 1

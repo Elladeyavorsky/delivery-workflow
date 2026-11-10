@@ -1,6 +1,6 @@
 # La spec vive en la issue
 
-La spec, el plan y las tasks de una tarea se escriben en el cuerpo de su issue, en las secciones `## Spec`, `## Plan` y `## Tasks`, debajo de la plantilla del tipo, en vez de en `docs/specs/<cambio>/` como hacen `exercises/ChromaDB` y los proyectos de `staging`. Es un requisito del curso (lo pidió Ventura en clase): la tarea entera se lee en un solo sitio y las tasks son casillas de GitHub. Se descartaron la spec en un comentario (no se edita por secciones), una issue aparte enlazada como sub-issue (dos sitios para una tarea) y dejar el plan y las tasks en ficheros (otra vez dos sitios).
+La spec, el plan y las tasks de una tarea se escriben en el cuerpo de su issue, en las secciones `## Spec`, `## Plan` y `## Tasks`, debajo de la plantilla del tipo, en vez de en `docs/specs/<cambio>/` como hacen `exercises/ChromaDB` y los proyectos de `staging`. Es un requisito del equipo: la tarea entera se lee en un solo sitio y las tasks son casillas de GitHub. Se descartaron la spec en un comentario (no se edita por secciones), una issue aparte enlazada como sub-issue (dos sitios para una tarea) y dejar el plan y las tasks en ficheros (otra vez dos sitios).
 
 ## Consecuencias
 

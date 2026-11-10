@@ -1,10 +1,10 @@
 # delivery-workflow
 
-Paquete [APM](https://github.com/microsoft/apm) con el flujo de entrega del bootcamp Neoland AI (10/2026) para **Claude Code, Cursor y Codex**. Lleva una tarea desde la idea hasta la revisión: la entrevista, la issue con su etiqueta, la rama, la pull request en draft enlazada, la spec en la issue y un ciclo de código y tests por rondas.
+Paquete [APM](https://github.com/microsoft/apm) con un flujo de entrega para **Claude Code, Cursor y Codex**. Lleva una tarea desde la idea hasta la revisión: la entrevista, la issue con su etiqueta, la rama, la pull request en draft enlazada, la spec en la issue y un ciclo de código y tests por rondas.
 
-Une la plantilla de git de [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template) y el ciclo de agentes de [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB), del [repositorio del curso](https://github.com/venturars/neoland-102026), generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
+Une la plantilla de git de [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template) y el ciclo de agentes de [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB), del repositorio de origen, [venturars/neoland-102026](https://github.com/venturars/neoland-102026), generalizados para cualquier proyecto en GitHub. Los cambios respecto a esas dos piezas están en [CAMBIOS.md](CAMBIOS.md).
 
-> **Estado de las pruebas:** en las tres herramientas se ha comprobado la instalación. La prueba de punta a punta en Claude Code está en curso; en Cursor y Codex el flujo está sin probar. Si usas una de esas herramientas, sigue [Probar el paquete](#probar-el-paquete) y cuenta qué pasa.
+> **Estado de las pruebas:** probado de punta a punta en Claude Code. En Cursor y Codex se ha comprobado la instalación, pero el flujo está sin probar. Si usas una de esas herramientas, sigue [Probar el paquete](#probar-el-paquete) y cuenta qué pasa.
 
 ## Requisitos
 

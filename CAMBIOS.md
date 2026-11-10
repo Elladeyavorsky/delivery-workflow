@@ -1,6 +1,6 @@
 # Cambios respecto a `staging`
 
-El paquete sale de dos piezas de la rama `staging` del [repositorio del curso](https://github.com/venturars/neoland-102026), en el commit `73e25550`:
+El paquete sale de dos piezas de la rama `staging` del repositorio de origen, [venturars/neoland-102026](https://github.com/venturars/neoland-102026), en el commit `73e25550`:
 
 - **La plantilla de git**, [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template), con lo que entró hasta venturars/neoland-102026#1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
 - **El ciclo de agentes**, [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB) (`AGENTS.md`, `agents/` y `templates/specs/`).
@@ -29,12 +29,12 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 
 ## Plantilla de git
 
-- **Rama base detectada.** Donde ponía `staging`, ahora se usa la rama base: `GIT_WORKFLOW_BASE`, si no `staging` si existe en `origin`, y si no la rama por defecto del remoto. En el repositorio del curso sigue siendo `staging`. Afecta a `pull-changes`, `create-branch`, `create-pr-base` y al orquestador ([ADR 0002](docs/adr/0002-rama-base-detectada.md)).
+- **Rama base detectada.** Donde ponía `staging`, ahora se usa la rama base: `GIT_WORKFLOW_BASE`, si no `staging` si existe en `origin`, y si no la rama por defecto del remoto. En el repositorio de origen sigue siendo `staging`. Afecta a `pull-changes`, `create-branch`, `create-pr-base` y al orquestador ([ADR 0002](docs/adr/0002-rama-base-detectada.md)).
 - **`create-branch.sh`.** Los argumentos pasan de `BASE NUMERO TIPO DESCRIPCION` a `NUMERO TIPO DESCRIPCION [BASE]`. La rama nueva no sigue a la rama base remota (`--no-track`).
 - **Se mantiene la comprobación del tipo.** `staging` la quitó de los scripts de rama. Aquí se mantiene con los siete tipos, `knowledge` incluido, porque la etiqueta se crea con el nombre del tipo: un tipo mal escrito dejaría una etiqueta suelta en el repositorio. `create-issue` también rechaza un tipo que no sea uno de los siete.
 - **Etiquetas por tipo.** Nuevo. `create-issue` y `create-pr-base` ponen a la issue y a la pull request una etiqueta con el nombre exacto del tipo, y la crean con `ensure-label.sh` si no existe. Si la cuenta no puede crear etiquetas, siguen sin ella y lo dicen.
 - **`create-pr-base.sh`.** Es el `create-pr-base-staging.sh` de `staging` con la base detectada (o la que se le pase), la etiqueta del tipo y la comprobación de una PR abierta de esa rama, que devuelve su URL sin tocarla.
-- **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio del curso; en `.git/` git nunca la ve. El resto del script no cambia.
+- **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio de origen; en `.git/` git nunca la ve. El resto del script no cambia.
 - **Revisores desde la issue.** Como en `exercises/ChromaDB`, si la issue nombra revisores (una línea `Revisan:` al final de la parte de arriba), el orquestador los pide al acabar el ciclo. ChromaDB solo los pide si son dos personas; aquí basta con uno. Si la issue no nombra a nadie, la PR sigue en draft hasta «que la revisen», como en la plantilla de git.
 - **`launch-push` es una skill.** En `staging` es un subagente que solo lanza su skill. Aquí el orquestador lanza la skill directamente: un push no hace ninguna pregunta, su salida es una línea y un subagente solo añadía una llamada más.
 - **Nombre de revisor ambiguo.** En `staging`, `create-pr` pide aclaración. Aquí `create-pr` es un subagente y no puede preguntar: devuelve el nombre y los candidatos al orquestador, que pregunta y lo vuelve a llamar.
@@ -47,7 +47,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 
 ## Ciclo de ChromaDB
 
-- **Spec en la issue.** La spec, el plan y las tasks se escriben en la issue, en `## Spec`, `## Plan` y `## Tasks`, debajo de la plantilla del tipo, en vez de en `docs/specs/<cambio>/`. Es un requisito del curso ([ADR 0005](docs/adr/0005-la-spec-vive-en-la-issue.md)). `issue-spec` lee el cuerpo antes de cada escritura, sustituye solo esas secciones y para si la parte de arriba cambió desde que empezó el ciclo, si el texto parece un secreto o si el cuerpo pasaría de 65 536 caracteres.
+- **Spec en la issue.** La spec, el plan y las tasks se escriben en la issue, en `## Spec`, `## Plan` y `## Tasks`, debajo de la plantilla del tipo, en vez de en `docs/specs/<cambio>/`. Es un requisito del equipo ([ADR 0005](docs/adr/0005-la-spec-vive-en-la-issue.md)). `issue-spec` lee el cuerpo antes de cada escritura, sustituye solo esas secciones y para si la parte de arriba cambió desde que empezó el ciclo, si el texto parece un secreto o si el cuerpo pasaría de 65 536 caracteres.
 - **Plantillas de spec generalizadas.** Sin Python ni ChromaDB: «Traducción a pytest» pasa a «Traducción a tests», con el framework del proyecto; «Capas» y «Estilo» remiten a `docs/ARCHITECTURE.md` y `docs/STYLE.md` si existen; las reglas fijas de estilo de ChromaDB (sin clases, `RuntimeError`) desaparecen. La spec pierde «Contexto y objetivo» y «Fuera de alcance», que ya están arriba en la plantilla del tipo, y gana la línea `Estado · Creada · Aprobada` de las specs de `asistenciapp` y una sección «Huecos».
 - **Rondas comentadas.** Cada ronda deja un comentario en la issue con la task, los ficheros y los dos veredictos. El `report.md` de una novena ronda fallida pasa a ser un comentario de informe, y el estado de la spec pasa a Fallida.
 - **Otra pasada sin contraseña.** En ChromaDB, otra pasada solo arranca si el mensaje trae una contraseña. Aquí el orquestador es una skill en la conversación: basta con que la persona la confirme en el chat. No hay que manejar ningún secreto.
