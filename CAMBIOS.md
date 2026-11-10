@@ -25,7 +25,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | `ChromaDB/templates/specs/spec.md`, `plan.md`, `tasks.md` | `.apm/skills/issue-spec/assets/` | Igual, y pasan a ser secciones de la issue (ver Spec en la issue). |
 | `MCPS/github-mcp-server/mcp.txt` | `dependencies.mcp` en `apm.yml` (servidor `github`) | APM escribe el servidor remoto de GitHub en la configuración de cada herramienta, con `Authorization: Bearer ${GITHUB_TOKEN}` y la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral` que `mcp.txt` explica para Cursor. Va declarado a mano (`registry: false`): la entrada del registro de APM pedía un token de forma interactiva y lo dejaba sin cabecera (APM 0.35.0). |
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
-| — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/adr/`, `tests/` | Manifiesto, documentación y tests del paquete. |
+| — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/MANTENIMIENTO.md`, `docs/adr/`, `tests/` | Manifiesto, documentación y tests del paquete. |
 
 ## Plantilla de git
 
