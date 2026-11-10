@@ -6,7 +6,7 @@ description: "Crea el commit vacío de apertura `chore: open #N` en la rama de t
 ### Herramienta: CREATE_EMPTY_COMMIT
 
 - **Descripción**: Úsala única y exclusivamente para el commit vacío de apertura, `chore: open #N`. No la uses para guardar ficheros.
-- **Comando de Terminal**: `"<carpeta de esta skill>/scripts/create-empty-commit.sh" "[NUMERO]"`
+- **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/create-empty-commit.sh" "[NUMERO]"`
 
 El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/create-empty-commit`.
 

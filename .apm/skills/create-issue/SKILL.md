@@ -7,7 +7,7 @@ description: "Crea la issue en GitHub con la plantilla de su tipo, la etiqueta d
 
 - **Descripción**: Úsala única y exclusivamente para dejar la tarea escrita en GitHub. No la uses para abrir la rama ni la pull request.
 - **MCP**: El servidor MCP `github`, declarado en `apm.yml`.
-- **Etiqueta**: `"<carpeta de esta skill>/scripts/ensure-label.sh" "[TIPO]"`, desde la raíz del repositorio git, antes de crear la issue.
+- **Etiqueta**: `bash "<carpeta de esta skill>/scripts/ensure-label.sh" "[TIPO]"`, desde la raíz del repositorio git, antes de crear la issue.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/create-issue`.
 

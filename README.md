@@ -48,6 +48,23 @@ Lo que pide cada herramienta además:
 - **Cursor:** comprueba en *Settings → MCP* que el servidor `github` está activado. El paquete le añade la cabecera `X-MCP-Features: mcp_apps_disable_form_deferral`: sin ella, crear o editar una issue o una pull request abre un formulario sin botón de enviar y la llamada se queda esperando. Si lo abres desde el Dock y no ve `GITHUB_TOKEN`, ábrelo desde la terminal con `cursor .`.
 - **Codex:** Codex solo lee `.codex/config.toml` si el proyecto es de confianza (*trusted*). Acepta la confianza cuando Codex la pida al abrir el proyecto. `/mcp` muestra si el servidor `github` está conectado. Codex solo delega en subagentes cuando una skill se lo pide: el orquestador los nombra uno a uno.
 
+## Permisos
+
+Las skills lanzan sus scripts con `bash` y `node`, y llaman a `git` y `gh`. La primera vez que el flujo usa cada comando, la herramienta pide permiso.
+
+- **Claude Code:** acepta cada aviso con «Yes, and don't ask again», o apruébalos de una vez en `.claude/settings.local.json`, que es tuyo y no se sube:
+
+  ```json
+  {
+    "permissions": {
+      "allow": ["Bash(bash:*)", "Bash(node:*)", "Bash(git:*)", "Bash(gh:*)"]
+    }
+  }
+  ```
+
+  `Bash(bash:*)` y `Bash(node:*)` dejan pasar cualquier script, no solo los del paquete: ponlas solo en proyectos en los que confíes. Los comandos del proyecto, como `npm test`, piden su propio permiso.
+- **Cursor y Codex:** sin probar. En Cursor, añade `bash`, `node`, `git` y `gh` a los comandos que el agente puede lanzar sin preguntar. En Codex, acepta cada comando cuando lo pida.
+
 ## Repositorio compartido
 
 En un proyecto donde cada persona usa una herramienta distinta, una sola persona instala el paquete para Claude Code, Cursor y Codex y sube lo que genera. El resto no necesita APM: al hacer pull ya tiene las skills, los subagentes y el MCP de su herramienta. Si cada persona instalara por su cuenta, cada `apm.lock.yaml` saldría distinto y las pull requests que lo incluyan chocarían entre sí.
@@ -70,7 +87,7 @@ Instalación única, en una pull request de tipo `chore`:
 
    Si sale una línea, no hagas commit: borra esos tres ficheros y repite el paso 1 en una terminal sin `GITHUB_TOKEN`.
 
-3. Haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.mcp.json`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
+3. Añade `.claude/settings.local.json` a `.gitignore`: guarda los permisos de cada persona. Después, haz commit de `apm.yml`, `apm.lock.yaml`, `.gitignore`, `.mcp.json`, `.claude/`, `.cursor/`, `.codex/` y `.agents/`.
 
 Cada persona sigue necesitando lo de [Requisitos](#requisitos) salvo APM: `gh` con sesión, Node 20 o superior y `GITHUB_TOKEN` al abrir su herramienta. En Cursor tiene que activar el servidor `github` y en Codex confiar en el proyecto.
 

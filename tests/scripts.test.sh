@@ -96,6 +96,11 @@ status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status informa de gh" grep -q "^GitHub CLI:" <<<"$status"
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
 
+# Las skills lanzan sus scripts con bash o node: así una regla de permisos vale para todos.
+commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
+check "las skills nombran sus scripts" test -n "$commands"
+check "las skills lanzan sus scripts con bash o node" bash -c '! grep -vE "^\`(bash|node) " <<<"$1"' _ "$commands"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."

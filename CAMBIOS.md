@@ -40,6 +40,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.
 - **Entrevistas.** Hacen las preguntas en tandas con respuesta recomendada, como en `staging` desde #925, pero esperan las respuestas en la conversación en vez de devolverlas al orquestador ([ADR 0001](docs/adr/0001-orquestador-y-entrevista-como-skills.md)). Se llaman tandas para no confundirlas con las rondas del ciclo. Quitan la línea de instalación de las skills de Matt Pocock y la cambian por un enlace de inspiración.
 - **Rutas.** Las skills llaman a sus scripts y plantillas desde la carpeta de la skill (`<carpeta de esta skill>/…`) en vez de `./tools/…` o `exercises/git-workflow-agent-template/tools/…`, y dicen cuál es esa carpeta en cada herramienta: `${CLAUDE_SKILL_DIR}` en Claude Code y `.agents/skills/<skill>` en Cursor y Codex.
+- **Scripts con `bash` y `node`.** Las skills lanzan cada script como `bash "<carpeta>/script.sh"` o `node "<carpeta>/script.mjs"`, no por su ruta. La ruta cambia en cada proyecto, así que una regla de permisos por ruta no sirve; `Bash(bash:*)` y `Bash(node:*)` sí.
 - **Frontmatter.** Cada skill y cada subagente lleva `name` y `description` en español. Los subagentes precargan sus skills con `skills:`. Codex descarta ese campo al instalar (APM lo avisa), pero sus subagentes heredan las skills igualmente.
 
 ## Ciclo de ChromaDB

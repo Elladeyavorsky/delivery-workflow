@@ -7,7 +7,7 @@ description: "Resume la rama actual, la rama base, si hay token de GitHub, gh co
 
 - **Descripción**: Úsala única y exclusivamente cuando necesites saber la rama actual, la rama base, si hay cambios sin commit, si la rama sigue a un remoto, si hay token para el MCP de GitHub y si están `gh` con sesión y Node 20+.
 
-- **Comando de Terminal**: `"<carpeta de esta skill>/scripts/check-status.sh"`
+- **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/check-status.sh"`
 
 El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/check-status`.
 
