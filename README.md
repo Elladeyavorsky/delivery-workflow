@@ -12,8 +12,6 @@ Paquete [APM](https://github.com/microsoft/apm) para **Claude Code, Cursor y Cod
 
 Solo se para si a la spec le falta un dato, si aparece un secreto o si falla la novena ronda.
 
-> Probado de punta a punta en Claude Code en macOS. En Cursor, Codex y Windows solo se ha comprobado la instalación o está sin probar.
-
 ## Requisitos
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
