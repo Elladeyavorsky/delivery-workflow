@@ -59,13 +59,13 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 Cada agente puede correr con un modelo que encaje con su trabajo (uno potente para el que escribe la spec, uno ligero para el que lanza un script), y cada colega tiene otra suscripción. Por eso el modelo no viene en el paquete: tras `apm install`, escribe `/configure-models` en el chat. Detecta los modelos de tu cuenta, propone uno por agente con el motivo y te pregunta una vez si los aceptas o quieres cambiar alguno. Con `--yes` acepta sin preguntar. Si no lo haces, los agentes usan el modelo de tu chat y todo funciona.
 
-Por ahora solo con **Cursor**. Qué necesitas saber:
+Funciona con **Cursor, Claude Code y Codex**. Qué necesitas saber:
 
 - `apm install` y `apm update` borran la línea `model` de los agentes: vuelve a ejecutar `/configure-models` (recuerda tus elecciones). `check-status` avisa con `Modelos: desincronizado`.
 - La línea `model` es tuya y no debe llegar a git. `/configure-models` ofrece añadir al `.gitignore` los 8 archivos de agentes del paquete, uno a uno.
 - **Si tu proyecto ya sube esos archivos** (`.cursor/agents/…`), `.gitignore` no basta: ejecuta una vez el `git rm --cached` que te escribe `/configure-models`, y haz commit. Nunca lo ejecuta él.
 
-Cómo funciona, cómo cambiar un modelo y qué falla en Cursor: [docs/MODELOS.md](docs/MODELOS.md).
+Cómo funciona, cómo cambiar un modelo y qué se probó en cada herramienta: [docs/MODELOS.md](docs/MODELOS.md).
 
 ## Instalación en Windows
 
