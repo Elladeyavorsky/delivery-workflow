@@ -612,7 +612,7 @@ export async function detectWithSaved({ profiles, root, tools, runner }) {
     const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: d, saved, manual });
     return {
       ...d,
-      saved: saved !== null,
+      saved: saved !== null && Object.keys(saved).length > 0,
       notes,
       proposal: d.proposal.map((p) => ({ ...p, model: choices[p.agent], source: source[p.agent] })),
     };
@@ -627,10 +627,13 @@ async function applyOne({ profiles, root, tool, state, opts, runner }) {
   const files = applyToFiles({ profiles, root, tool, choices });
   // Sin modelo propuesto no se guarda nada: «no había qué proponer» no es «elegí heredar» (eso es --set x=inherit).
   const keep = Object.keys(choices).filter((a) => choices[a] !== null || !["propuesta", "reemplazado"].includes(source[a]));
-  state.tools[tool] = {
-    agents: Object.fromEntries(keep.map((a) => [a, choices[a]])),
-    manual: keep.filter((a) => choices[a] !== null && (source[a] === "manual" || (source[a] === "guardado" && wasManual.includes(a)))),
-  };
+  if (keep.length === 0) delete state.tools[tool];
+  else {
+    state.tools[tool] = {
+      agents: Object.fromEntries(keep.map((a) => [a, choices[a]])),
+      manual: keep.filter((a) => choices[a] !== null && (source[a] === "manual" || (source[a] === "guardado" && wasManual.includes(a)))),
+    };
+  }
   for (const f of files) if (f.result === "ausente") notes.push(`Falta el archivo de ${f.agent}: ejecuta apm install.`);
   let gitignore = null;
   if (opts.gitignore || opts.yes) gitignore = updateGitignore(root, gitignoreEntries(profiles, tool));

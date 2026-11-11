@@ -658,7 +658,7 @@ test("mini no coincide con gemini: un Gemini Pro no cae en el nivel ligero", () 
 
 test("status: si ningún agente lleva modelo no dice «configurado» a secas", async () => {
   const root = project();
-  await exec(root, ["apply"], fake({}));
+  await exec(root, ["apply", "--set", "code-developer=inherit"], fake({}));
   assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(cursor 8\/8\)/);
 });
 
@@ -753,10 +753,18 @@ test("--set x=inherit sí se guarda y se respeta", async () => {
   assert.equal(pr.source, "guardado");
 });
 
-test("status con agentes sin entrada guardada no se rompe", async () => {
+test("tras un primer apply fallido no queda nada guardado: status dice sin configurar y detect no dice «guardado»", async () => {
   const root = projectFor("codex");
   await exec(root, ["apply"], codexDown);
-  assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(codex 8\/8\)/);
+  assert.match(statusLine({ profiles, root }), /^sin configurar/);
+  const [d] = JSON.parse(await run(["detect", "--root", root], { run: codexDown }));
+  assert.equal(d.saved, false);
+});
+
+test("status con solo algunos agentes guardados no se rompe", async () => {
+  const root = projectFor("codex");
+  await exec(root, ["apply", "--set", "create-pr=gpt-5.1-codex-mini"], codexDown);
+  assert.match(statusLine({ profiles, root }), /^desincronizado|^configurado/);
 });
 
 test("un modelo escrito a mano que no está en la lista se mantiene en el siguiente apply", async () => {
