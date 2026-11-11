@@ -154,6 +154,15 @@ git tag v0.10.0
 check "release-version falla con una versión menor que la última" bash -c "! bash '$release' 2>/dev/null"
 echo 'version: 0.11.0' >apm.yml
 check "release-version compara por números y acepta sin comillas" test "$(bash "$release")" = 0.11.0
+echo "version: '0.11.1'" >apm.yml
+check "release-version acepta comillas simples" test "$(bash "$release")" = 0.11.1
+echo "version: '0.11.1\"" >apm.yml
+check "release-version falla con comillas que no cierran" bash -c "! bash '$release' 2>/dev/null"
+printf 'version: "0.11.2"\nversion: "0.11.3"\n' >apm.yml
+check "release-version usa solo la primera línea version" test "$(bash "$release")" = 0.11.2
+git tag v0.12.0-rc1
+echo 'version: "0.11.2"' >apm.yml
+check "release-version no cuenta una etiqueta con sufijo" test "$(bash "$release")" = 0.11.2
 echo 'version: "1.0"' >apm.yml
 check "release-version falla sin X.Y.Z" bash -c "! bash '$release' 2>/dev/null"
 check "el workflow usa release-version" grep -q "bash .github/scripts/release-version.sh" "${package}/.github/workflows/release.yml"
