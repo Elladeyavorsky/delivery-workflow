@@ -666,3 +666,67 @@ test("Claude: la nota enseña el plan y cómo cambiar un alias", async () => {
   const d = await detectClaude({ run: fake({ "claude auth status": { status: "ok", stdout: readFileSync(join(FIXTURES, "claude-auth-status.json"), "utf8") } }), root: tmpdir(), home: tmpdir(), profile: profiles.tools.claude });
   assert.match(d.note, /Plan detectado: .*--set agente=sonnet/);
 });
+
+test("trackedFiles con una lista vacía no lista el repositorio entero", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cm-empty-"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, "src"));
+  writeFileSync(join(root, "README.md"), "x");
+  writeFileSync(join(root, "src", "app.js"), "x");
+  execFileSync("git", ["add", "."], { cwd: root });
+  assert.deepEqual(await trackedFiles(root, []), []);
+});
+
+test("apply con una carpeta de agentes vacía no propone git rm --cached", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cm-emptyagents-"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  mkdirSync(join(root, ".codex", "agents"), { recursive: true });
+  writeFileSync(join(root, "README.md"), "x");
+  execFileSync("git", ["add", "."], { cwd: root });
+  const [r] = await exec(root, ["apply"], allRuns);
+  assert.deepEqual(r.tracked ?? [], []);
+  assert.ok(!r.hint);
+});
+
+const TOML_ARRAY = [
+  'name = "a"',
+  "tools = [",
+  '  ["x", "y"],',
+  '  ["z"], # otro [',
+  "]",
+  'description = "d" # nota con [corchete',
+  'inline = { k = ["v"] }',
+  'developer_instructions = "texto con [ y ] dentro"',
+  "",
+  "[mcp_servers.x]",
+  'model = "tampoco"',
+  "",
+].join("\n");
+
+function tomlModelCount(text) {
+  return text.split("\n").filter((l, n, all) => /^model\s*=/.test(l) && n < all.indexOf("[mcp_servers.x]")).length;
+}
+
+test("setModelToml no se confunde con arrays de varias líneas, comentarios con [ ni corchetes en cadenas", () => {
+  const once = setModelToml(TOML_ARRAY, "uno");
+  assert.equal(tomlModelCount(once), 1);
+  assert.equal(getModelToml(once), "uno");
+  assert.ok(once.includes('model = "tampoco"'));
+  const twice = setModelToml(once, "dos");
+  assert.equal(tomlModelCount(twice), 1);
+  assert.equal(getModelToml(twice), "dos");
+  assert.equal(setModelToml(twice, null), TOML_ARRAY);
+});
+
+test("setModelToml con un model puesto tras un array de varias líneas lo reemplaza, no lo duplica", () => {
+  const text = 'name = "a"\ntools = [\n  ["x"],\n]\nmodel = "viejo"\n';
+  const out = setModelToml(text, "nuevo");
+  assert.equal(out.split("\n").filter((l) => /^model\s*=/.test(l)).length, 1);
+  assert.equal(getModelToml(out), "nuevo");
+});
+
+test("setModelToml deja una sola clave model aunque el archivo ya tuviera dos", () => {
+  const out = setModelToml('name = "a"\nmodel = "uno"\nmodel = "dos"\n', "tres");
+  assert.equal(out.split("\n").filter((l) => /^model\s*=/.test(l)).length, 1);
+  assert.equal(getModelToml(out), "tres");
+});

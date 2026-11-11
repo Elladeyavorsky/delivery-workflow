@@ -302,17 +302,47 @@ export function setModelMd(text, model) {
   return [lines[0], ...body, ...lines.slice(end)].join(eol);
 }
 
-// En TOML la línea `model = "x"` es una clave de primer nivel: antes de la primera tabla y fuera de las cadenas multilínea.
+// En TOML la línea `model = "x"` es una clave de primer nivel: antes de la primera tabla, fuera de las
+// cadenas multilínea y fuera de los arrays o tablas en línea que siguen en varias líneas.
+// Recorre el texto carácter a carácter (cadenas, comentarios y corchetes) y marca las líneas de primer nivel.
 function topLevelLines(lines) {
   const top = new Set();
-  let multi = null;
+  let multi = null; // triple comilla doble o simple abierta
+  let depth = 0; // [ y { abiertos fuera de cadenas
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (multi === null && /^\s*\[/.test(line)) break;
-    if (multi === null) top.add(i);
-    for (const quote of ['"""', "\'\'\'"]) {
-      const count = line.split(quote).length - 1;
-      if (count % 2 === 1) multi = multi === quote ? null : multi ?? quote;
+    const atStart = multi === null && depth === 0;
+    if (atStart && /^\s*\[/.test(line)) break;
+    if (atStart) top.add(i);
+    let j = 0;
+    while (j < line.length) {
+      if (multi !== null) {
+        const end = line.indexOf(multi, j);
+        if (end === -1) break;
+        let slashes = 0; // en las dobles, una barra escapa la comilla
+        while (multi[0] === '"' && line[end - 1 - slashes] === "\\") slashes++;
+        if (slashes % 2 === 1) {
+          j = end + 1;
+          continue;
+        }
+        multi = null;
+        j = end + 3;
+        continue;
+      }
+      const c = line[j];
+      if (c === "#") break;
+      if (line.startsWith('"'.repeat(3), j) || line.startsWith("'".repeat(3), j)) {
+        multi = line.slice(j, j + 3);
+        j += 3;
+      } else if (c === '"' || c === "'") {
+        j++;
+        while (j < line.length && line[j] !== c) j += c === '"' && line[j] === "\\" ? 2 : 1;
+        j++;
+      } else {
+        if (c === "[" || c === "{") depth++;
+        else if ((c === "]" || c === "}") && depth > 0) depth--;
+        j++;
+      }
     }
   }
   return top;
@@ -337,6 +367,12 @@ export function setModelToml(text, model) {
     const keptTop = topLevelLines(kept);
     const nameAt = kept.findIndex((l, n) => keptTop.has(n) && /^name\s*=/.test(l));
     kept.splice(nameAt + 1, 0, `model = "${model}"`);
+  }
+  // Red de seguridad: un TOML con dos `model` no lo carga Codex. Mejor un error que escribirlo.
+  const finalTop = topLevelLines(kept);
+  const count = kept.filter((l, n) => finalTop.has(n) && TOML_MODEL.test(l)).length;
+  if (count !== (model === null ? 0 : 1)) {
+    throw new ConfigureModelsError("No se pudo escribir el modelo en el TOML sin dejarlo inválido; no se ha cambiado el archivo.", 3);
   }
   return kept.join(eol);
 }
@@ -470,9 +506,12 @@ export function updateGitignore(root, entries) {
 
 // Los archivos que git ya sigue: .gitignore no los suelta. Nunca se quitan solos.
 export async function trackedFiles(root, files) {
+  // Sin rutas, `git ls-files` lista todo el repositorio.
+  if (files.length === 0) return [];
   const rel = files.map((f) => relative(root, f));
+  const asked = new Set(rel);
   const out = await git(root, ["ls-files", "--", ...rel]);
-  return out ? out.split("\n").filter(Boolean) : [];
+  return out ? out.split("\n").filter((l) => asked.has(l)) : [];
 }
 
 export function untrackHint(tracked) {
