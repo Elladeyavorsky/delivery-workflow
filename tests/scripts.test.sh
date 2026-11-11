@@ -31,6 +31,7 @@ case "$1 $2" in
   "label list") [[ -n "${FAKE_GH_LABELS:-}" ]] && echo "$FAKE_GH_LABELS"; exit 0 ;;
   "label create") [[ "${FAKE_GH_LABEL_DENIED:-}" == 1 ]] && exit 1; exit 0 ;;
   "pr list") exit 0 ;;
+  "pr view") echo '{"number":9,"reviewDecision":"CHANGES_REQUESTED","body":"Closes #1"}'; exit 0 ;;
   "issue view") echo '{"body":"hola"}'; exit 0 ;;
   "pr create") echo "https://github.com/owner/repo/pull/9"; exit 0 ;;
   "api user") [[ "$*" == *--include* ]] && printf 'HTTP/2.0 200 OK\netag: "u"\n\n{"login":"ada"}\n' || echo ada; exit 0 ;;
@@ -143,6 +144,7 @@ status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status lee el token del .env" grep -q "^Token de GitHub: GITHUB_TOKEN en .env" <<<"$status"
 check "check-status dice la cuenta del token" grep -q "^GitHub CLI: cuenta ada" <<<"$status"
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
+check "check-status informa de la pull request" grep -q "^Pull request: #9 CHANGES_REQUESTED issue #1" <<<"$status"
 
 # Las skills lanzan sus scripts con bash o node: así una regla de permisos vale para todos.
 commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
