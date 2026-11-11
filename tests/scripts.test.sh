@@ -74,7 +74,19 @@ mv env.bak .env
 git rm -q --cached .gitignore && mv .gitignore gitignore.bak
 check "con el .env fuera de .gitignore, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
 mv gitignore.bak .gitignore && git add .gitignore
+printf 'GITHUB_TOKEN=token-con-comentario  # mi token\n' >.env
+bash "$ghsh" repo view >/dev/null 2>&1
+check "gh.sh quita un comentario detrás del token" test "$(cat "$FAKE_GH_TOKEN")" = token-con-comentario
+printf 'GITHUB_TOKEN="token-entre-comillas" # mi token\n' >.env
+bash "$ghsh" repo view >/dev/null 2>&1
+check "gh.sh quita un comentario detrás de las comillas" test "$(cat "$FAKE_GH_TOKEN")" = token-entre-comillas
 echo "GITHUB_TOKEN=token-del-env" >.env
+check "gh.sh deja el token para GitHub Enterprise" test "$(bash -c "source '$ghsh'; load_github_token; echo \$GH_ENTERPRISE_TOKEN")" = token-del-env
+git worktree add -q "${work}/worktree" -b worktree-test 2>/dev/null
+check "en un worktree, gh.sh usa el .env de la copia principal" bash -c "cd '${work}/worktree' && bash '$ghsh' repo view"
+check "en un worktree, el token es el del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+git worktree remove --force "${work}/worktree"
+git branch -q -D worktree-test
 for copy in "${skills}"/*/scripts/gh.sh; do
   check "gh.sh es igual en $(basename "$(dirname "$(dirname "$copy")")")" cmp -s "$ghsh" "$copy"
 done
@@ -124,6 +136,7 @@ check "git no ve la caché" test -z "$(git status --porcelain)"
 # issue-spec: lee la issue con el token del .env.
 check "issue-spec lee la issue" test "$(node "${skills}/issue-spec/scripts/issue-spec.mjs" read 1)" = hola
 check "issue-spec usa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+check "ISSUE_SPEC_GH no salta gh.sh" test "$(ISSUE_SPEC_GH=/usr/bin/false node "${skills}/issue-spec/scripts/issue-spec.mjs" read 1)" = hola
 
 # check-status: informa del token del .env, de su cuenta y de Node.
 status=$("${skills}/check-status/scripts/check-status.sh")
