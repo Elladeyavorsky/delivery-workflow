@@ -5,7 +5,7 @@ description: "Elige el modelo de IA de cada agente del paquete según la suscrip
 
 ### Herramienta: CONFIGURE_MODELS
 
-- **Descripción**: Úsala única y exclusivamente para elegir, con la persona, el modelo de cada agente (`concept-developer`, `code-developer`, …). Sin esta configuración los agentes usan el modelo del chat y nada falla. Por ahora solo funciona con Cursor.
+- **Descripción**: Úsala única y exclusivamente para elegir, con la persona, el modelo de cada agente (`concept-developer`, `code-developer`, …). Sin esta configuración los agentes usan el modelo del chat y nada falla. Funciona con Cursor, Claude Code y Codex.
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/configure-models.mjs" ORDEN [OPCIONES]`, desde la raíz del repositorio git.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/configure-models`.
@@ -16,10 +16,10 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
    - `detect`: lee los modelos y devuelve, por herramienta, la propuesta de cada agente (modelo, nivel, motivo y si viene de lo guardado). No escribe nada.
    - `apply`: escribe el modelo en cada agente y guarda la elección. Sin `--set` usa lo guardado o, si no hay nada, la propuesta.
    - `reset`: quita el modelo de todos los agentes y borra lo guardado.
-2. **`--set agente=modelo`** _(Opcional, repetible)_: el modelo de ese agente. `inherit` quita el modelo (el agente usa el del chat).
+2. **`--set agente=modelo`** _(Opcional, repetible)_: el modelo de ese agente. `inherit` quita el modelo (el agente usa el del chat). Exige `--target` si hay más de una herramienta: cada herramienta nombra sus modelos a su manera.
 3. **`--gitignore`** _(Opcional)_: añade al `.gitignore` los archivos de los agentes del paquete, uno a uno.
 4. **`--yes` / `-y`** _(Opcional)_: acepta todo sin preguntar, `.gitignore` incluido.
-5. **`--target cursor`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
+5. **`--target cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
 
 #### Reglas de Invocación Críticas
 
@@ -31,8 +31,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
   3. Pregunta **una vez**: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]». Si hay `saved`, di que son los modelos guardados.
   4. Si responde con el nombre de un agente, pregunta su modelo. Enséñale los de la lista detectada y acepta cualquier otro escrito a mano; Enter = `inherit`. Repite la pregunta hasta que acepte.
   5. Si el `.gitignore` aún no tiene los archivos, pregunta una vez si los añades: la línea `model` es de cada persona y no debe llegar a git.
-  6. Lanza `apply` con un `--set` por cada cambio, y `--gitignore` si aceptó. Muestra la tabla final con lo que devuelve el script.
-- **Un modelo escrito a mano**: Avisa de que si Cursor no lo reconoce usará el modelo del chat sin decir nada. El script ya añade este aviso en `notes` si el modelo no está en la lista.
+  6. Lanza `apply` con un `--set` por cada cambio, y `--gitignore` si aceptó. Si hay varias herramientas, un `apply --target T` por cada una, con solo sus cambios, y las que no cambian con un `apply` sin `--set`. Muestra la tabla final con lo que devuelve el script.
+- **Un modelo escrito a mano**: Avisa de que si la herramienta no lo reconoce, Cursor usará el modelo del chat sin decir nada y Claude Code dará un error al llamar al agente. El script ya añade este aviso en `notes` si el modelo no está en la lista.
 - **Archivos que git ya sigue**: Si la respuesta trae `hint`, enséñalo tal cual y di que lo ejecute la persona. No ejecutes `git rm` tú.
 - **Después de `apm install` o `apm update`**: Instalar borra las líneas `model`. Si ya hay elecciones guardadas, `apply` sin argumentos las vuelve a poner sin preguntar nada. Dilo así a la persona.
 - **Procesamiento de respuestas**: El script escribe JSON. `result` vale `cambiado`, `igual` o `ausente` (falta el archivo: pide `apm install`). Si el código de salida no es 0, lee el error y comunícalo. No inventes modelos ni resultados.

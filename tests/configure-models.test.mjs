@@ -445,3 +445,206 @@ test("detect sin nada guardado marca la propuesta como tal", async () => {
   assert.equal(r.saved, false);
   assert.ok(r.proposal.every((p) => p.source === "propuesta"));
 });
+
+// --- Claude Code y Codex ---
+
+import {
+  parseClaudeAuth,
+  readAvailableModels,
+  detectClaude,
+  parseCodexModels,
+  detectCodex,
+  setModelToml,
+  getModelToml,
+} from "../.apm/skills/configure-models/scripts/configure-models.mjs";
+
+const claudeAuth = readFileSync(join(FIXTURES, "claude-auth-status.json"), "utf8");
+// Hecho a mano: no había Codex para capturar la salida real de `codex debug models`.
+const codexSample = readFileSync(join(FIXTURES, "codex-models.hecho-a-mano.json"), "utf8");
+const emptyHome = () => mkdtempSync(join(tmpdir(), "cm-home-"));
+
+test("el parser de Claude lee la salida real de claude auth status", () => {
+  assert.deepEqual(parseClaudeAuth(claudeAuth), { loggedIn: true, plan: "pro" });
+  assert.equal(parseClaudeAuth("no es json"), null);
+  assert.equal(parseClaudeAuth("{}"), null);
+});
+
+test("Claude propone sus alias con el plan cuando hay sesión", async () => {
+  const d = await detectClaude({ run: fake({ "claude auth status": { status: "ok", stdout: claudeAuth } }), root: emptyHome(), home: emptyHome(), profile: profiles.tools.claude });
+  assert.equal(d.status, "ok");
+  assert.deepEqual(d.models.map((m) => m.id), ["opus", "sonnet", "haiku"]);
+  assert.equal(d.plan, "pro");
+});
+
+test("availableModels limita los alias; con varios archivos vale lo que todos permiten", () => {
+  const root = emptyHome();
+  const home = emptyHome();
+  mkdirSync(join(root, ".claude"));
+  mkdirSync(join(home, ".claude"));
+  assert.equal(readAvailableModels({ root, home }), null);
+  writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify({ model: "sonnet", availableModels: ["sonnet", "haiku"] }));
+  assert.deepEqual(readAvailableModels({ root, home }), ["sonnet", "haiku"]);
+  writeFileSync(join(root, ".claude", "settings.json"), JSON.stringify({ availableModels: ["haiku", "opus"] }));
+  assert.deepEqual(readAvailableModels({ root, home }), ["haiku"]);
+});
+
+test("Claude con availableModels solo ofrece esos modelos", async () => {
+  const root = emptyHome();
+  mkdirSync(join(root, ".claude"));
+  writeFileSync(join(root, ".claude", "settings.json"), JSON.stringify({ availableModels: ["sonnet", "haiku"] }));
+  const d = await detectClaude({ run: fake({ "claude auth status": { status: "ok", stdout: claudeAuth } }), root, home: emptyHome(), profile: profiles.tools.claude });
+  assert.deepEqual(d.models.map((m) => m.id), ["sonnet", "haiku"]);
+  assert.equal(resolveModel(profiles, "claude", "heavy", d.models), "sonnet");
+});
+
+test("Claude sin sesión, sin comando, con fallo o con salida rara es desconocido y lo dice", async () => {
+  const base = { root: emptyHome(), home: emptyHome(), profile: profiles.tools.claude };
+  const out = async (table) => detectClaude({ ...base, run: fake(table) });
+  assert.match((await out({ "claude auth status": { status: "ok", stdout: '{"loggedIn": false}' } })).reason, /iniciado sesión/);
+  assert.match((await out({})).reason, /no está instalado/);
+  assert.match((await out({ "claude auth status": { status: "timeout", stdout: "" } })).reason, /a tiempo/);
+  assert.match((await out({ "claude auth status": { status: "ok", stdout: "hola" } })).reason, /no se entendió/);
+  assert.deepEqual((await out({})).models, []);
+});
+
+test("cada nivel de Claude elige su alias", () => {
+  const models = ["opus", "sonnet", "haiku"].map((id) => ({ id }));
+  assert.equal(resolveModel(profiles, "claude", "heavy", models), "opus");
+  assert.equal(resolveModel(profiles, "claude", "standard", models), "sonnet");
+  assert.equal(resolveModel(profiles, "claude", "light", models), "haiku");
+});
+
+const TOML = `name = "create-branch"\ndescription = "Abre la rama."\ndeveloper_instructions = "# Subagente\\n\\nHaz esto."\n`;
+
+test("setModelToml añade la clave tras name, es idempotente y null devuelve el original", () => {
+  const once = setModelToml(TOML, "gpt-5.1-codex");
+  assert.equal(once, TOML.replace('name = "create-branch"\n', 'name = "create-branch"\nmodel = "gpt-5.1-codex"\n'));
+  assert.equal(getModelToml(once), "gpt-5.1-codex");
+  assert.equal(setModelToml(once, "gpt-5.1-codex"), once);
+  assert.equal(setModelToml(once, null), TOML);
+  assert.equal(getModelToml(TOML), null);
+});
+
+test("setModelToml reemplaza la clave y no toca model dentro de tablas ni de cadenas multilínea", () => {
+  const complex = `name = "a"\ndeveloper_instructions = """\nmodel = "no soy yo"\n"""\n\n[mcp_servers.x]\nmodel = "tampoco"\n`;
+  const out = setModelToml(complex, "uno");
+  assert.ok(out.includes('model = "no soy yo"') && out.includes('model = "tampoco"'));
+  assert.equal(getModelToml(out), "uno");
+  assert.equal(getModelToml(setModelToml(out, "dos")), "dos");
+  assert.equal(setModelToml(out, null), complex);
+});
+
+test("setModelToml respeta CRLF", () => {
+  const crlf = TOML.replace(/\n/g, "\r\n");
+  assert.equal(setModelToml(setModelToml(crlf, "x"), null), crlf);
+});
+
+test("el parser de Codex acepta un objeto con models o una lista y salta los ocultos", () => {
+  const ids = parseCodexModels(codexSample).map((m) => m.id);
+  assert.deepEqual(ids, ["gpt-5.1-codex", "gpt-5.1-codex-mini", "gpt-5.1"]);
+  assert.deepEqual(parseCodexModels('["gpt-a","gpt-b"]').map((m) => m.id), ["gpt-a", "gpt-b"]);
+  assert.deepEqual(parseCodexModels("no es json"), []);
+  assert.deepEqual(parseCodexModels('{"models": 3}'), []);
+});
+
+test("cada nivel de Codex elige su modelo", () => {
+  const models = parseCodexModels(codexSample);
+  assert.equal(resolveModel(profiles, "codex", "heavy", models), "gpt-5.1-codex");
+  assert.equal(resolveModel(profiles, "codex", "light", models), "gpt-5.1-codex-mini");
+});
+
+test("Codex lee codex debug models y, si falla, la caché de ~/.codex", async () => {
+  const ok = await detectCodex({ run: fake({ "codex debug models": { status: "ok", stdout: codexSample } }), home: emptyHome(), env: {} });
+  assert.equal(ok.status, "ok");
+  const home = emptyHome();
+  mkdirSync(join(home, ".codex"));
+  writeFileSync(join(home, ".codex", "models_cache.json"), codexSample);
+  const cached = await detectCodex({ run: fake({}), home, env: {} });
+  assert.equal(cached.status, "ok");
+  assert.equal(cached.models.length, 3);
+});
+
+test("Codex sin comando ni caché es desconocido y dice por qué", async () => {
+  const d = await detectCodex({ run: fake({}), home: emptyHome(), env: {} });
+  assert.equal(d.status, "unknown");
+  assert.match(d.reason, /no está instalado el comando codex/);
+  const t = await detectCodex({ run: fake({ "codex debug models": { status: "timeout", stdout: "" } }), home: emptyHome(), env: {} });
+  assert.match(t.reason, /iniciar sesión/);
+});
+
+// Un proyecto con los agentes de una herramienta, con el nombre y la extensión que deja apm.
+function projectFor(tool) {
+  const root = mkdtempSync(join(tmpdir(), "cm-proj-"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  const { agentsDir, extension } = profiles.tools[tool];
+  mkdirSync(join(root, agentsDir), { recursive: true });
+  for (const name of Object.keys(profiles.agents)) {
+    const body = extension === "toml" ? `name = "${name}"\ndescription = "d"\ndeveloper_instructions = "x"\n` : `---\nname: ${name}\ndescription: "d"\n---\ncuerpo\n`;
+    writeFileSync(join(root, agentsDir, `${name}.${extension}`), body);
+  }
+  return root;
+}
+const allRuns = fake({
+  "cursor-agent models": { status: "ok", stdout: cursorOutput },
+  "claude auth status": { status: "ok", stdout: claudeAuth },
+  "codex debug models": { status: "ok", stdout: codexSample },
+});
+
+test("apply en Claude Code escribe alias en .claude/agents", async () => {
+  const root = projectFor("claude");
+  const [r] = await exec(root, ["apply"], allRuns);
+  assert.equal(r.tool, "claude");
+  const text = (a) => readFileSync(join(root, ".claude", "agents", `${a}.md`), "utf8");
+  assert.equal(getModelMd(text("concept-developer")), "opus");
+  assert.equal(getModelMd(text("code-developer")), "sonnet");
+  assert.equal(getModelMd(text("create-branch")), "haiku");
+});
+
+test("apply en Codex escribe model en los .toml, es idempotente y reset lo deshace", async () => {
+  const root = projectFor("codex");
+  const file = (a) => join(root, ".codex", "agents", `${a}.toml`);
+  const original = readFileSync(file("create-pr"), "utf8");
+  await exec(root, ["apply"], allRuns);
+  const first = readFileSync(file("create-pr"), "utf8");
+  assert.equal(getModelToml(first), "gpt-5.1-codex-mini");
+  await exec(root, ["apply"], allRuns);
+  assert.equal(readFileSync(file("create-pr"), "utf8"), first);
+  await exec(root, ["reset"], allRuns);
+  assert.equal(readFileSync(file("create-pr"), "utf8"), original);
+});
+
+test("el .gitignore lleva los archivos de cada herramienta con su extensión", () => {
+  assert.ok(gitignoreEntries(profiles, "claude").every((e) => e.startsWith(".claude/agents/") && e.endsWith(".md")));
+  assert.ok(gitignoreEntries(profiles, "codex").every((e) => e.startsWith(".codex/agents/") && e.endsWith(".toml")));
+});
+
+test("con las tres herramientas, apply y status las cubren a todas", async () => {
+  const root = projectFor("cursor");
+  for (const tool of ["claude", "codex"]) {
+    const { agentsDir, extension } = profiles.tools[tool];
+    mkdirSync(join(root, agentsDir), { recursive: true });
+    const other = projectFor(tool);
+    for (const f of readdirSync(join(other, agentsDir))) copyFileSync(join(other, agentsDir, f), join(root, agentsDir, f));
+    assert.ok(extension);
+  }
+  // projectFor("cursor") escribió el frontmatter md; las tres carpetas existen
+  assert.deepEqual(toolsPresent(profiles, root), ["cursor", "claude", "codex"]);
+  const results = await exec(root, ["apply"], allRuns);
+  assert.deepEqual(results.map((r) => r.tool), ["cursor", "claude", "codex"]);
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8, claude 8/8, codex 8/8)");
+  const only = await exec(root, ["apply", "--target", "claude"], allRuns);
+  assert.equal(only.length, 1);
+  await assert.rejects(exec(project(), ["apply", "--target", "codex"], allRuns), /codex/);
+});
+
+test("--target rechaza una herramienta que no existe", async () => {
+  await assert.rejects(exec(project(), ["apply", "--target", "vim"]), /Herramienta desconocida/);
+});
+
+test("--set sin --target con varias herramientas se rechaza y no escribe nada", async () => {
+  const root = projectFor("cursor");
+  mkdirSync(join(root, ".claude", "agents"), { recursive: true });
+  await assert.rejects(exec(root, ["apply", "--set", "create-pr=composer-2.5"], allRuns), /--target/);
+  const ok = await exec(root, ["apply", "--target", "cursor", "--set", "create-pr=composer-2.5"], allRuns);
+  assert.equal(ok.length, 1);
+});

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execFile as execFileCb, execFileSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -143,7 +143,101 @@ export async function detectCursor({ run = runCommand } = {}) {
   return { status: "unknown", models: [], reason };
 }
 
-export const DETECTORS = { cursor: detectCursor };
+// Claude Code no tiene comando que liste modelos: se usan sus alias, limitados por `availableModels` si los ajustes lo piden.
+const CLAUDE_REASONS = {
+  missing: "no está instalado el comando claude",
+  timeout: "claude auth status no respondió a tiempo",
+  error: "claude auth status falló",
+  loggedOut: "no has iniciado sesión en Claude Code (claude auth login)",
+  unreadable: "no se entendió la salida de claude auth status",
+};
+
+export function parseClaudeAuth(text) {
+  try {
+    const data = JSON.parse(text);
+    if (typeof data?.loggedIn !== "boolean") return null;
+    return { loggedIn: data.loggedIn, plan: data.subscriptionType ?? data.planTier ?? null };
+  } catch {
+    return null;
+  }
+}
+
+// Los modelos permitidos por los ajustes (proyecto, local y usuario): si hay varios, vale lo que todos permiten.
+export function readAvailableModels({ root, home = homedir() }) {
+  const lists = [];
+  for (const file of [join(root, ".claude", "settings.json"), join(root, ".claude", "settings.local.json"), join(home, ".claude", "settings.json")]) {
+    try {
+      const value = JSON.parse(readFileSync(file, "utf8")).availableModels;
+      if (Array.isArray(value) && value.length) lists.push(value.filter((v) => typeof v === "string"));
+    } catch {
+      /* sin archivo o ilegible: no limita */
+    }
+  }
+  if (lists.length === 0) return null;
+  return lists.reduce((all, list) => all.filter((m) => list.includes(m)));
+}
+
+export async function detectClaude({ run = runCommand, root, home, profile }) {
+  const result = await run("claude", ["auth", "status"]);
+  if (result.status !== "ok") return { status: "unknown", models: [], reason: CLAUDE_REASONS[result.status] ?? CLAUDE_REASONS.error };
+  const auth = parseClaudeAuth(result.stdout);
+  if (!auth) return { status: "unknown", models: [], reason: CLAUDE_REASONS.unreadable };
+  if (!auth.loggedIn) return { status: "unknown", models: [], reason: CLAUDE_REASONS.loggedOut };
+  const limit = readAvailableModels({ root, home });
+  const ids = limit ?? profile.aliases;
+  return { status: "ok", models: ids.map((id) => ({ id, name: id })), reason: null, plan: auth.plan };
+}
+
+// Codex: `codex debug models` imprime el catálogo; si falla, se lee la caché que guarda el propio Codex.
+// El formato está tomado de la documentación, sin probarlo con un Codex real: se acepta una lista o un objeto con `models`.
+export function parseCodexModels(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const items = Array.isArray(data) ? data : data?.models ?? data?.data ?? [];
+  if (!Array.isArray(items)) return [];
+  const models = [];
+  for (const item of items) {
+    const id = typeof item === "string" ? item : item?.slug ?? item?.id ?? item?.model;
+    if (typeof id !== "string" || !isModelShape(id)) continue;
+    if (["hide", "hidden", "none"].includes(item?.visibility)) continue;
+    models.push({ id, name: item?.display_name ?? id });
+  }
+  return models;
+}
+
+const CODEX_REASONS = {
+  missing: "no está instalado el comando codex",
+  timeout: "codex debug models no respondió a tiempo; puede que falte iniciar sesión",
+  error: "codex debug models falló; puede que falte iniciar sesión",
+  empty: "no se encontró una lista de modelos que se entienda",
+};
+
+export async function detectCodex({ run = runCommand, home = homedir(), env = process.env } = {}) {
+  const result = await run("codex", ["debug", "models"]);
+  if (result.status === "ok") {
+    const models = parseCodexModels(result.stdout);
+    if (models.length) return { status: "ok", models, reason: null };
+  }
+  const reason = result.status === "ok" ? CODEX_REASONS.empty : CODEX_REASONS[result.status] ?? CODEX_REASONS.error;
+  try {
+    const cache = join(env.CODEX_HOME ?? join(home, ".codex"), "models_cache.json");
+    const models = parseCodexModels(readFileSync(cache, "utf8"));
+    if (models.length) return { status: "ok", models, reason: null };
+  } catch {
+    /* sin caché */
+  }
+  return { status: "unknown", models: [], reason };
+}
+
+export const DETECTORS = {
+  cursor: (args) => detectCursor(args),
+  claude: (args) => detectClaude(args),
+  codex: (args) => detectCodex(args),
+};
 
 // Solo las herramientas cuya carpeta de agentes existe en el proyecto.
 export function toolsPresent(profiles, root, exists = existsSync) {
@@ -152,11 +246,11 @@ export function toolsPresent(profiles, root, exists = existsSync) {
     .map(([tool]) => tool);
 }
 
-export async function detect({ profiles = loadProfiles(), root, tools, run } = {}) {
+export async function detect({ profiles = loadProfiles(), root, tools, run, home } = {}) {
   const present = tools ?? toolsPresent(profiles, root);
   const result = [];
   for (const tool of present) {
-    const detection = await DETECTORS[tool]({ run });
+    const detection = await DETECTORS[tool]({ run, root, home, profile: profiles.tools[tool] });
     result.push({
       tool,
       name: profiles.tools[tool].name,
@@ -198,6 +292,48 @@ export function setModelMd(text, model) {
   }
   return [lines[0], ...body, ...lines.slice(end)].join(eol);
 }
+
+// En TOML la línea `model = "x"` es una clave de primer nivel: antes de la primera tabla y fuera de las cadenas multilínea.
+function topLevelLines(lines) {
+  const top = new Set();
+  let multi = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (multi === null && /^\s*\[/.test(line)) break;
+    if (multi === null) top.add(i);
+    for (const quote of ['"""', "\'\'\'"]) {
+      const count = line.split(quote).length - 1;
+      if (count % 2 === 1) multi = multi === quote ? null : multi ?? quote;
+    }
+  }
+  return top;
+}
+
+const TOML_MODEL = /^model\s*=/;
+
+export function getModelToml(text) {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const top = topLevelLines(lines);
+  const i = lines.findIndex((l, n) => top.has(n) && TOML_MODEL.test(l));
+  if (i === -1) return null;
+  return lines[i].replace(/^model\s*=\s*/, "").replace(/^(["'])(.*)\1\s*$/, "$2").trim() || null;
+}
+
+export function setModelToml(text, model) {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const top = topLevelLines(lines);
+  const kept = lines.filter((l, n) => !(top.has(n) && TOML_MODEL.test(l)));
+  if (model !== null) {
+    const keptTop = topLevelLines(kept);
+    const nameAt = kept.findIndex((l, n) => keptTop.has(n) && /^name\s*=/.test(l));
+    kept.splice(nameAt + 1, 0, `model = "${model}"`);
+  }
+  return kept.join(eol);
+}
+
+export const getModel = (text, extension) => (extension === "toml" ? getModelToml(text) : getModelMd(text));
+export const setModel = (text, model, extension) => (extension === "toml" ? setModelToml(text, model) : setModelMd(text, model));
 
 // --- Elecciones guardadas (personales: dentro de .git, git no las ve) ---
 
@@ -293,7 +429,7 @@ export function applyToFiles({ profiles, root, tool, choices }) {
     const file = agentPath(profiles, root, tool, agent);
     if (!existsSync(file)) return { agent, model, file, result: "ausente" };
     const before = readFileSync(file, "utf8");
-    const after = setModelMd(before, model);
+    const after = setModel(before, model, profiles.tools[tool].extension);
     if (after === before) return { agent, model, file, result: "igual" };
     writeFileSync(file, after);
     return { agent, model, file, result: "cambiado" };
@@ -360,7 +496,7 @@ export const USAGE = [
   "  apply                  Escribe el modelo en cada agente. Sin --set usa lo guardado o la propuesta.",
   "  reset                  Quita la línea model de los agentes y borra lo guardado.",
   "  status                 Una línea para check-status.",
-  "Opciones: --yes|-y  --target cursor  --set agente=modelo (inherit = sin modelo)  --gitignore  --root RUTA",
+  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --gitignore  --root RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -385,7 +521,10 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
   if (!["detect", "apply", "reset"].includes(opts.command)) throw new ConfigureModelsError(USAGE, 2);
   const tools = selectTools(opts, profiles, root);
   if (tools.length === 0) {
-    throw new ConfigureModelsError("No hay carpetas de agentes en este proyecto (.cursor/agents). Ejecuta apm install antes.", 3);
+    throw new ConfigureModelsError("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
+  }
+  if (opts.command === "apply" && Object.keys(opts.set).length > 0 && tools.length > 1) {
+    throw new ConfigureModelsError("--set vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target cursor|claude|codex.", 2);
   }
   if (opts.command === "detect") {
     return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner }), null, 2);
@@ -469,7 +608,7 @@ async function resetOne({ profiles, root, tool, state }) {
 // Una línea para check-status: sin configurar, configurado o desincronizado.
 export function statusLine({ profiles, root }) {
   const tools = toolsPresent(profiles, root);
-  if (tools.length === 0) return "sin configurar (no hay agentes de Cursor en este proyecto; por ahora solo se configura Cursor)";
+  if (tools.length === 0) return "sin configurar (no hay carpeta de agentes en este proyecto; ejecuta apm install)";
   let dir;
   try {
     dir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
@@ -492,7 +631,7 @@ export function statusLine({ profiles, root }) {
     for (const agent of names) {
       const file = agentPath(profiles, root, tool, agent);
       try {
-        if ((getModelMd(readFileSync(file, "utf8")) ?? null) === (saved[agent] ?? null)) match++;
+        if ((getModel(readFileSync(file, "utf8"), profiles.tools[tool].extension) ?? null) === (saved[agent] ?? null)) match++;
       } catch {
         /* archivo ausente o ilegible: no coincide */
       }
