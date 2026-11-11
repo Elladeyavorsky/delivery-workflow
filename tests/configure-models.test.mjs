@@ -476,7 +476,7 @@ test("Claude propone sus alias con el plan cuando hay sesión", async () => {
   assert.equal(d.plan, "pro");
 });
 
-test("availableModels limita los alias; con varios archivos vale lo que todos permiten", () => {
+test("availableModels limita los alias; con varios archivos se juntan (unión, como hace Claude Code)", () => {
   const root = emptyHome();
   const home = emptyHome();
   mkdirSync(join(root, ".claude"));
@@ -485,7 +485,7 @@ test("availableModels limita los alias; con varios archivos vale lo que todos pe
   writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify({ model: "sonnet", availableModels: ["sonnet", "haiku"] }));
   assert.deepEqual(readAvailableModels({ root, home }), ["sonnet", "haiku"]);
   writeFileSync(join(root, ".claude", "settings.json"), JSON.stringify({ availableModels: ["haiku", "opus"] }));
-  assert.deepEqual(readAvailableModels({ root, home }), ["haiku"]);
+  assert.deepEqual(readAvailableModels({ root, home }), ["haiku", "opus", "sonnet"]);
 });
 
 test("Claude con availableModels solo ofrece esos modelos", async () => {
@@ -729,4 +729,55 @@ test("setModelToml deja una sola clave model aunque el archivo ya tuviera dos", 
   const out = setModelToml('name = "a"\nmodel = "uno"\nmodel = "dos"\n', "tres");
   assert.equal(out.split("\n").filter((l) => /^model\s*=/.test(l)).length, 1);
   assert.equal(getModelToml(out), "tres");
+});
+
+// --- Lo guardado: nulos, modelos a mano y listas vacías ---
+
+const codexDown = fake({});
+const codexUp = fake({ "codex debug models": { status: "ok", stdout: codexSample } });
+
+test("una detección fallida no guarda nulos: el siguiente apply ya propone", async () => {
+  const root = projectFor("codex");
+  await exec(root, ["apply"], codexDown);
+  const [second] = await exec(root, ["apply"], codexUp);
+  assert.equal(second.agents.find((a) => a.agent === "concept-developer").model, "gpt-5.1-codex");
+  assert.equal(second.agents.find((a) => a.agent === "concept-developer").source, "propuesta");
+});
+
+test("--set x=inherit sí se guarda y se respeta", async () => {
+  const root = projectFor("codex");
+  await exec(root, ["apply", "--set", "create-pr=inherit"], codexUp);
+  const [again] = await exec(root, ["apply"], codexUp);
+  const pr = again.agents.find((a) => a.agent === "create-pr");
+  assert.equal(pr.model, null);
+  assert.equal(pr.source, "guardado");
+});
+
+test("status con agentes sin entrada guardada no se rompe", async () => {
+  const root = projectFor("codex");
+  await exec(root, ["apply"], codexDown);
+  assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(codex 8\/8\)/);
+});
+
+test("un modelo escrito a mano que no está en la lista se mantiene en el siguiente apply", async () => {
+  const root = projectFor("claude");
+  await exec(root, ["apply", "--set", "concept-developer=claude-opus-4-1"], allRuns);
+  const [again] = await exec(root, ["apply"], allRuns);
+  const a = again.agents.find((x) => x.agent === "concept-developer");
+  assert.equal(a.model, "claude-opus-4-1");
+  assert.ok(again.notes.some((n) => n.includes("escrito a mano")));
+  assert.equal(getModelMd(readFileSync(join(root, ".claude", "agents", "concept-developer.md"), "utf8")), "claude-opus-4-1");
+});
+
+test("un modelo propuesto que desaparece de la lista sigue reemplazándose", async () => {
+  const root = projectFor("cursor");
+  await exec(root, ["apply"], withModels);
+  const reducido = fake({ "cursor-agent --list-models": { status: "ok", stdout: "Available models\n\ncomposer-2.5 - Composer 2.5\n" } });
+  const [again] = await exec(root, ["apply"], reducido);
+  assert.ok(again.agents.every((a) => a.model === null || a.model === "composer-2.5"));
+});
+
+test("una lista vacía es desconocido, no «sin modelos»", async () => {
+  const [d] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent --list-models": { status: "ok", stdout: "Available models\n\n" } }) });
+  assert.equal(d.status, "unknown");
 });

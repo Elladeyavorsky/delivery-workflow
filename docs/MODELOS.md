@@ -32,7 +32,7 @@ Cada agente tiene un nivel y cada herramienta elige, de lo que tienes, el modelo
 `apm install` borra la línea `model` de los agentes sin avisar (comprobado con `apm` 0.35.0 en las tres herramientas). Por eso:
 
 - `check-status` muestra `Modelos: desincronizado (cursor 0/8)`; si ningún agente lleva modelo, `configurado, pero ningún agente lleva modelo`.
-- `/configure-models` empieza por lo guardado: Enter (o `--yes`) lo restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un guardado vale si el modelo sigue en la lista actual, o si no se pudo leer la lista (puede ser uno escrito a mano).
+- `/configure-models` empieza por lo guardado: Enter (o `--yes`) lo restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un guardado vale si el modelo sigue en la lista actual, si no se pudo leer la lista, o si lo escribiste a mano (se avisa, pero se mantiene). Si no había qué proponer (herramienta caída, lista vacía), no se guarda nada: el siguiente `apply` vuelve a proponer. Solo `--set agente=inherit` guarda «heredar».
 - `apm audit` marcará esos agentes como editados. Es lo esperado.
 
 **Automatizarlo (no incluido):** tras `apm lifecycle trust`, un bloque `lifecycle: post-install` en tu `apm.yml` con el comando `apply` lo hizo solo en una prueba. Se deja fuera porque ese bloque ejecuta comandos en cada instalación y cada persona debe decidir si lo confía.
@@ -58,7 +58,7 @@ git rm --cached ".cursor/agents/code-developer.md" ...
 - Para comprobar un agente: `cursor-agent -p --trust --output-format stream-json "Usa el subagente X"` y mira `model` en la llamada `taskToolCall`.
 
 **Claude Code** (probado con 2.1.322, plan Pro)
-- No hay comando que liste modelos: se ofrecen los alias `opus`, `sonnet` y `haiku` si `claude auth status` muestra una sesión, limitados por `availableModels` de tus ajustes si lo defines. **No se filtran por plan** (solo se probó Pro): la propuesta muestra tu plan, y si el tuyo no incluye `opus`, cámbialo con `--set concept-developer=sonnet`. Un nombre completo (`claude-opus-…`) también vale, escrito a mano.
+- No hay comando que liste modelos: se ofrecen los alias `opus`, `sonnet` y `haiku` si `claude auth status` muestra una sesión, limitados por `availableModels` de tus ajustes de usuario, proyecto y local si lo defines (Claude Code junta esas listas; la lista de administrador gestionada **no se lee**). Un nombre completo (`claude-opus-…`) escrito a mano se mantiene en los siguientes `apply`, con un aviso si no sale en la lista. **No se filtran por plan** (solo se probó Pro): la propuesta muestra tu plan, y si el tuyo no incluye `opus`, cámbialo con `--set concept-developer=sonnet`.
 - Los alias valen en el frontmatter: el resultado de `claude -p --output-format stream-json --verbose` lista en `modelUsage` los modelos usados.
 - Un nombre desconocido **sí falla** (error 404 al llamar al agente).
 - `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` **no pisó** `model: opus` del frontmatter en esa versión.

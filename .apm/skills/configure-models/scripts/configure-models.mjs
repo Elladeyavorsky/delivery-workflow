@@ -182,7 +182,8 @@ export function readAvailableModels({ root, home = homedir() }) {
     }
   }
   if (lists.length === 0) return null;
-  return lists.reduce((all, list) => all.filter((m) => list.includes(m)));
+  // Sin lista gestionada (que no se lee), Claude Code junta las listas de usuario, proyecto y local.
+  return [...new Set(lists.flat())];
 }
 
 export async function detectClaude({ run = runCommand, root, home, profile }) {
@@ -259,7 +260,11 @@ export async function detect({ profiles = loadProfiles(), root, tools, run, home
   const present = tools ?? toolsPresent(profiles, root);
   const result = [];
   for (const tool of present) {
-    const detection = await DETECTORS[tool]({ run, root, home, profile: profiles.tools[tool] });
+    let detection = await DETECTORS[tool]({ run, root, home, profile: profiles.tools[tool] });
+    // Una lista vacía no es «no hay modelos»: es que no se pudo saber. Así no se guardan nulos por error.
+    if (detection.status === "ok" && detection.models.length === 0) {
+      detection = { ...detection, status: "unknown", reason: "la herramienta devolvió una lista de modelos vacía" };
+    }
     result.push({
       tool,
       name: profiles.tools[tool].name,
@@ -422,7 +427,7 @@ export function writeState(dir, state) {
 // --- Qué se aplica ---
 
 // Guardado válido: sigue en la lista actual. Si no se pudo detectar, se confía: pudo escribirse a mano.
-export function planChoices({ profiles, tool, detection, saved, overrides = {} }) {
+export function planChoices({ profiles, tool, detection, saved, manual = [], overrides = {} }) {
   const ids = new Set(detection.models.map((m) => m.id));
   const known = detection.status === "ok";
   const notes = [];
@@ -432,7 +437,11 @@ export function planChoices({ profiles, tool, detection, saved, overrides = {} }
   for (const agent of Object.keys(profiles.agents)) {
     if (saved && agent in saved) {
       const keep = saved[agent];
-      if (keep !== null && known && !ids.has(keep)) {
+      if (keep !== null && known && !ids.has(keep) && manual.includes(agent)) {
+        choices[agent] = keep;
+        source[agent] = "guardado";
+        notes.push(`«${keep}» (${agent}) está escrito a mano y no sale en la lista de ${profiles.tools[tool].name}: se mantiene. Si no lo reconoce, se usará el modelo del chat.`);
+      } else if (keep !== null && known && !ids.has(keep)) {
         choices[agent] = proposal[agent];
         source[agent] = "reemplazado";
         notes.push(`«${keep}» (${agent}) ya no está en la lista de modelos: se usa ${proposal[agent] ?? "el del chat"}.`);
@@ -599,7 +608,8 @@ export async function detectWithSaved({ profiles, root, tools, runner }) {
   const detections = await detect({ profiles, root, tools, run: runner });
   return detections.map((d) => {
     const saved = state.tools[d.tool]?.agents ?? null;
-    const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: d, saved });
+    const manual = state.tools[d.tool]?.manual ?? [];
+    const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: d, saved, manual });
     return {
       ...d,
       saved: saved !== null,
@@ -612,9 +622,15 @@ export async function detectWithSaved({ profiles, root, tools, runner }) {
 async function applyOne({ profiles, root, tool, state, opts, runner }) {
   const [detection] = await detect({ profiles, root, tools: [tool], run: runner });
   const saved = state.tools[tool]?.agents ?? null;
-  const { choices, source, notes } = planChoices({ profiles, tool, detection, saved, overrides: opts.set });
+  const wasManual = state.tools[tool]?.manual ?? [];
+  const { choices, source, notes } = planChoices({ profiles, tool, detection, saved, manual: wasManual, overrides: opts.set });
   const files = applyToFiles({ profiles, root, tool, choices });
-  state.tools[tool] = { agents: choices };
+  // Sin modelo propuesto no se guarda nada: «no había qué proponer» no es «elegí heredar» (eso es --set x=inherit).
+  const keep = Object.keys(choices).filter((a) => choices[a] !== null || !["propuesta", "reemplazado"].includes(source[a]));
+  state.tools[tool] = {
+    agents: Object.fromEntries(keep.map((a) => [a, choices[a]])),
+    manual: keep.filter((a) => choices[a] !== null && (source[a] === "manual" || (source[a] === "guardado" && wasManual.includes(a)))),
+  };
   for (const f of files) if (f.result === "ausente") notes.push(`Falta el archivo de ${f.agent}: ejecuta apm install.`);
   let gitignore = null;
   if (opts.gitignore || opts.yes) gitignore = updateGitignore(root, gitignoreEntries(profiles, tool));
