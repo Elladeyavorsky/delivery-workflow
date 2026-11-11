@@ -65,7 +65,7 @@ export function parseCursorModels(text) {
   const models = [];
   for (const line of lines) {
     const m = /^([A-Za-z0-9][A-Za-z0-9._\-[\]=,]*) - (.+)$/.exec(line.trim());
-    if (m) models.push({ id: m[1], name: m[2].replace(/[​-‏﻿]/g, "").trim() });
+    if (m) models.push({ id: m[1], name: m[2].replace(/[\u200b-\u200f\ufeff]/g, "").trim() });
   }
   return models;
 }
