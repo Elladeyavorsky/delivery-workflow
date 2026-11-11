@@ -85,3 +85,95 @@ test("un modelo a mano se valida y «inherit» o vacío significan heredar", () 
   assert.throws(() => normalizeChoice('x"\nname: y'), /no válido/);
   assert.equal(isModelShape("-x"), false);
 });
+
+// --- Detección ---
+
+import { mkdtempSync, writeFileSync, chmodSync, mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { detectCursor, detect, runCommand, toolsPresent } from "../.apm/skills/configure-models/scripts/configure-models.mjs";
+
+const fake = (table) => async (command, args) => table[`${command} ${args.join(" ")}`] ?? { status: "missing", stdout: "" };
+
+test("detecta los modelos con cursor-agent models", async () => {
+  const d = await detectCursor({ run: fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } }) });
+  assert.equal(d.status, "ok");
+  assert.ok(d.models.some((m) => m.id === "composer-2.5"));
+});
+
+test("prueba primero cursor-agent y solo después agent", async () => {
+  const calls = [];
+  const run = async (command, args) => {
+    calls.push(command);
+    return { status: "ok", stdout: cursorOutput };
+  };
+  await detectCursor({ run });
+  assert.deepEqual(calls, ["cursor-agent"]);
+});
+
+test("si cursor-agent no existe usa agent", async () => {
+  const d = await detectCursor({ run: fake({ "agent models": { status: "ok", stdout: cursorOutput } }) });
+  assert.equal(d.status, "ok");
+});
+
+test("sin ningún comando el estado es desconocido y lo dice", async () => {
+  const d = await detectCursor({ run: fake({}) });
+  assert.equal(d.status, "unknown");
+  assert.deepEqual(d.models, []);
+  assert.match(d.reason, /no está instalado/);
+});
+
+test("un tiempo agotado es desconocido y no se reintenta con el mismo comando", async () => {
+  const calls = [];
+  const run = async (command, args) => {
+    calls.push(`${command} ${args[0]}`);
+    return { status: "timeout", stdout: "" };
+  };
+  const d = await detectCursor({ run });
+  assert.equal(d.status, "unknown");
+  assert.match(d.reason, /iniciar sesión/);
+  assert.deepEqual(calls, ["cursor-agent models", "agent models"]);
+});
+
+test("una salida que no es una lista de modelos es desconocido", async () => {
+  const d = await detectCursor({ run: fake({ "cursor-agent models": { status: "ok", stdout: "Starting login process...\n" } }) });
+  assert.equal(d.status, "unknown");
+  assert.match(d.reason, /no devolvió una lista/);
+});
+
+test("runCommand corta un comando que no responde", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "cm-"));
+  const bin = join(dir, "colgado");
+  writeFileSync(bin, "#!/bin/sh\nsleep 30\n");
+  chmodSync(bin, 0o755);
+  const started = Date.now();
+  const result = await runCommand(bin, [], { timeout: 300 });
+  assert.equal(result.status, "timeout");
+  assert.ok(Date.now() - started < 5000);
+});
+
+test("runCommand distingue comando ausente, error y éxito", async () => {
+  assert.equal((await runCommand("no-existe-este-comando-xyz", [])).status, "missing");
+  assert.equal((await runCommand("sh", ["-c", "exit 3"])).status, "error");
+  const ok = await runCommand("sh", ["-c", "echo hola"]);
+  assert.equal(ok.status, "ok");
+  assert.equal(ok.stdout.trim(), "hola");
+});
+
+test("solo se detectan las herramientas con carpeta de agentes", () => {
+  const root = mkdtempSync(join(tmpdir(), "cm-"));
+  assert.deepEqual(toolsPresent(profiles, root), []);
+  mkdirSync(join(root, ".cursor", "agents"), { recursive: true });
+  assert.deepEqual(toolsPresent(profiles, root), ["cursor"]);
+});
+
+test("detect junta modelos y propuesta por herramienta", async () => {
+  const [r] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } }) });
+  assert.equal(r.tool, "cursor");
+  assert.equal(r.proposal.length, 8);
+  assert.equal(r.proposal.find((p) => p.agent === "create-branch").model, "composer-2.5");
+});
+
+test("sin modelos detectados ninguna propuesta lleva modelo", async () => {
+  const [r] = await detect({ tools: ["cursor"], run: fake({}) });
+  assert.ok(r.proposal.every((p) => p.model === null));
+});

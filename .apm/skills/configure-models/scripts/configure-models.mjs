@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -63,6 +65,103 @@ export function parseCursorModels(text) {
     if (m) models.push({ id: m[1], name: m[2].replace(/[​-‏﻿]/g, "").trim() });
   }
   return models;
+}
+
+// --- Detección ---
+
+export const COMMAND_TIMEOUT_MS = 10000;
+
+// Lanza un comando externo con límite de tiempo. Nunca rechaza: devuelve el estado.
+// Se ejecuta en una carpeta vacía: un cursor-agent antiguo trata «models» como un prompt.
+export function runCommand(command, args, { timeout = COMMAND_TIMEOUT_MS, cwd = tmpdir(), env = process.env } = {}) {
+  return new Promise((done) => {
+    let out = "";
+    let finished = false;
+    let child;
+    const finish = (result) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      done(result);
+    };
+    try {
+      child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "ignore"] });
+    } catch {
+      return done({ status: "missing", stdout: "" });
+    }
+    const timer = setTimeout(() => {
+      child.kill("SIGKILL");
+      finish({ status: "timeout", stdout: out });
+    }, timeout);
+    child.stdout.on("data", (chunk) => {
+      out += chunk;
+      if (out.length > 1_000_000) child.kill("SIGKILL");
+    });
+    child.on("error", (e) => finish({ status: e.code === "ENOENT" ? "missing" : "error", stdout: out }));
+    child.on("close", (code) => finish({ status: code === 0 ? "ok" : "error", stdout: out }));
+  });
+}
+
+// Primero cursor-agent: «agent» es un nombre genérico que puede ser otro programa.
+const CURSOR_ATTEMPTS = [
+  ["cursor-agent", ["models"]],
+  ["cursor-agent", ["--list-models"]],
+  ["agent", ["models"]],
+  ["agent", ["--list-models"]],
+];
+
+const REASONS = {
+  missing: "no está instalado el comando de Cursor (cursor-agent)",
+  timeout: "el comando de Cursor no respondió a tiempo; puede que falte iniciar sesión",
+  error: "el comando de Cursor falló; puede que falte iniciar sesión",
+  empty: "el comando de Cursor no devolvió una lista de modelos que se entienda",
+};
+
+// Devuelve {status: "ok"|"unknown", models, reason}. «unknown» significa que no se sabe, no que no haya.
+export async function detectCursor({ run = runCommand } = {}) {
+  let reason = REASONS.missing;
+  let informative = false; // el primer fallo que no sea «no existe» es el que se cuenta
+  const skipped = new Set();
+  for (const [command, args] of CURSOR_ATTEMPTS) {
+    if (skipped.has(command)) continue;
+    const result = await run(command, args);
+    if (result.status === "missing" || result.status === "timeout") skipped.add(command);
+    let failure = result.status;
+    if (result.status === "ok") {
+      const models = parseCursorModels(result.stdout);
+      if (models.length) return { status: "ok", models, reason: null };
+      failure = "empty";
+    }
+    if (failure !== "missing" && !informative) {
+      reason = REASONS[failure] ?? REASONS.error;
+      informative = true;
+    }
+  }
+  return { status: "unknown", models: [], reason };
+}
+
+export const DETECTORS = { cursor: detectCursor };
+
+// Solo las herramientas cuya carpeta de agentes existe en el proyecto.
+export function toolsPresent(profiles, root, exists = existsSync) {
+  return Object.entries(profiles.tools)
+    .filter(([, t]) => exists(join(root, t.agentsDir)))
+    .map(([tool]) => tool);
+}
+
+export async function detect({ profiles = loadProfiles(), root, tools, run } = {}) {
+  const present = tools ?? toolsPresent(profiles, root);
+  const result = [];
+  for (const tool of present) {
+    const detection = await DETECTORS[tool]({ run });
+    result.push({
+      tool,
+      name: profiles.tools[tool].name,
+      ...detection,
+      proposal: proposeAll(profiles, tool, detection.models),
+    });
+  }
+  return result;
 }
 
 // --- fin ---
