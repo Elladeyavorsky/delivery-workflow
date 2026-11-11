@@ -26,12 +26,14 @@ mkdir -p "${work}/bin"
 cat >"${work}/bin/gh" <<'GH'
 #!/usr/bin/env bash
 echo "$*" >>"$FAKE_GH_LOG"
+echo "${GH_TOKEN:-}" >"$FAKE_GH_TOKEN"
 case "$1 $2" in
   "label list") [[ -n "${FAKE_GH_LABELS:-}" ]] && echo "$FAKE_GH_LABELS"; exit 0 ;;
   "label create") [[ "${FAKE_GH_LABEL_DENIED:-}" == 1 ]] && exit 1; exit 0 ;;
   "pr list") exit 0 ;;
+  "issue view") echo '{"body":"hola"}'; exit 0 ;;
   "pr create") echo "https://github.com/owner/repo/pull/9"; exit 0 ;;
-  "api user") printf 'HTTP/2.0 200 OK\netag: "u"\n\n{"login":"ada"}\n'; exit 0 ;;
+  "api user") [[ "$*" == *--include* ]] && printf 'HTTP/2.0 200 OK\netag: "u"\n\n{"login":"ada"}\n' || echo ada; exit 0 ;;
   "api repos/owner/repo/collaborators?per_page=100&page=1") printf 'HTTP/2.0 200 OK\netag: "c"\n\n[{"login":"ada"}]\n'; exit 0 ;;
 esac
 exit 0
@@ -39,6 +41,7 @@ GH
 chmod +x "${work}/bin/gh"
 export PATH="${work}/bin:${PATH}"
 export FAKE_GH_LOG="${work}/gh.log"
+export FAKE_GH_TOKEN="${work}/gh.token"
 unset GIT_WORKFLOW_BASE
 
 git init -q --bare -b main "${work}/origin.git"
@@ -46,9 +49,35 @@ git clone -q "${work}/origin.git" "${work}/repo" 2>/dev/null
 cd "${work}/repo"
 git config user.email test@example.com
 git config user.name Test
-git commit -q --allow-empty -m init
+echo .env >.gitignore
+git add .gitignore
+git commit -q -m init
+echo "GITHUB_TOKEN=token-del-env" >.env
 git push -q origin HEAD:main HEAD:staging
 git fetch -q origin
+
+# gh.sh: gh con el token del .env, nunca con el del entorno ni la sesión de gh.
+ghsh="${skills}/create-issue/scripts/gh.sh"
+check "gh.sh lanza gh" env GH_TOKEN=token-de-la-sesion GITHUB_TOKEN=token-de-la-sesion bash "$ghsh" repo view
+check "gh.sh pasa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+printf '# comentario\nexport GITHUB_TOKEN = "token con comillas"\r\n' >.env
+check "gh.sh rechaza un token con espacios" bash -c "! bash '$ghsh' repo view 2>/dev/null"
+printf '# comentario\nexport GITHUB_TOKEN="token-entre-comillas"\r\n' >.env
+bash "$ghsh" repo view >/dev/null 2>&1
+check "gh.sh quita export, comillas y retorno de carro" test "$(cat "$FAKE_GH_TOKEN")" = token-entre-comillas
+mv .env env.bak
+: >"$FAKE_GH_LOG"
+check "sin .env, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
+check "sin .env, no se llama a gh" test ! -s "$FAKE_GH_LOG"
+check "sin .env, ensure-label sale con 3" bash -c "bash '${skills}/create-issue/scripts/ensure-label.sh' feat 2>/dev/null; test \$? -eq 3"
+mv env.bak .env
+git rm -q --cached .gitignore && mv .gitignore gitignore.bak
+check "con el .env fuera de .gitignore, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
+mv gitignore.bak .gitignore && git add .gitignore
+echo "GITHUB_TOKEN=token-del-env" >.env
+for copy in "${skills}"/*/scripts/gh.sh; do
+  check "gh.sh es igual en $(basename "$(dirname "$(dirname "$copy")")")" cmp -s "$ghsh" "$copy"
+done
 
 # create-branch: siete tipos, knowledge incluido; los demás se rechazan.
 check "create-branch acepta knowledge" "${skills}/create-branch/scripts/create-branch.sh" 5 knowledge add-notes
@@ -89,17 +118,54 @@ check "GIT_WORKFLOW_BASE cambia la base" grep -q -- "pr create --base main" "$FA
 node "${skills}/github-cache/scripts/github-cache.mjs" directory owner/repo >/dev/null
 check "la caché se guarda en .git/" test -f .git/.git-workflow-cache.json
 check "la caché no se guarda en la raíz" test ! -e .git-workflow-cache.json
+check "la caché usa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
 check "git no ve la caché" test -z "$(git status --porcelain)"
 
-# check-status: informa de gh y de Node.
+# issue-spec: lee la issue con el token del .env.
+check "issue-spec lee la issue" test "$(node "${skills}/issue-spec/scripts/issue-spec.mjs" read 1)" = hola
+check "issue-spec usa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+
+# check-status: informa del token del .env, de su cuenta y de Node.
 status=$("${skills}/check-status/scripts/check-status.sh")
-check "check-status informa de gh" grep -q "^GitHub CLI:" <<<"$status"
+check "check-status lee el token del .env" grep -q "^Token de GitHub: GITHUB_TOKEN en .env" <<<"$status"
+check "check-status dice la cuenta del token" grep -q "^GitHub CLI: cuenta ada" <<<"$status"
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
 
 # Las skills lanzan sus scripts con bash o node: así una regla de permisos vale para todos.
 commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
 check "las skills nombran sus scripts" test -n "$commands"
 check "las skills lanzan sus scripts con bash o node" bash -c '! grep -vE "^\`(bash|node) " <<<"$1"' _ "$commands"
+
+# release-version: la versión de apm.yml, sin etiqueta y mayor que la última.
+release="${package}/.github/scripts/release-version.sh"
+git init -q "${work}/release"
+cd "${work}/release"
+git config user.email test@example.com
+git config user.name Test
+echo 'version: "0.1.0"' >apm.yml
+git add apm.yml
+git commit -q -m init
+check "release-version sin etiquetas escribe la versión" test "$(bash "$release")" = 0.1.0
+git tag v0.1.0
+check "release-version falla si la etiqueta ya existe" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: "0.1.1"' >apm.yml
+check "release-version acepta la versión siguiente" test "$(bash "$release")" = 0.1.1
+git tag v0.10.0
+check "release-version falla con una versión menor que la última" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: 0.11.0' >apm.yml
+check "release-version compara por números y acepta sin comillas" test "$(bash "$release")" = 0.11.0
+echo "version: '0.11.1'" >apm.yml
+check "release-version acepta comillas simples" test "$(bash "$release")" = 0.11.1
+echo "version: '0.11.1\"" >apm.yml
+check "release-version falla con comillas que no cierran" bash -c "! bash '$release' 2>/dev/null"
+printf 'version: "0.11.2"\nversion: "0.11.3"\n' >apm.yml
+check "release-version usa solo la primera línea version" test "$(bash "$release")" = 0.11.2
+git tag v0.12.0-rc1
+echo 'version: "0.11.2"' >apm.yml
+check "release-version no cuenta una etiqueta con sufijo" test "$(bash "$release")" = 0.11.2
+echo 'version: "1.0"' >apm.yml
+check "release-version falla sin X.Y.Z" bash -c "! bash '$release' 2>/dev/null"
+check "el workflow usa release-version" grep -q "bash .github/scripts/release-version.sh" "${package}/.github/workflows/release.yml"
 
 echo
 if [[ $failures -eq 0 ]]; then

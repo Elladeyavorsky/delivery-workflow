@@ -1,16 +1,7 @@
 name: delivery-workflow
-version: "0.1.0"
+version: "0.1.1"
 description: Flujo de entrega para Claude Code, Cursor y Codex. De la idea a la revisión, con issue, rama, pull request en draft, spec en la issue y ciclo de desarrollo y tests por rondas, en español.
 author: Ventura Rodríguez
 repository: https://github.com/venturars/delivery-workflow
 keywords: [git, github, workflow, spec, agents, claude-code, cursor, codex]
 targets: [claude, cursor, codex]
-dependencies:
-  mcp:
-    - name: github
-      registry: false
-      transport: http
-      url: https://api.githubcopilot.com/mcp/
-      headers:
-        Authorization: "Bearer ${GITHUB_TOKEN}"
-        X-MCP-Features: mcp_apps_disable_form_deferral

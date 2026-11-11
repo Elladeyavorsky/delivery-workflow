@@ -2,12 +2,14 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile, open, unlink, rename } from "node:fs/promises";
-import { resolve, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, resolve, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 
 const exec = promisify(execFile);
+// gh.sh lanza gh con el token del .env del proyecto, nunca con la sesión de gh.
+const GH = join(dirname(fileURLToPath(import.meta.url)), "gh.sh");
 const TTL = 48 * 60 * 60 * 1000;
 const LOGIN = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
 const REPOSITORY = /^[\w.-]+\/[\w.-]+$/;
@@ -40,7 +42,7 @@ async function requestGithub(host, endpoint, etag) {
   const args = ["api", endpoint, "--hostname", host, "--include", "--method", "GET", "--header", "Accept: application/vnd.github+json"];
   if (etag) args.push("--header", `If-None-Match: ${etag}`);
   try {
-    const { stdout } = await exec("gh", args, { timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
+    const { stdout } = await exec("bash", [GH, ...args], { timeout: 30000, maxBuffer: 8 * 1024 * 1024 });
     return parseGhResponse(stdout);
   } catch (error) {
     if (error.stdout) {
@@ -48,7 +50,7 @@ async function requestGithub(host, endpoint, etag) {
       if (response.status === 304) return response;
       throw new Error(`GitHub respondió HTTP ${response.status}.`);
     }
-    throw new Error("No se pudo consultar GitHub con gh.");
+    throw new Error(error.stderr?.trim() || "No se pudo consultar GitHub con gh.");
   }
 }
 

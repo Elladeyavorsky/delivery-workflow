@@ -8,7 +8,7 @@ description: "Lee y escribe la spec, el plan y las tasks de una tarea en su issu
 - **Descripción**: Úsala para todo lo que el ciclo lee o escribe en la issue: las secciones `## Spec`, `## Plan` y `## Tasks`, las casillas de las tasks, la línea Estado y los comentarios de cada ronda. No la uses para crear la issue ni para cambiar su parte de arriba (la plantilla del tipo).
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/issue-spec.mjs" COMANDO N ...`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/issue-spec`. Requiere Node 20+ y `gh` con sesión en la cuenta del repositorio.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/issue-spec`. Requiere Node 20+, `gh` y el `GITHUB_TOKEN` del `.env` del proyecto: el script lanza `gh` con ese token, nunca con la sesión de `gh`.
 
 La forma de las tres secciones está en `<carpeta de esta skill>/assets/spec.md`, `plan.md` y `tasks.md`.
 

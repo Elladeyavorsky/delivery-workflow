@@ -66,6 +66,9 @@ else
   base=$(detect_base)
 fi
 
+source "${here}/gh.sh"
+load_github_token
+
 existing=$(gh pr list --head "$branch" --base "$base" --state open --json url --jq '.[0].url // empty')
 if [[ -n "$existing" ]]; then
   echo "La pull request de ${branch} hacia ${base} ya existía: ${existing}"
@@ -74,7 +77,7 @@ if [[ -n "$existing" ]]; then
 fi
 
 label_args=()
-if "${here}/ensure-label.sh" "$type"; then
+if bash "${here}/ensure-label.sh" "$type"; then
   label_args=(--label "$type")
 else
   status=$?
