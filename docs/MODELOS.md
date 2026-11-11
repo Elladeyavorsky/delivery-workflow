@@ -39,7 +39,7 @@ Cada agente tiene un nivel y cada herramienta elige, de lo que tienes, el modelo
 
 ## Por qué no se suben a git
 
-El modelo depende de tu suscripción: subido, a quien no lo tenga le daría un agente roto. Por eso los 8 archivos de agentes del paquete se tratan como resultado de la instalación ([decisión 0008](adr/0008-los-modelos-son-personales.md)). `/configure-models` ofrece ponerlos en el `.gitignore`, uno a uno (no la carpeta `agents/`, para que tus propios agentes se sigan subiendo), sin duplicar.
+El modelo depende de tu suscripción: subido, a quien no lo tenga le daría un agente roto. Por eso los 8 archivos de agentes del paquete se tratan como resultado de la instalación ([decisión 0009](adr/0009-los-modelos-son-personales.md)). `/configure-models` ofrece ponerlos en el `.gitignore`, uno a uno (no la carpeta `agents/`, para que tus propios agentes se sigan subiendo), sin duplicar.
 
 **Si tu proyecto ya los sube**, `.gitignore` no basta. `/configure-models` te avisa y escribe el comando; ejecútalo tú una vez y haz commit (nunca lo ejecuta él):
 

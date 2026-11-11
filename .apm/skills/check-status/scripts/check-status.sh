@@ -77,12 +77,13 @@ fi
 
 source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
 token=no
-if token_error=$(load_github_token 2>&1); then
-  load_github_token
+token_error=$(mktemp)
+trap 'rm -f "$token_error"' EXIT
+if load_github_token 2>"$token_error"; then
   token=yes
   echo "Token de GitHub: GITHUB_TOKEN en .env"
 else
-  echo "Token de GitHub: ${token_error}"
+  echo "Token de GitHub: $(cat "$token_error")"
 fi
 
 if ! command -v gh >/dev/null 2>&1; then

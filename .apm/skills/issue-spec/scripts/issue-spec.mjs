@@ -149,9 +149,8 @@ function parseArgs(args) {
 
 // gh.sh lanza gh con el token del .env del proyecto, nunca con la sesión de gh.
 function gh() {
-  const binary = process.env.ISSUE_SPEC_GH;
-  const [command, prefix] = binary ? [binary, []] : ["bash", [join(dirname(fileURLToPath(import.meta.url)), "gh.sh")]];
-  return async (args) => (await exec(command, [...prefix, ...args], { maxBuffer: 8 * 1024 * 1024 })).stdout;
+  const script = join(dirname(fileURLToPath(import.meta.url)), "gh.sh");
+  return async (args) => (await exec("bash", [script, ...args], { maxBuffer: 8 * 1024 * 1024 })).stdout;
 }
 
 async function withTemporary(text, action) {

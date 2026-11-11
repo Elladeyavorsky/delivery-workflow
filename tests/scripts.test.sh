@@ -74,7 +74,19 @@ mv env.bak .env
 git rm -q --cached .gitignore && mv .gitignore gitignore.bak
 check "con el .env fuera de .gitignore, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
 mv gitignore.bak .gitignore && git add .gitignore
+printf 'GITHUB_TOKEN=token-con-comentario  # mi token\n' >.env
+bash "$ghsh" repo view >/dev/null 2>&1
+check "gh.sh quita un comentario detrás del token" test "$(cat "$FAKE_GH_TOKEN")" = token-con-comentario
+printf 'GITHUB_TOKEN="token-entre-comillas" # mi token\n' >.env
+bash "$ghsh" repo view >/dev/null 2>&1
+check "gh.sh quita un comentario detrás de las comillas" test "$(cat "$FAKE_GH_TOKEN")" = token-entre-comillas
 echo "GITHUB_TOKEN=token-del-env" >.env
+check "gh.sh deja el token para GitHub Enterprise" test "$(bash -c "source '$ghsh'; load_github_token; echo \$GH_ENTERPRISE_TOKEN")" = token-del-env
+git worktree add -q "${work}/worktree" -b worktree-test 2>/dev/null
+check "en un worktree, gh.sh usa el .env de la copia principal" bash -c "cd '${work}/worktree' && bash '$ghsh' repo view"
+check "en un worktree, el token es el del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+git worktree remove --force "${work}/worktree"
+git branch -q -D worktree-test
 for copy in "${skills}"/*/scripts/gh.sh; do
   check "gh.sh es igual en $(basename "$(dirname "$(dirname "$copy")")")" cmp -s "$ghsh" "$copy"
 done
@@ -124,6 +136,7 @@ check "git no ve la caché" test -z "$(git status --porcelain)"
 # issue-spec: lee la issue con el token del .env.
 check "issue-spec lee la issue" test "$(node "${skills}/issue-spec/scripts/issue-spec.mjs" read 1)" = hola
 check "issue-spec usa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
+check "ISSUE_SPEC_GH no salta gh.sh" test "$(ISSUE_SPEC_GH=/usr/bin/false node "${skills}/issue-spec/scripts/issue-spec.mjs" read 1)" = hola
 
 # check-status: informa del token del .env, de su cuenta y de Node.
 status=$("${skills}/check-status/scripts/check-status.sh")
@@ -163,6 +176,37 @@ rm -rf .cursor
 commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
 check "las skills nombran sus scripts" test -n "$commands"
 check "las skills lanzan sus scripts con bash o node" bash -c '! grep -vE "^\`(bash|node) " <<<"$1"' _ "$commands"
+
+# release-version: la versión de apm.yml, sin etiqueta y mayor que la última.
+release="${package}/.github/scripts/release-version.sh"
+git init -q "${work}/release"
+cd "${work}/release"
+git config user.email test@example.com
+git config user.name Test
+echo 'version: "0.1.0"' >apm.yml
+git add apm.yml
+git commit -q -m init
+check "release-version sin etiquetas escribe la versión" test "$(bash "$release")" = 0.1.0
+git tag v0.1.0
+check "release-version falla si la etiqueta ya existe" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: "0.1.1"' >apm.yml
+check "release-version acepta la versión siguiente" test "$(bash "$release")" = 0.1.1
+git tag v0.10.0
+check "release-version falla con una versión menor que la última" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: 0.11.0' >apm.yml
+check "release-version compara por números y acepta sin comillas" test "$(bash "$release")" = 0.11.0
+echo "version: '0.11.1'" >apm.yml
+check "release-version acepta comillas simples" test "$(bash "$release")" = 0.11.1
+echo "version: '0.11.1\"" >apm.yml
+check "release-version falla con comillas que no cierran" bash -c "! bash '$release' 2>/dev/null"
+printf 'version: "0.11.2"\nversion: "0.11.3"\n' >apm.yml
+check "release-version usa solo la primera línea version" test "$(bash "$release")" = 0.11.2
+git tag v0.12.0-rc1
+echo 'version: "0.11.2"' >apm.yml
+check "release-version no cuenta una etiqueta con sufijo" test "$(bash "$release")" = 0.11.2
+echo 'version: "1.0"' >apm.yml
+check "release-version falla sin X.Y.Z" bash -c "! bash '$release' 2>/dev/null"
+check "el workflow usa release-version" grep -q "bash .github/scripts/release-version.sh" "${package}/.github/workflows/release.yml"
 
 echo
 if [[ $failures -eq 0 ]]; then
