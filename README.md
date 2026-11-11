@@ -53,6 +53,20 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 4. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
 
+5. Elige el modelo de cada agente con `/configure-models`, como explica [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
+
+## Modelos de los agentes
+
+Cada agente puede correr con un modelo que encaje con su trabajo (uno potente para el que escribe la spec, uno ligero para el que lanza un script), y cada colega tiene otra suscripción. Por eso el modelo no viene en el paquete: tras `apm install`, escribe `/configure-models` en el chat. Detecta los modelos de tu cuenta, propone uno por agente con el motivo y te pregunta una vez si los aceptas o quieres cambiar alguno. Con `--yes` acepta sin preguntar. Si no lo haces, los agentes usan el modelo de tu chat y todo funciona.
+
+Por ahora solo con **Cursor**. Qué necesitas saber:
+
+- `apm install` y `apm update` borran la línea `model` de los agentes: vuelve a ejecutar `/configure-models` (recuerda tus elecciones). `check-status` avisa con `Modelos: desincronizado`.
+- La línea `model` es tuya y no debe llegar a git. `/configure-models` ofrece añadir al `.gitignore` los 8 archivos de agentes del paquete, uno a uno.
+- **Si tu proyecto ya sube esos archivos** (`.cursor/agents/…`), `.gitignore` no basta: ejecuta una vez el `git rm --cached` que te escribe `/configure-models`, y haz commit. Nunca lo ejecuta él.
+
+Cómo funciona, cómo cambiar un modelo y qué falla en Cursor: [docs/MODELOS.md](docs/MODELOS.md).
+
 ## Instalación en Windows
 
 Los scripts del paquete son de `bash`, así que en Windows hacen falta una terminal y un entorno de tipo Unix. Elige una opción.
@@ -116,5 +130,6 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 ## Más información
 
 - [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
+- [docs/MODELOS.md](docs/MODELOS.md): cómo se elige el modelo de cada agente y por qué no se sube a git.
 - [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
 - [docs/adr/](docs/adr/) y [GLOSSARY.md](GLOSSARY.md): decisiones de diseño y vocabulario.
