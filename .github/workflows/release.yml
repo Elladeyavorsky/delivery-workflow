@@ -1,0 +1,39 @@
+# Cada pull request a main comprueba que la versión de apm.yml se puede publicar.
+# Cada push a main crea la etiqueta vX.Y.Z y su release con las notas de GitHub.
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  version:
+    name: Comprobar la versión
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bash .github/scripts/release-version.sh
+
+  release:
+    name: Etiqueta y release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Crear la etiqueta y la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(bash .github/scripts/release-version.sh)
+          gh release create "v${version}" --target "$GITHUB_SHA" --title "v${version}" --generate-notes

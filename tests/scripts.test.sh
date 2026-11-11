@@ -136,6 +136,37 @@ commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}"
 check "las skills nombran sus scripts" test -n "$commands"
 check "las skills lanzan sus scripts con bash o node" bash -c '! grep -vE "^\`(bash|node) " <<<"$1"' _ "$commands"
 
+# release-version: la versión de apm.yml, sin etiqueta y mayor que la última.
+release="${package}/.github/scripts/release-version.sh"
+git init -q "${work}/release"
+cd "${work}/release"
+git config user.email test@example.com
+git config user.name Test
+echo 'version: "0.1.0"' >apm.yml
+git add apm.yml
+git commit -q -m init
+check "release-version sin etiquetas escribe la versión" test "$(bash "$release")" = 0.1.0
+git tag v0.1.0
+check "release-version falla si la etiqueta ya existe" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: "0.1.1"' >apm.yml
+check "release-version acepta la versión siguiente" test "$(bash "$release")" = 0.1.1
+git tag v0.10.0
+check "release-version falla con una versión menor que la última" bash -c "! bash '$release' 2>/dev/null"
+echo 'version: 0.11.0' >apm.yml
+check "release-version compara por números y acepta sin comillas" test "$(bash "$release")" = 0.11.0
+echo "version: '0.11.1'" >apm.yml
+check "release-version acepta comillas simples" test "$(bash "$release")" = 0.11.1
+echo "version: '0.11.1\"" >apm.yml
+check "release-version falla con comillas que no cierran" bash -c "! bash '$release' 2>/dev/null"
+printf 'version: "0.11.2"\nversion: "0.11.3"\n' >apm.yml
+check "release-version usa solo la primera línea version" test "$(bash "$release")" = 0.11.2
+git tag v0.12.0-rc1
+echo 'version: "0.11.2"' >apm.yml
+check "release-version no cuenta una etiqueta con sufijo" test "$(bash "$release")" = 0.11.2
+echo 'version: "1.0"' >apm.yml
+check "release-version falla sin X.Y.Z" bash -c "! bash '$release' 2>/dev/null"
+check "el workflow usa release-version" grep -q "bash .github/scripts/release-version.sh" "${package}/.github/workflows/release.yml"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."
