@@ -388,7 +388,7 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
     throw new ConfigureModelsError("No hay carpetas de agentes en este proyecto (.cursor/agents). Ejecuta apm install antes.", 3);
   }
   if (opts.command === "detect") {
-    return JSON.stringify(await detect({ profiles, root, tools, run: runner }), null, 2);
+    return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner }), null, 2);
   }
   const dir = await gitDir(root);
   const state = readState(dir);
@@ -398,6 +398,27 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
   }
   writeState(dir, state);
   return JSON.stringify(results, null, 2);
+}
+
+// La propuesta parte de lo guardado (si sigue valiendo) y, si no hay nada guardado, del nivel de cada agente.
+export async function detectWithSaved({ profiles, root, tools, runner }) {
+  let state = { tools: {} };
+  try {
+    state = readState(await gitDir(root));
+  } catch {
+    /* sin repositorio git no hay elecciones guardadas */
+  }
+  const detections = await detect({ profiles, root, tools, run: runner });
+  return detections.map((d) => {
+    const saved = state.tools[d.tool]?.agents ?? null;
+    const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: d, saved });
+    return {
+      ...d,
+      saved: saved !== null,
+      notes,
+      proposal: d.proposal.map((p) => ({ ...p, model: choices[p.agent], source: source[p.agent] })),
+    };
+  });
 }
 
 async function applyOne({ profiles, root, tool, state, opts, runner }) {

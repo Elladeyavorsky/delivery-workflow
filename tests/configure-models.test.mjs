@@ -429,3 +429,19 @@ test("detect por la CLI devuelve la propuesta en JSON", async () => {
   assert.equal(r.status, "ok");
   assert.equal(r.proposal.length, 8);
 });
+
+test("detect parte de lo guardado: tras guardar, la propuesta es lo guardado", async () => {
+  const root = project();
+  await exec(root, ["apply", "--set", "create-pr=grok-4.7-medium"]);
+  const [r] = await exec(root, ["detect"]);
+  assert.equal(r.saved, true);
+  const pr = r.proposal.find((p) => p.agent === "create-pr");
+  assert.equal(pr.model, "grok-4.7-medium");
+  assert.equal(pr.source, "guardado");
+});
+
+test("detect sin nada guardado marca la propuesta como tal", async () => {
+  const [r] = await exec(project(), ["detect"]);
+  assert.equal(r.saved, false);
+  assert.ok(r.proposal.every((p) => p.source === "propuesta"));
+});
