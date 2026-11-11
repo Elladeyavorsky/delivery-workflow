@@ -56,7 +56,7 @@ test("sin la cabecera «Available models» el parser no inventa modelos", () => 
 
 test("cada nivel elige el primer patrón que coincide", () => {
   const models = parseCursorModels(cursorOutput);
-  assert.equal(resolveModel(profiles, "cursor", "heavy", models), "grok-4.7-medium");
+  assert.equal(resolveModel(profiles, "cursor", "heavy", models), "composer-2.5");
   assert.equal(resolveModel(profiles, "cursor", "light", models), "composer-2.5");
   const withOpus = [{ id: "claude-opus-4-8" }, ...models];
   assert.equal(resolveModel(profiles, "cursor", "heavy", withOpus), "claude-opus-4-8");
@@ -94,24 +94,24 @@ import { detectCursor, detect, runCommand, toolsPresent } from "../.apm/skills/c
 
 const fake = (table) => async (command, args) => table[`${command} ${args.join(" ")}`] ?? { status: "missing", stdout: "" };
 
-test("detecta los modelos con cursor-agent models", async () => {
-  const d = await detectCursor({ run: fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } }) });
+test("detecta los modelos con cursor-agent --list-models", async () => {
+  const d = await detectCursor({ run: fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } }) });
   assert.equal(d.status, "ok");
   assert.ok(d.models.some((m) => m.id === "composer-2.5"));
 });
 
-test("prueba primero cursor-agent y solo después agent", async () => {
+test("prueba --list-models antes que «models» y nunca lanza el binario genérico agent", async () => {
   const calls = [];
   const run = async (command, args) => {
-    calls.push(command);
-    return { status: "ok", stdout: cursorOutput };
+    calls.push(`${command} ${args[0]}`);
+    return { status: "ok", stdout: "" };
   };
   await detectCursor({ run });
-  assert.deepEqual(calls, ["cursor-agent"]);
+  assert.deepEqual(calls, ["cursor-agent --list-models", "cursor-agent models"]);
 });
 
-test("si cursor-agent no existe usa agent", async () => {
-  const d = await detectCursor({ run: fake({ "agent models": { status: "ok", stdout: cursorOutput } }) });
+test("si --list-models no existe en un cursor-agent viejo, usa «models»", async () => {
+  const d = await detectCursor({ run: fake({ "cursor-agent --list-models": { status: "error", stdout: "" }, "cursor-agent models": { status: "ok", stdout: cursorOutput } }) });
   assert.equal(d.status, "ok");
 });
 
@@ -131,11 +131,11 @@ test("un tiempo agotado es desconocido y no se reintenta con el mismo comando", 
   const d = await detectCursor({ run });
   assert.equal(d.status, "unknown");
   assert.match(d.reason, /iniciar sesión/);
-  assert.deepEqual(calls, ["cursor-agent models", "agent models"]);
+  assert.deepEqual(calls, ["cursor-agent --list-models"]);
 });
 
 test("una salida que no es una lista de modelos es desconocido", async () => {
-  const d = await detectCursor({ run: fake({ "cursor-agent models": { status: "ok", stdout: "Starting login process...\n" } }) });
+  const d = await detectCursor({ run: fake({ "cursor-agent --list-models": { status: "ok", stdout: "Starting login process...\n" } }) });
   assert.equal(d.status, "unknown");
   assert.match(d.reason, /no devolvió una lista/);
 });
@@ -167,7 +167,7 @@ test("solo se detectan las herramientas con carpeta de agentes", () => {
 });
 
 test("detect junta modelos y propuesta por herramienta", async () => {
-  const [r] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } }) });
+  const [r] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } }) });
   assert.equal(r.tool, "cursor");
   assert.equal(r.proposal.length, 8);
   assert.equal(r.proposal.find((p) => p.agent === "create-branch").model, "composer-2.5");
@@ -288,7 +288,7 @@ function project({ commit = false } = {}) {
 
 const snapshot = (root) =>
   Object.fromEntries(readdirSync(join(root, ".cursor", "agents")).map((f) => [f, readFileSync(join(root, ".cursor", "agents", f), "utf8")]));
-const withModels = fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } });
+const withModels = fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } });
 const exec = async (root, args, runner = withModels) => JSON.parse(await run([...args, "--root", root], { run: runner }));
 
 test("apply escribe el modelo en los 8 agentes y dos veces da los mismos archivos", async () => {
@@ -296,7 +296,7 @@ test("apply escribe el modelo en los 8 agentes y dos veces da los mismos archivo
   const [r1] = await exec(root, ["apply"]);
   assert.equal(r1.agents.length, 8);
   const first = snapshot(root);
-  assert.equal(getModelMd(first["concept-developer.md"]), "grok-4.7-medium");
+  assert.equal(getModelMd(first["concept-developer.md"]), "composer-2.5");
   assert.equal(getModelMd(first["create-branch.md"]), "composer-2.5");
   const [r2] = await exec(root, ["apply"]);
   assert.ok(r2.agents.every((a) => a.result === "igual"));
@@ -585,7 +585,7 @@ function projectFor(tool) {
   return root;
 }
 const allRuns = fake({
-  "cursor-agent models": { status: "ok", stdout: cursorOutput },
+  "cursor-agent --list-models": { status: "ok", stdout: cursorOutput },
   "claude auth status": { status: "ok", stdout: claudeAuth },
   "codex debug models": { status: "ok", stdout: codexSample },
 });
@@ -654,4 +654,15 @@ test("mini no coincide con gemini: un Gemini Pro no cae en el nivel ligero", () 
   assert.equal(resolveModel(profiles, "codex", "light", models), "gpt-5.1-codex-mini");
   assert.equal(resolveModel(profiles, "cursor", "light", ["gemini-3-pro"]), null);
   assert.equal(resolveModel(profiles, "cursor", "light", ["gemini-3-pro", "gpt-5-mini"]), "gpt-5-mini");
+});
+
+test("status: si ningún agente lleva modelo no dice «configurado» a secas", async () => {
+  const root = project();
+  await exec(root, ["apply"], fake({}));
+  assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(cursor 8\/8\)/);
+});
+
+test("Claude: la nota enseña el plan y cómo cambiar un alias", async () => {
+  const d = await detectClaude({ run: fake({ "claude auth status": { status: "ok", stdout: readFileSync(join(FIXTURES, "claude-auth-status.json"), "utf8") } }), root: tmpdir(), home: tmpdir(), profile: profiles.tools.claude });
+  assert.match(d.note, /Plan detectado: .*--set agente=sonnet/);
 });

@@ -31,7 +31,7 @@ Cada agente tiene un nivel y cada herramienta elige, de lo que tienes, el modelo
 
 `apm install` borra la línea `model` de los agentes sin avisar (comprobado con `apm` 0.35.0 en las tres herramientas). Por eso:
 
-- `check-status` muestra `Modelos: desincronizado (cursor 0/8)`.
+- `check-status` muestra `Modelos: desincronizado (cursor 0/8)`; si ningún agente lleva modelo, `configurado, pero ningún agente lleva modelo`.
 - `/configure-models` empieza por lo guardado: Enter (o `--yes`) lo restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un guardado vale si el modelo sigue en la lista actual, o si no se pudo leer la lista (puede ser uno escrito a mano).
 - `apm audit` marcará esos agentes como editados. Es lo esperado.
 
@@ -50,15 +50,15 @@ git rm --cached ".cursor/agents/code-developer.md" ...
 ## Qué hay que saber de cada herramienta
 
 **Cursor** (probado con `cursor-agent` 2026.11.11, plan Plus)
-- Lista: `cursor-agent models` (si no existe, `agent`). Sin la CLI no hay lista: escribe el modelo a mano.
+- Lista: `cursor-agent --list-models` y, si falla, `cursor-agent models`. No se lanza `agent`: es un nombre demasiado genérico. Sin la CLI no hay lista: escribe el modelo a mano.
 - El nombre exacto de la lista vale en el frontmatter (`grok-4.7-medium` corrió como tal). Un nombre desconocido **no da error**: corre con el modelo del chat y solo deja una nota en el resultado.
-- La lista incluye modelos que tu plan no permite (`grok-4.7-low`, `grok-4.7-high` fallaron como subagente). Los patrones prefieren los que funcionaron. Un administrador Enterprise puede bloquear más.
-- Un `cursor-agent` de 2025 trata `models` como una orden al agente: se ejecuta en una carpeta vacía, con 10 s de límite, y solo se acepta una salida que empiece por «Available models».
+- La lista incluye modelos que tu plan no permite (`grok-4.7-low`, `grok-4.7-high` fallaron como subagente). Los patrones son de familia (`claude-*`, `gpt-5*`, `composer`), sin versiones fijas; si uno falla, cámbialo con `--set`. Un administrador Enterprise puede bloquear más.
+- Un `cursor-agent` de 2025 trata `models` como una orden al agente: por eso va después de `--list-models`, se ejecuta en una carpeta temporal vacía, con 10 s de límite, y solo se acepta una salida que empiece por «Available models».
 - Hay informes de que el IDE ignora `model` a veces. Aquí solo se probó la CLI; en el IDE, mira qué modelo usó el subagente.
 - Para comprobar un agente: `cursor-agent -p --trust --output-format stream-json "Usa el subagente X"` y mira `model` en la llamada `taskToolCall`.
 
 **Claude Code** (probado con 2.1.322, plan Pro)
-- No hay comando que liste modelos: se ofrecen los alias `opus`, `sonnet` y `haiku` si `claude auth status` muestra una sesión, limitados por `availableModels` de tus ajustes si lo defines. Un nombre completo (`claude-opus-…`) también vale, escrito a mano.
+- No hay comando que liste modelos: se ofrecen los alias `opus`, `sonnet` y `haiku` si `claude auth status` muestra una sesión, limitados por `availableModels` de tus ajustes si lo defines. **No se filtran por plan** (solo se probó Pro): la propuesta muestra tu plan, y si el tuyo no incluye `opus`, cámbialo con `--set concept-developer=sonnet`. Un nombre completo (`claude-opus-…`) también vale, escrito a mano.
 - Los alias valen en el frontmatter: el resultado de `claude -p --output-format stream-json --verbose` lista en `modelUsage` los modelos usados.
 - Un nombre desconocido **sí falla** (error 404 al llamar al agente).
 - `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` **no pisó** `model: opus` del frontmatter en esa versión.

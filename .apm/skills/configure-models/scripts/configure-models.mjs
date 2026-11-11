@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile as execFileCb, execFileSync, spawn } from "node:child_process";
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -75,9 +75,18 @@ export function parseCursorModels(text) {
 export const COMMAND_TIMEOUT_MS = 10000;
 
 // Lanza un comando externo con límite de tiempo. Nunca rechaza: devuelve el estado.
-// Se ejecuta en una carpeta vacía: un cursor-agent antiguo trata «models» como un prompt.
-export function runCommand(command, args, { timeout = COMMAND_TIMEOUT_MS, cwd = tmpdir(), env = process.env } = {}) {
+// Se ejecuta en una carpeta nueva y vacía: un cursor-agent antiguo trata «models» como un prompt.
+export function runCommand(command, args, { timeout = COMMAND_TIMEOUT_MS, cwd, env = process.env } = {}) {
   return new Promise((done) => {
+    let scratch = null;
+    if (!cwd) {
+      try {
+        scratch = mkdtempSync(join(tmpdir(), "dw-run-"));
+        cwd = scratch;
+      } catch {
+        cwd = tmpdir();
+      }
+    }
     let out = "";
     let finished = false;
     let child;
@@ -85,6 +94,7 @@ export function runCommand(command, args, { timeout = COMMAND_TIMEOUT_MS, cwd = 
       if (finished) return;
       finished = true;
       clearTimeout(timer);
+      if (scratch) rmSync(scratch, { recursive: true, force: true });
       done(result);
     };
     try {
@@ -107,10 +117,8 @@ export function runCommand(command, args, { timeout = COMMAND_TIMEOUT_MS, cwd = 
 
 // Primero cursor-agent: «agent» es un nombre genérico que puede ser otro programa.
 const CURSOR_ATTEMPTS = [
-  ["cursor-agent", ["models"]],
   ["cursor-agent", ["--list-models"]],
-  ["agent", ["models"]],
-  ["agent", ["--list-models"]],
+  ["cursor-agent", ["models"]],
 ];
 
 const REASONS = {
@@ -185,7 +193,8 @@ export async function detectClaude({ run = runCommand, root, home, profile }) {
   if (!auth.loggedIn) return { status: "unknown", models: [], reason: CLAUDE_REASONS.loggedOut };
   const limit = readAvailableModels({ root, home });
   const ids = limit ?? profile.aliases;
-  return { status: "ok", models: ids.map((id) => ({ id, name: id })), reason: null, plan: auth.plan };
+  const note = `Plan detectado: ${auth.plan ?? "desconocido"}. Los alias no se filtran por plan: si el tuyo no incluye uno (por ejemplo opus) y el agente falla al llamarlo, cámbialo con --set agente=sonnet.`;
+  return { status: "ok", models: ids.map((id) => ({ id, name: id })), reason: null, plan: auth.plan, note };
 }
 
 // Codex: `codex debug models` imprime el catálogo; si falla, se lee la caché que guarda el propio Codex.
@@ -409,6 +418,7 @@ export function planChoices({ profiles, tool, detection, saved, overrides = {} }
       notes.push(`«${model}» (${agent}) no está en la lista de ${profiles.tools[tool].name}: si no lo reconoce, usará el modelo del chat sin avisar.`);
     }
   }
+  if (detection.note) notes.push(detection.note);
   if (!known) {
     notes.unshift(`No se pudo leer la lista de modelos: ${detection.reason}. Se usan los modelos guardados o, si no hay, los agentes heredan el del chat.`);
   }
@@ -619,6 +629,7 @@ export function statusLine({ profiles, root }) {
   const parts = [];
   let allOk = true;
   let any = false;
+  let withModel = 0;
   for (const tool of tools) {
     const saved = state.tools[tool]?.agents;
     if (!saved) {
@@ -637,10 +648,12 @@ export function statusLine({ profiles, root }) {
       }
     }
     if (match !== names.length) allOk = false;
+    withModel += names.filter((a) => (saved[a] ?? null) !== null).length;
     parts.push(`${tool} ${match}/${names.length}`);
   }
   if (!any) return "sin configurar (ejecuta /configure-models)";
   const list = parts.join(", ");
+  if (allOk && !withModel) return `configurado, pero ningún agente lleva modelo (${list}): heredan el del chat`;
   return allOk && parts.every((p) => /\d+\/\d+$/.test(p))
     ? `configurado (${list})`
     : `desincronizado (${list}): ejecuta /configure-models para volver a aplicarlo`;

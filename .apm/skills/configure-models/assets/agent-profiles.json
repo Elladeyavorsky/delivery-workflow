@@ -48,20 +48,17 @@
         "heavy": [
           "^claude-.*opus",
           "^gpt-5(\\.\\d+)?-high$",
-          "^grok-4\\.7-medium$",
           "^composer"
         ],
         "standard": [
           "^claude-.*sonnet",
           "^gpt-5(\\.\\d+)?$",
-          "^grok-4\\.7-medium$",
           "^composer"
         ],
         "light": [
           "^claude-.*haiku",
           "(^|[-_.])mini($|[-_.])",
-          "^composer",
-          "^grok-4\\.7-medium$"
+          "^composer"
         ]
       }
     },
