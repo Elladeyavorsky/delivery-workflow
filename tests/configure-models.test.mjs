@@ -177,3 +177,255 @@ test("sin modelos detectados ninguna propuesta lleva modelo", async () => {
   const [r] = await detect({ tools: ["cursor"], run: fake({}) });
   assert.ok(r.proposal.every((p) => p.model === null));
 });
+
+// --- Escribir, deshacer, .gitignore ---
+
+import { execFileSync } from "node:child_process";
+import { copyFileSync, existsSync, statSync } from "node:fs";
+import {
+  setModelMd,
+  getModelMd,
+  planChoices,
+  gitignoreEntries,
+  updateGitignore,
+  trackedFiles,
+  untrackHint,
+  run,
+  statusLine,
+  STATE_FILE,
+} from "../.apm/skills/configure-models/scripts/configure-models.mjs";
+
+const AGENT = `---\nname: create-branch\ndescription: "Abre la rama."\nskills:\n  - create-branch\n---\n# Cuerpo\nmodel: no es del frontmatter\n`;
+
+test("setModelMd añade la línea tras name y no toca el cuerpo", () => {
+  const out = setModelMd(AGENT, "composer-2.5");
+  assert.equal(out, AGENT.replace("name: create-branch\n", "name: create-branch\nmodel: composer-2.5\n"));
+  assert.equal(getModelMd(out), "composer-2.5");
+});
+
+test("setModelMd es idempotente y null devuelve el original", () => {
+  const once = setModelMd(AGENT, "composer-2.5");
+  assert.equal(setModelMd(once, "composer-2.5"), once);
+  assert.equal(setModelMd(once, null), AGENT);
+  assert.equal(setModelMd(AGENT, null), AGENT);
+});
+
+test("setModelMd reemplaza una línea model que ya existe", () => {
+  const edited = setModelMd(AGENT, "viejo");
+  const out = setModelMd(edited, "nuevo");
+  assert.equal(getModelMd(out), "nuevo");
+  assert.equal(out.split("\n---\n")[0].match(/^model:/gm).length, 1);
+});
+
+test("setModelMd respeta los saltos de línea CRLF", () => {
+  const crlf = AGENT.replace(/\n/g, "\r\n");
+  const out = setModelMd(crlf, "composer-2.5");
+  assert.ok(out.includes("name: create-branch\r\nmodel: composer-2.5\r\n"));
+  assert.equal(setModelMd(out, null), crlf);
+});
+
+test("un archivo sin frontmatter da un error claro", () => {
+  assert.throws(() => setModelMd("hola", "x"), /frontmatter/);
+});
+
+const SAVED_DETECTION = (status, ids) => ({ status, models: ids.map((id) => ({ id })), reason: "no está instalado" });
+
+test("lo guardado sigue valiendo si está en la lista", () => {
+  const { choices, source } = planChoices({
+    profiles, tool: "cursor", detection: SAVED_DETECTION("ok", ["composer-2.5", "grok-4.7-medium"]),
+    saved: { "create-branch": "grok-4.7-medium" },
+  });
+  assert.equal(choices["create-branch"], "grok-4.7-medium");
+  assert.equal(source["create-branch"], "guardado");
+});
+
+test("lo guardado que ya no está en la lista se sustituye por la propuesta", () => {
+  const { choices, notes } = planChoices({
+    profiles, tool: "cursor", detection: SAVED_DETECTION("ok", ["composer-2.5"]),
+    saved: { "create-branch": "grok-4.7-medium" },
+  });
+  assert.equal(choices["create-branch"], "composer-2.5");
+  assert.ok(notes.some((n) => n.includes("ya no está en la lista")));
+});
+
+test("si no se pudo detectar, lo guardado se respeta aunque sea a mano", () => {
+  const { choices, notes } = planChoices({
+    profiles, tool: "cursor", detection: SAVED_DETECTION("unknown", []),
+    saved: { "create-branch": "modelo-a-mano" },
+  });
+  assert.equal(choices["create-branch"], "modelo-a-mano");
+  assert.equal(choices["code-developer"], null);
+  assert.match(notes[0], /No se pudo leer la lista/);
+  assert.ok(notes.some((n) => n.includes("Ningún agente lleva modelo")) === false);
+});
+
+test("--set pisa lo guardado, avisa si no está en la lista y rechaza agentes desconocidos", () => {
+  const detection = SAVED_DETECTION("ok", ["composer-2.5"]);
+  const { choices, notes } = planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { "create-pr": "otro-modelo", "code-tester": "inherit" } });
+  assert.equal(choices["create-pr"], "otro-modelo");
+  assert.equal(choices["code-tester"], null);
+  assert.ok(notes.some((n) => n.includes("otro-modelo") && n.includes("sin avisar")));
+  assert.throws(() => planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { fantasma: "x" } }), /desconocido/);
+});
+
+// Un proyecto desechable con git y los 8 agentes copiados como los despliega apm.
+function project({ commit = false } = {}) {
+  const root = mkdtempSync(join(tmpdir(), "cm-proj-"));
+  const sh = (...a) => execFileSync("git", a, { cwd: root, stdio: "ignore" });
+  sh("init", "-q");
+  sh("config", "user.email", "t@example.invalid");
+  sh("config", "user.name", "t");
+  mkdirSync(join(root, ".cursor", "agents"), { recursive: true });
+  for (const f of readdirSync(AGENTS)) {
+    copyFileSync(join(AGENTS, f), join(root, ".cursor", "agents", f.replace(".agent.md", ".md")));
+  }
+  if (commit) {
+    sh("add", "-A");
+    sh("commit", "-q", "-m", "x");
+  }
+  return root;
+}
+
+const snapshot = (root) =>
+  Object.fromEntries(readdirSync(join(root, ".cursor", "agents")).map((f) => [f, readFileSync(join(root, ".cursor", "agents", f), "utf8")]));
+const withModels = fake({ "cursor-agent models": { status: "ok", stdout: cursorOutput } });
+const exec = async (root, args, runner = withModels) => JSON.parse(await run([...args, "--root", root], { run: runner }));
+
+test("apply escribe el modelo en los 8 agentes y dos veces da los mismos archivos", async () => {
+  const root = project();
+  const [r1] = await exec(root, ["apply"]);
+  assert.equal(r1.agents.length, 8);
+  const first = snapshot(root);
+  assert.equal(getModelMd(first["concept-developer.md"]), "grok-4.7-medium");
+  assert.equal(getModelMd(first["create-branch.md"]), "composer-2.5");
+  const [r2] = await exec(root, ["apply"]);
+  assert.ok(r2.agents.every((a) => a.result === "igual"));
+  assert.deepEqual(snapshot(root), first);
+});
+
+test("reset deja los archivos como estaban y borra lo guardado", async () => {
+  const root = project();
+  const original = snapshot(root);
+  await exec(root, ["apply"]);
+  const state = join(root, ".git", STATE_FILE);
+  assert.ok(existsSync(state));
+  assert.equal(statSync(state).mode & 0o777, 0o600);
+  await exec(root, ["reset"]);
+  assert.deepEqual(snapshot(root), original);
+  assert.ok(!existsSync(state));
+});
+
+test("sin modelos detectados los agentes quedan sin model y la salida lo dice", async () => {
+  const root = project();
+  const original = snapshot(root);
+  const [r] = await exec(root, ["apply"], fake({}));
+  assert.deepEqual(snapshot(root), original);
+  assert.ok(r.agents.every((a) => a.model === null));
+  assert.ok(r.notes.some((n) => n.includes("Ningún agente lleva modelo")));
+  assert.ok(r.notes.some((n) => n.includes("No se pudo leer la lista")));
+});
+
+test("apply sin argumentos tras apm install vuelve a poner lo guardado, sin preguntar", async () => {
+  const root = project();
+  await exec(root, ["apply", "--set", "create-branch=modelo-a-mano", "--set", "code-tester=inherit"], fake({}));
+  const configured = snapshot(root);
+  for (const f of Object.keys(configured)) copyFileSync(join(AGENTS, f.replace(".md", ".agent.md")), join(root, ".cursor", "agents", f)); // apm install borra las líneas
+  assert.notDeepEqual(snapshot(root), configured);
+  await exec(root, ["apply"], fake({}));
+  assert.deepEqual(snapshot(root), configured);
+});
+
+test("--set escribe el modelo a mano y inherit lo quita", async () => {
+  const root = project();
+  const [r] = await exec(root, ["apply", "--set", "create-pr=grok-4.7-medium", "--set", "create-branch=inherit"]);
+  const files = snapshot(root);
+  assert.equal(getModelMd(files["create-pr.md"]), "grok-4.7-medium");
+  assert.equal(getModelMd(files["create-branch.md"]), null);
+  assert.equal(r.agents.find((a) => a.agent === "create-pr").source, "manual");
+});
+
+test("--set con un modelo de forma rara se rechaza y no escribe nada", async () => {
+  const root = project();
+  const original = snapshot(root);
+  await assert.rejects(exec(root, ["apply", "--set", "create-pr=a b"]), /no válido/);
+  assert.deepEqual(snapshot(root), original);
+});
+
+test("el .gitignore lleva los 8 archivos por nombre y no se duplica", async () => {
+  const root = project();
+  const entries = gitignoreEntries(profiles, "cursor");
+  assert.equal(entries.length, 8);
+  assert.ok(entries.every((e) => e.startsWith(".cursor/agents/") && e.endsWith(".md")));
+  await exec(root, ["apply", "--gitignore"]);
+  const once = readFileSync(join(root, ".gitignore"), "utf8");
+  await exec(root, ["apply", "--gitignore"]);
+  await exec(root, ["apply", "--yes"]);
+  assert.equal(readFileSync(join(root, ".gitignore"), "utf8"), once);
+  for (const e of entries) assert.equal(once.split("\n").filter((l) => l === e).length, 1);
+  assert.ok(!once.split("\n").includes(".cursor/agents/"));
+});
+
+test("el .gitignore existente se respeta y solo se añade lo que falta", () => {
+  const root = project();
+  writeFileSync(join(root, ".gitignore"), "node_modules\n/.cursor/agents/create-pr.md");
+  const r = updateGitignore(root, gitignoreEntries(profiles, "cursor"));
+  assert.equal(r.added.length, 7);
+  const text = readFileSync(join(root, ".gitignore"), "utf8");
+  assert.ok(text.startsWith("node_modules\n/.cursor/agents/create-pr.md\n"));
+  assert.ok(!text.includes("\n.cursor/agents/create-pr.md\n"));
+});
+
+test("sin --gitignore ni --yes no se toca el .gitignore", async () => {
+  const root = project();
+  await exec(root, ["apply"]);
+  assert.ok(!existsSync(join(root, ".gitignore")));
+});
+
+test("un archivo seguido por git da el aviso y el git rm --cached, y no se quita nada", async () => {
+  const root = project({ commit: true });
+  const [r] = await exec(root, ["apply", "--gitignore"]);
+  assert.equal(r.tracked.length, 8);
+  assert.match(r.hint, /^git rm --cached "\.cursor\/agents\/code-developer\.md"/);
+  assert.ok(r.notes.some((n) => n.includes("Git sigue estos archivos")));
+  const tracked = execFileSync("git", ["ls-files", ".cursor"], { cwd: root, encoding: "utf8" }).trim().split("\n");
+  assert.equal(tracked.length, 8);
+  assert.deepEqual(await trackedFiles(root, [join(root, ".cursor/agents/create-pr.md")]), [".cursor/agents/create-pr.md"]);
+  assert.equal(untrackHint([]), null);
+});
+
+test("si no hay archivos seguidos no hay aviso", async () => {
+  const [r] = await exec(project(), ["apply"]);
+  assert.deepEqual(r.tracked, []);
+  assert.equal(r.hint, null);
+});
+
+test("sin carpeta de agentes apply explica qué hacer", async () => {
+  const root = mkdtempSync(join(tmpdir(), "cm-vacio-"));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  await assert.rejects(run(["apply", "--root", root], { run: withModels }), /apm install/);
+});
+
+test("status: sin configurar, configurado y desincronizado", async () => {
+  const root = project();
+  assert.match(statusLine({ profiles, root }), /^sin configurar/);
+  await exec(root, ["apply"]);
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+  copyFileSync(join(AGENTS, "create-pr.agent.md"), join(root, ".cursor", "agents", "create-pr.md"));
+  assert.match(statusLine({ profiles, root }), /^desincronizado \(cursor 7\/8\)/);
+  await exec(root, ["apply"]);
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+});
+
+test("status no falla sin repo, sin carpeta de agentes ni fichero de elecciones", () => {
+  const sinGit = mkdtempSync(join(tmpdir(), "cm-sg-"));
+  assert.match(statusLine({ profiles, root: sinGit }), /^sin configurar/);
+  mkdirSync(join(sinGit, ".cursor", "agents"), { recursive: true });
+  assert.match(statusLine({ profiles, root: sinGit }), /no es un repositorio git/);
+});
+
+test("detect por la CLI devuelve la propuesta en JSON", async () => {
+  const [r] = await exec(project(), ["detect"]);
+  assert.equal(r.tool, "cursor");
+  assert.equal(r.status, "ok");
+  assert.equal(r.proposal.length, 8);
+});
