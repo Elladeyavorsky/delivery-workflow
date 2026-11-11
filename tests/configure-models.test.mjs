@@ -648,3 +648,10 @@ test("--set sin --target con varias herramientas se rechaza y no escribe nada", 
   const ok = await exec(root, ["apply", "--target", "cursor", "--set", "create-pr=composer-2.5"], allRuns);
   assert.equal(ok.length, 1);
 });
+
+test("mini no coincide con gemini: un Gemini Pro no cae en el nivel ligero", () => {
+  const models = ["gemini-3-pro", "gpt-5.1-codex-mini", "o4-mini"];
+  assert.equal(resolveModel(profiles, "codex", "light", models), "gpt-5.1-codex-mini");
+  assert.equal(resolveModel(profiles, "cursor", "light", ["gemini-3-pro"]), null);
+  assert.equal(resolveModel(profiles, "cursor", "light", ["gemini-3-pro", "gpt-5-mini"]), "gpt-5-mini");
+});

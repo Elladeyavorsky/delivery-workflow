@@ -139,7 +139,13 @@ for agent in "${package}"/.apm/agents/*.agent.md; do
 done
 status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status dice sin configurar con agentes y sin elecciones" grep -q "^Modelos: sin configurar" <<<"$status"
-check "apply funciona sin cursor-agent" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set create-branch=composer-2.5
+# cursor-agent falso con la lista del fixture: la prueba no depende de lo instalado ni de ninguna cuenta.
+cat >"${work}/bin/cursor-agent" <<CA
+#!/usr/bin/env bash
+cat "${package}/tests/fixtures/configure-models/cursor-agent-models.txt"
+CA
+chmod +x "${work}/bin/cursor-agent"
+check "apply funciona con un cursor-agent falso" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set create-branch=composer-2.5
 status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status dice configurado" grep -q "^Modelos: configurado (cursor 8/8)" <<<"$status"
 cp "${package}/.apm/agents/create-pr.agent.md" .cursor/agents/create-pr.md

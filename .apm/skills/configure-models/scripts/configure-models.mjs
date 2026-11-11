@@ -651,6 +651,6 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
     .then((out) => console.log(out))
     .catch((e) => {
       console.error(e.message);
-      process.exitCode = e.code ?? 1;
+      process.exitCode = typeof e.code === "number" ? e.code : 1;
     });
 }

@@ -59,7 +59,7 @@
         ],
         "light": [
           "^claude-.*haiku",
-          "mini",
+          "(^|[-_.])mini($|[-_.])",
           "^composer",
           "^grok-4\\.7-medium$"
         ]
@@ -110,7 +110,7 @@
           "^gpt-[\\d.]+$"
         ],
         "light": [
-          "mini",
+          "(^|[-_.])mini($|[-_.])",
           "^gpt-[\\d.]+-codex$",
           "^gpt-[\\d.]+$"
         ]
