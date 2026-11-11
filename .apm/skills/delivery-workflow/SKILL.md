@@ -19,7 +19,7 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 ## 3. Flujo de Trabajo (Paso a Paso)
 
 1. **Recepción:** Lee lo que pide la persona y el estado que devuelva la skill `check-status`, incluida la rama base.
-2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token del `.env`, que GitHub lo rechaza, o que faltan `gh` o Node 20+, para antes de cualquier paso que los use. Antes de crear la issue:
+2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token del `.env`, que GitHub lo rechaza, o que faltan `gh` o Node 20+, para antes de cualquier paso que los use. Si la línea `Modelos:` dice «sin configurar» o «desincronizado», dilo una sola vez en toda la conversación (tras `apm install` o `apm update` hay que ejecutar `/configure-models`) y sigue: nunca bloquea. Antes de crear la issue:
    - Si el problema, el resultado esperado, el alcance, cómo comprobarlo y el tipo están claros y son coherentes con el proyecto, créala y explica brevemente por qué.
    - Si quedan dudas o contradicciones, usa la skill `help-me-to-think`. No repitas entrevistas resueltas salvo cambios o decisiones nuevas.
 
@@ -64,7 +64,8 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
 ## 4. Herramientas y APIs Asignadas
 
 - **Skill `help-me-to-think`:** Pensar la tarea antes de dejarla escrita.
-- **Skill `check-status`:** Saber la rama, la rama base, si hay token, `gh` y Node, y si hay cambios, antes de elegir el momento.
+- **Skill `check-status`:** Saber la rama, la rama base, si hay token, `gh` y Node, si los agentes tienen modelo (`Modelos:`), y si hay cambios, antes de elegir el momento.
+- **Skill `configure-models`:** Elegir el modelo de cada agente con la persona. Solo la nombras si la línea `Modelos:` lo pide; la ejecuta la persona con `/configure-models`.
 - **Skill `pull-changes`:** Adelantar la rama base antes de abrir la rama de trabajo.
 - **Skill `launch-push`:** Subir la rama de trabajo después de cada commit.
 - **Skill `link-pr-to-issue`:** Enlazar la pull request con la issue y dejar `Closes #N` en el cuerpo. La llama el orquestador, no `create-pr`.

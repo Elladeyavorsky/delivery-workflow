@@ -106,6 +106,14 @@ else
   fi
 fi
 
+# Modelos de los agentes. Nunca para el script: si algo falla, se dice y se sigue.
+models_script="$(dirname "${BASH_SOURCE[0]}")/../../configure-models/scripts/configure-models.mjs"
+models=""
+if [[ -f "$models_script" ]] && command -v node >/dev/null 2>&1; then
+  models=$(node "$models_script" status 2>/dev/null) || models=""
+fi
+echo "Modelos: ${models:-no se pudo comprobar (falta Node o la skill configure-models)}"
+
 if upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null); then
   counts=$(git rev-list --left-right --count "HEAD...${upstream}")
   ahead=${counts%%[[:space:]]*}

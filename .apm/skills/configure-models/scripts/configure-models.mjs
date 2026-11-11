@@ -469,7 +469,7 @@ async function resetOne({ profiles, root, tool, state }) {
 // Una línea para check-status: sin configurar, configurado o desincronizado.
 export function statusLine({ profiles, root }) {
   const tools = toolsPresent(profiles, root);
-  if (tools.length === 0) return "sin configurar (no hay carpeta de agentes; ejecuta apm install)";
+  if (tools.length === 0) return "sin configurar (no hay agentes de Cursor en este proyecto; por ahora solo se configura Cursor)";
   let dir;
   try {
     dir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();

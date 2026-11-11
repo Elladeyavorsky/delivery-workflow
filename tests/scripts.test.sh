@@ -131,6 +131,28 @@ check "check-status lee el token del .env" grep -q "^Token de GitHub: GITHUB_TOK
 check "check-status dice la cuenta del token" grep -q "^GitHub CLI: cuenta ada" <<<"$status"
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
 
+# check-status: la línea de modelos nunca para el script y pasa por sus tres estados.
+check "check-status avisa de que no hay agentes de Cursor" grep -q "^Modelos: sin configurar" <<<"$status"
+mkdir -p .cursor/agents
+for agent in "${package}"/.apm/agents/*.agent.md; do
+  cp "$agent" ".cursor/agents/$(basename "${agent%.agent.md}").md"
+done
+status=$("${skills}/check-status/scripts/check-status.sh")
+check "check-status dice sin configurar con agentes y sin elecciones" grep -q "^Modelos: sin configurar" <<<"$status"
+check "apply funciona sin cursor-agent" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set create-branch=composer-2.5
+status=$("${skills}/check-status/scripts/check-status.sh")
+check "check-status dice configurado" grep -q "^Modelos: configurado (cursor 8/8)" <<<"$status"
+cp "${package}/.apm/agents/create-pr.agent.md" .cursor/agents/create-pr.md
+status=$("${skills}/check-status/scripts/check-status.sh")
+check "check-status dice desincronizado" grep -q "^Modelos: desincronizado (cursor 7/8)" <<<"$status"
+check "check-status sigue entero tras la línea de modelos" grep -q "^Último commit:" <<<"$status"
+mkdir -p "${work}/solo/check-status/scripts"
+cp "${skills}/check-status/scripts/"*.sh "${work}/solo/check-status/scripts/"
+status=$("${work}/solo/check-status/scripts/check-status.sh")
+check "check-status sin la skill configure-models sigue y lo dice" grep -q "^Modelos: no se pudo comprobar" <<<"$status"
+check "check-status sin la skill configure-models llega al final" grep -q "^Sin seguimiento:" <<<"$status"
+rm -rf .cursor
+
 # Las skills lanzan sus scripts con bash o node: así una regla de permisos vale para todos.
 commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
 check "las skills nombran sus scripts" test -n "$commands"
