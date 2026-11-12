@@ -24,8 +24,7 @@ Momento en que la pull request recibe revisores y sale de draft.
 Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. Spec, plan y tasks van en un comentario de la issue y se repite el ciclo.
 
 **Revisión** (comentario):
-El comentario de la issue que empieza por `<!-- Revisión N -->` y lleva las plantillas de spec, plan y tasks de lo que pidió la persona revisora. No es la petición de revisores.
-_Evitar_: review (en español, salvo `CHANGES_REQUESTED`)
+El comentario de la issue que empieza por `<!-- Revisión N -->` y lleva las plantillas de spec, plan y tasks de lo que pidió la persona revisora.
 
 **Otra pasada**:
 Momento en que la persona confirma que el ciclo vuelve a empezar después de que la novena ronda falle.
