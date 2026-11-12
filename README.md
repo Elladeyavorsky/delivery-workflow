@@ -57,13 +57,13 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 ## Modelos de los agentes
 
-Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete: tras `apm install`, ejecute `/configure-models` en el chat. La skill detecta los modelos disponibles en la cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno. Con `--yes` se aceptan sin preguntar. Si no se configura, los agentes usan el modelo del chat y el flujo funciona igualmente.
+Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete: tras `apm install`, ejecuta `/configure-models` en el chat. La skill detecta los modelos disponibles en tu cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno. Con `--yes` se aceptan sin preguntar. Si no se configura, los agentes usan el modelo del chat y el flujo funciona igualmente.
 
-Compatible con **Cursor, Claude Code y Codex**. Aspectos a tener en cuenta:
+Compatible con **Cursor, Claude Code y Codex**. Qué tener en cuenta:
 
-- `apm install` y `apm update` eliminan la línea `model` de los agentes: debe volver a ejecutarse `/configure-models`, que conserva las elecciones anteriores. `check-status` lo señala con `Modelos: desincronizado`.
+- `apm install` y `apm update` eliminan la línea `model` de los agentes: vuelve a ejecutar `/configure-models`, que conserva tus elecciones anteriores. `check-status` lo señala con `Modelos: desincronizado`.
 - La línea `model` es personal y no debe llegar a git. `/configure-models` propone añadir al `.gitignore` los 8 archivos de agentes del paquete, de uno en uno.
-- **Si el proyecto ya versiona esos archivos** (`.cursor/agents/…`), `.gitignore` no es suficiente: ejecute una vez el `git rm --cached` que genera `/configure-models` y realice el commit. La skill nunca lo ejecuta por su cuenta.
+- **Si el proyecto ya versiona esos archivos** (`.cursor/agents/…`), `.gitignore` no es suficiente: ejecuta una vez el `git rm --cached` que te genera `/configure-models` y haz commit. La skill nunca lo ejecuta por su cuenta.
 
 Funcionamiento, cambio de modelo y verificación en cada herramienta: [docs/MODELOS.md](docs/MODELOS.md).
 
