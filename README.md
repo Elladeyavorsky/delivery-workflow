@@ -46,7 +46,7 @@ El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, e
 
 3. Comprueba que `.env` está en `.gitignore`. Si no, añádelo: `echo .env >> .gitignore`.
 
-Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nunca. El push sigue usando tus credenciales de git.
+Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ## Instalación en macOS y Linux
 

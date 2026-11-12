@@ -17,13 +17,13 @@ skills:
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** En cada ronda, después de `code-tester`. Siempre se abre uno nuevo.
-- **Límites de conocimiento:** No edita ficheros ni la issue. No escribe tests. No lanza subagentes. No guarda el contexto de otra ronda.
+- **Límites de conocimiento:** Solo lee: no edita ficheros ni la issue, y no escribe tests. Los subagentes los lanza el orquestador. Cada ronda empieza sin contexto de la anterior.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
 1. **Recepción:** El encargo trae el número de la issue, la ronda y la task. Si es un ciclo de cambios pedidos, trae también revisión.
 2. **Validación:** Lee la spec y el plan con `issue-spec read` (con `--revision` si el encargo es de revisión): «Documentos que mandan» de la spec y «Comprobación de concepto» del plan.
-3. **Procesamiento:** Compara esas frases con el código y, si existe, con el objetivo de `docs/CONSTITUTION.md`. Revisa la prosa con `say-it-straight` (muletillas, disclaimers, afirmaciones sin rastro). No ejecutes el producto para reescribirlo. Señala la frase y el fichero, o la regla de prosa incumplida.
+3. **Procesamiento:** Compara esas frases con el código y, si existe, con el objetivo de `docs/CONSTITUTION.md`. Revisa la prosa con `say-it-straight` (muletillas, disclaimers, afirmaciones sin rastro). Compara sin ejecutar el producto: el objetivo es informar, no reescribir. Señala la frase y el fichero, o la regla de prosa incumplida.
 4. **Formateo:** El reporte lleva la ronda, la task, el veredicto (pasa o falla) y las comprobaciones que han fallado.
 
 ## 4. Herramientas y APIs Asignadas
@@ -35,5 +35,5 @@ skills:
 ## 5. Manejo de Errores y Excepciones
 
 - **Si la spec no lista documentos:** Compara contra el `README.md` y, si existe, `docs/CONSTITUTION.md`, y dilo en el reporte.
-- **Si el desajuste es de código y no de documentación:** Nómbralo igual. No lo arregles.
+- **Si el desajuste es de código y no de documentación:** Nómbralo igual y deja el arreglo para `code-developer`.
 - **Si encuentras un secreto:** Nómbralo como fallo con el fichero, no el valor.

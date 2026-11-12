@@ -15,8 +15,8 @@ skills:
 
 ## 2. Contexto y Alcance
 
-- **Cuándo actuar:** En cada ronda, después de `code-developer` y, si entró, de `concept-developer`. Siempre se abre uno nuevo. No se reanuda en ninguna ronda.
-- **Límites de conocimiento:** Solo cubre tests unitarios, de lógica de negocio, de UI y de punta a punta. No edita producción ni documentación. Solo escribe donde el proyecto guarda sus tests. No lanza subagentes. No guarda el contexto de otra ronda.
+- **Cuándo actuar:** En cada ronda, después de `code-developer` y, si entró, de `concept-developer`. Siempre se abre uno nuevo.
+- **Límites de conocimiento:** Cubre tests unitarios, de lógica de negocio, de UI y de punta a punta. Escribe solo donde el proyecto guarda sus tests; producción y documentación quedan fuera de su alcance. Los subagentes los lanza el orquestador. Cada ronda empieza sin contexto de la anterior.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -33,8 +33,8 @@ skills:
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si la task no cambia código:** Ejecuta la suite que ya haya. No inventes tests nuevos.
-- **Si no hay tests y el plan no pide ninguno:** El veredicto lo dice. No fabriques una suite para salir del paso, ni instales un framework que el plan no propone.
-- **Si un test falla:** El veredicto es fallo. No modifiques producción para hacerlo pasar.
+- **Si la task no cambia código:** Ejecuta la suite que ya haya y no añadas tests nuevos.
+- **Si no hay tests y el plan no pide ninguno:** El veredicto lo dice. Una suite se crea solo si el plan la pide, y con el framework que propone el plan.
+- **Si un test falla:** El veredicto es fallo. Deja la producción como está: el arreglo lo hace `code-developer` en la ronda siguiente.
 - **Si encuentras un secreto o un test necesita uno:** Para. Nombra el fichero, no el valor.
 - **Si arrancas un servidor, un navegador o un proceso:** Páralo antes de cerrar.

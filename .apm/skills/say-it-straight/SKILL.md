@@ -1,6 +1,6 @@
 ---
 name: say-it-straight
-description: "Prosa en español para issues, spec, PRs y docs: declarativa, concreta y sin relleno defensivo. La usan create-issue, create-pr, concept-developer y concept-tester. Fuera de alcance: commits (commit-changes, inglés) y chat del orquestador."
+description: "Prosa en español para issues, spec, PRs y docs: declarativa, concreta y sin relleno defensivo. La usan manage-issue, manage-pr, concept-developer y concept-tester. Fuera de alcance: commits (commit-changes, inglés) y chat del orquestador."
 ---
 
 # Skill: Say it straight
@@ -37,7 +37,7 @@ Precedencia:
 
 ## 4. Herramientas y APIs Asignadas
 
-- **Plantillas de `create-issue` y `create-pr-base`:** La forma del cuerpo.
+- **Plantillas de `manage-issue` y `manage-pr-base`:** La forma del cuerpo.
 - **Plantillas de `issue-spec`:** La forma de Spec, Plan y Tasks.
 - **`docs/STYLE.md` del proyecto:** Si existe, manda sobre tono local en docs del consumidor.
 

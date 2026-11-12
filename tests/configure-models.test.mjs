@@ -170,7 +170,7 @@ test("detect junta modelos y propuesta por herramienta", async () => {
   const [r] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } }) });
   assert.equal(r.tool, "cursor");
   assert.equal(r.proposal.length, 8);
-  assert.equal(r.proposal.find((p) => p.agent === "create-branch").model, "composer-2.5");
+  assert.equal(r.proposal.find((p) => p.agent === "manage-branch").model, "composer-2.5");
 });
 
 test("sin modelos detectados ninguna propuesta lleva modelo", async () => {
@@ -192,11 +192,11 @@ import {
   STATE_FILE,
 } from "../.apm/skills/configure-models/scripts/configure-models.mjs";
 
-const AGENT = `---\nname: create-branch\ndescription: "Abre la rama."\nskills:\n  - create-branch\n---\n# Cuerpo\nmodel: no es del frontmatter\n`;
+const AGENT = `---\nname: manage-branch\ndescription: "Abre la rama."\nskills:\n  - manage-branch\n---\n# Cuerpo\nmodel: no es del frontmatter\n`;
 
 test("setModelMd añade la línea tras name y no toca el cuerpo", () => {
   const out = setModelMd(AGENT, "composer-2.5");
-  assert.equal(out, AGENT.replace("name: create-branch\n", "name: create-branch\nmodel: composer-2.5\n"));
+  assert.equal(out, AGENT.replace("name: manage-branch\n", "name: manage-branch\nmodel: composer-2.5\n"));
   assert.equal(getModelMd(out), "composer-2.5");
 });
 
@@ -217,7 +217,7 @@ test("setModelMd reemplaza una línea model que ya existe", () => {
 test("setModelMd respeta los saltos de línea CRLF", () => {
   const crlf = AGENT.replace(/\n/g, "\r\n");
   const out = setModelMd(crlf, "composer-2.5");
-  assert.ok(out.includes("name: create-branch\r\nmodel: composer-2.5\r\n"));
+  assert.ok(out.includes("name: manage-branch\r\nmodel: composer-2.5\r\n"));
   assert.equal(setModelMd(out, null), crlf);
 });
 
@@ -230,27 +230,27 @@ const SAVED_DETECTION = (status, ids) => ({ status, models: ids.map((id) => ({ i
 test("lo guardado sigue valiendo si está en la lista", () => {
   const { choices, source } = planChoices({
     profiles, tool: "cursor", detection: SAVED_DETECTION("ok", ["composer-2.5", "grok-4.7-medium"]),
-    saved: { "create-branch": "grok-4.7-medium" },
+    saved: { "manage-branch": "grok-4.7-medium" },
   });
-  assert.equal(choices["create-branch"], "grok-4.7-medium");
-  assert.equal(source["create-branch"], "guardado");
+  assert.equal(choices["manage-branch"], "grok-4.7-medium");
+  assert.equal(source["manage-branch"], "guardado");
 });
 
 test("lo guardado que ya no está en la lista se sustituye por la propuesta", () => {
   const { choices, notes } = planChoices({
     profiles, tool: "cursor", detection: SAVED_DETECTION("ok", ["composer-2.5"]),
-    saved: { "create-branch": "grok-4.7-medium" },
+    saved: { "manage-branch": "grok-4.7-medium" },
   });
-  assert.equal(choices["create-branch"], "composer-2.5");
+  assert.equal(choices["manage-branch"], "composer-2.5");
   assert.ok(notes.some((n) => n.includes("ya no está en la lista")));
 });
 
 test("si no se pudo detectar, lo guardado se respeta aunque sea a mano", () => {
   const { choices, notes } = planChoices({
     profiles, tool: "cursor", detection: SAVED_DETECTION("unknown", []),
-    saved: { "create-branch": "modelo-a-mano" },
+    saved: { "manage-branch": "modelo-a-mano" },
   });
-  assert.equal(choices["create-branch"], "modelo-a-mano");
+  assert.equal(choices["manage-branch"], "modelo-a-mano");
   assert.equal(choices["code-developer"], null);
   assert.match(notes[0], /No se pudo leer la lista/);
   assert.ok(notes.some((n) => n.includes("Ningún agente lleva modelo")) === false);
@@ -258,8 +258,8 @@ test("si no se pudo detectar, lo guardado se respeta aunque sea a mano", () => {
 
 test("--set pisa lo guardado, avisa si no está en la lista y rechaza agentes desconocidos", () => {
   const detection = SAVED_DETECTION("ok", ["composer-2.5"]);
-  const { choices, notes } = planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { "create-pr": "otro-modelo", "code-tester": "inherit" } });
-  assert.equal(choices["create-pr"], "otro-modelo");
+  const { choices, notes } = planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { "manage-pr": "otro-modelo", "code-tester": "inherit" } });
+  assert.equal(choices["manage-pr"], "otro-modelo");
   assert.equal(choices["code-tester"], null);
   assert.ok(notes.some((n) => n.includes("otro-modelo") && n.includes("sin avisar")));
   assert.throws(() => planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { fantasma: "x" } }), /desconocido/);
@@ -294,7 +294,7 @@ test("apply escribe el modelo en los 8 agentes y dos veces da los mismos archivo
   assert.equal(r1.agents.length, 8);
   const first = snapshot(root);
   assert.equal(getModelMd(first["concept-developer.md"]), "composer-2.5");
-  assert.equal(getModelMd(first["create-branch.md"]), "composer-2.5");
+  assert.equal(getModelMd(first["manage-branch.md"]), "composer-2.5");
   const [r2] = await exec(root, ["apply"]);
   assert.ok(r2.agents.every((a) => a.result === "igual"));
   assert.deepEqual(snapshot(root), first);
@@ -324,7 +324,7 @@ test("sin modelos detectados los agentes quedan sin model y la salida lo dice", 
 
 test("apply sin argumentos tras apm install vuelve a poner lo guardado, sin preguntar", async () => {
   const root = project();
-  await exec(root, ["apply", "--set", "create-branch=modelo-a-mano", "--set", "code-tester=inherit"], fake({}));
+  await exec(root, ["apply", "--set", "manage-branch=modelo-a-mano", "--set", "code-tester=inherit"], fake({}));
   const configured = snapshot(root);
   for (const f of Object.keys(configured)) copyFileSync(join(AGENTS, f.replace(".md", ".agent.md")), join(root, ".cursor", "agents", f)); // apm install borra las líneas
   assert.notDeepEqual(snapshot(root), configured);
@@ -334,17 +334,17 @@ test("apply sin argumentos tras apm install vuelve a poner lo guardado, sin preg
 
 test("--set escribe el modelo a mano y inherit lo quita", async () => {
   const root = project();
-  const [r] = await exec(root, ["apply", "--set", "create-pr=grok-4.7-medium", "--set", "create-branch=inherit"]);
+  const [r] = await exec(root, ["apply", "--set", "manage-pr=grok-4.7-medium", "--set", "manage-branch=inherit"]);
   const files = snapshot(root);
-  assert.equal(getModelMd(files["create-pr.md"]), "grok-4.7-medium");
-  assert.equal(getModelMd(files["create-branch.md"]), null);
-  assert.equal(r.agents.find((a) => a.agent === "create-pr").source, "manual");
+  assert.equal(getModelMd(files["manage-pr.md"]), "grok-4.7-medium");
+  assert.equal(getModelMd(files["manage-branch.md"]), null);
+  assert.equal(r.agents.find((a) => a.agent === "manage-pr").source, "manual");
 });
 
 test("--set con un modelo de forma rara se rechaza y no escribe nada", async () => {
   const root = project();
   const original = snapshot(root);
-  await assert.rejects(exec(root, ["apply", "--set", "create-pr=a b"]), /no válido/);
+  await assert.rejects(exec(root, ["apply", "--set", "manage-pr=a b"]), /no válido/);
   assert.deepEqual(snapshot(root), original);
 });
 
@@ -359,7 +359,7 @@ test("status: sin configurar, configurado y desincronizado", async () => {
   assert.match(statusLine({ profiles, root }), /^sin configurar/);
   await exec(root, ["apply"]);
   assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
-  copyFileSync(join(AGENTS, "create-pr.agent.md"), join(root, ".cursor", "agents", "create-pr.md"));
+  copyFileSync(join(AGENTS, "manage-pr.agent.md"), join(root, ".cursor", "agents", "manage-pr.md"));
   assert.match(statusLine({ profiles, root }), /^desincronizado \(cursor 7\/8\)/);
   await exec(root, ["apply"]);
   assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
@@ -381,10 +381,10 @@ test("detect por la CLI devuelve la propuesta en JSON", async () => {
 
 test("detect parte de lo guardado: tras guardar, la propuesta es lo guardado", async () => {
   const root = project();
-  await exec(root, ["apply", "--set", "create-pr=grok-4.7-medium"]);
+  await exec(root, ["apply", "--set", "manage-pr=grok-4.7-medium"]);
   const [r] = await exec(root, ["detect"]);
   assert.equal(r.saved, true);
-  const pr = r.proposal.find((p) => p.agent === "create-pr");
+  const pr = r.proposal.find((p) => p.agent === "manage-pr");
   assert.equal(pr.model, "grok-4.7-medium");
   assert.equal(pr.source, "guardado");
 });
@@ -463,11 +463,11 @@ test("cada nivel de Claude elige su alias", () => {
   assert.equal(resolveModel(profiles, "claude", "light", models), "haiku");
 });
 
-const TOML = `name = "create-branch"\ndescription = "Abre la rama."\ndeveloper_instructions = "# Subagente\\n\\nHaz esto."\n`;
+const TOML = `name = "manage-branch"\ndescription = "Abre la rama."\ndeveloper_instructions = "# Subagente\\n\\nHaz esto."\n`;
 
 test("setModelToml añade la clave tras name, es idempotente y null devuelve el original", () => {
   const once = setModelToml(TOML, "gpt-5.1-codex");
-  assert.equal(once, TOML.replace('name = "create-branch"\n', 'name = "create-branch"\nmodel = "gpt-5.1-codex"\n'));
+  assert.equal(once, TOML.replace('name = "manage-branch"\n', 'name = "manage-branch"\nmodel = "gpt-5.1-codex"\n'));
   assert.equal(getModelToml(once), "gpt-5.1-codex");
   assert.equal(setModelToml(once, "gpt-5.1-codex"), once);
   assert.equal(setModelToml(once, null), TOML);
@@ -546,20 +546,20 @@ test("apply en Claude Code escribe alias en .claude/agents", async () => {
   const text = (a) => readFileSync(join(root, ".claude", "agents", `${a}.md`), "utf8");
   assert.equal(getModelMd(text("concept-developer")), "opus");
   assert.equal(getModelMd(text("code-developer")), "sonnet");
-  assert.equal(getModelMd(text("create-branch")), "haiku");
+  assert.equal(getModelMd(text("manage-branch")), "haiku");
 });
 
 test("apply en Codex escribe model en los .toml, es idempotente y reset lo deshace", async () => {
   const root = projectFor("codex");
   const file = (a) => join(root, ".codex", "agents", `${a}.toml`);
-  const original = readFileSync(file("create-pr"), "utf8");
+  const original = readFileSync(file("manage-pr"), "utf8");
   await exec(root, ["apply"], allRuns);
-  const first = readFileSync(file("create-pr"), "utf8");
+  const first = readFileSync(file("manage-pr"), "utf8");
   assert.equal(getModelToml(first), "gpt-5.1-codex-mini");
   await exec(root, ["apply"], allRuns);
-  assert.equal(readFileSync(file("create-pr"), "utf8"), first);
+  assert.equal(readFileSync(file("manage-pr"), "utf8"), first);
   await exec(root, ["reset"], allRuns);
-  assert.equal(readFileSync(file("create-pr"), "utf8"), original);
+  assert.equal(readFileSync(file("manage-pr"), "utf8"), original);
 });
 
 test("con las tres herramientas, apply y status las cubren a todas", async () => {
@@ -588,8 +588,8 @@ test("--target rechaza una herramienta que no existe", async () => {
 test("--set sin --target con varias herramientas se rechaza y no escribe nada", async () => {
   const root = projectFor("cursor");
   mkdirSync(join(root, ".claude", "agents"), { recursive: true });
-  await assert.rejects(exec(root, ["apply", "--set", "create-pr=composer-2.5"], allRuns), /--target/);
-  const ok = await exec(root, ["apply", "--target", "cursor", "--set", "create-pr=composer-2.5"], allRuns);
+  await assert.rejects(exec(root, ["apply", "--set", "manage-pr=composer-2.5"], allRuns), /--target/);
+  const ok = await exec(root, ["apply", "--target", "cursor", "--set", "manage-pr=composer-2.5"], allRuns);
   assert.equal(ok.length, 1);
 });
 
@@ -669,9 +669,9 @@ test("una detección fallida no guarda nulos: el siguiente apply ya propone", as
 
 test("--set x=inherit sí se guarda y se respeta", async () => {
   const root = projectFor("codex");
-  await exec(root, ["apply", "--set", "create-pr=inherit"], codexUp);
+  await exec(root, ["apply", "--set", "manage-pr=inherit"], codexUp);
   const [again] = await exec(root, ["apply"], codexUp);
-  const pr = again.agents.find((a) => a.agent === "create-pr");
+  const pr = again.agents.find((a) => a.agent === "manage-pr");
   assert.equal(pr.model, null);
   assert.equal(pr.source, "guardado");
 });
@@ -686,7 +686,7 @@ test("tras un primer apply fallido no queda nada guardado: status dice sin confi
 
 test("status con solo algunos agentes guardados no se rompe", async () => {
   const root = projectFor("codex");
-  await exec(root, ["apply", "--set", "create-pr=gpt-5.1-codex-mini"], codexDown);
+  await exec(root, ["apply", "--set", "manage-pr=gpt-5.1-codex-mini"], codexDown);
   assert.match(statusLine({ profiles, root }), /^desincronizado|^configurado/);
 });
 
@@ -735,7 +735,7 @@ test("sin cursor-agent, detect con --models propone por nivel y no dice que fall
   const by = Object.fromEntries(d.proposal.map((p) => [p.agent, p.model]));
   assert.equal(by["concept-developer"], "claude-opus-5-5-high");
   assert.equal(by["code-developer"], "claude-sonnet-5-5-high");
-  assert.equal(by["create-branch"], "composer-2.5-fast");
+  assert.equal(by["manage-branch"], "composer-2.5-fast");
   assert.ok(d.notes.some((n) => n.includes("--models")));
   assert.ok(!d.notes.some((n) => n.includes("No se pudo leer")));
 });
@@ -751,7 +751,7 @@ test("sin cursor-agent, apply con --models escribe los 8 agentes y lo guarda", a
 
 test("--models con --set fuera de la lista avisa; sin --models nada cambia", async () => {
   const root = project();
-  const [r] = await exec(root, ["apply", "--models", SESSION_MODELS, "--set", "create-pr=otro-modelo"], noCursor);
+  const [r] = await exec(root, ["apply", "--models", SESSION_MODELS, "--set", "manage-pr=otro-modelo"], noCursor);
   assert.ok(r.notes.some((n) => n.includes("otro-modelo")));
   const [plain] = JSON.parse(await run(["detect", "--root", project()], { run: noCursor }));
   assert.equal(plain.status, "unknown");

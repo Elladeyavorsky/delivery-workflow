@@ -25,7 +25,7 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 |---|---|---|
 | `concept-developer` | pesado | Redacta la especificación y el plan: un error se propaga a todas las rondas posteriores. |
 | `code-developer`, `code-tester`, `concept-tester` | estándar | Escriben código y pruebas y comparan la documentación con el código: un modelo insuficiente puede dar aprobaciones erróneas. |
-| `create-issue`, `create-pr`, `create-branch`, `create-commit` | ligero | Completan una plantilla o ejecutan uno o dos scripts. |
+| `manage-issue`, `manage-pr`, `manage-branch`, `manage-commit` | ligero | Completan una plantilla o ejecutan uno o dos scripts. |
 
 ## Después de `apm install` o `apm update`
 
