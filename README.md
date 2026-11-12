@@ -9,6 +9,7 @@ Paquete [APM](https://github.com/microsoft/apm) para **Claude Code, Cursor y Cod
 3. **Escribe la spec, el plan y las tasks** en la propia issue.
 4. **La implementa en hasta nueve rondas** de código, tests y revisión de la documentación. Cada ronda deja un comentario en la issue.
 5. **La cierra** con el commit final, el push y la petición de revisión.
+6. **Si la revisión pide cambios**, escribe spec, plan y tasks en un comentario de la misma issue y repite el ciclo.
 
 Solo se para si a la spec le falta un dato, si aparece un secreto o si falla la novena ronda.
 
@@ -108,6 +109,7 @@ Llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`) y
 | «Crea la issue, solo git: …» | Hasta la pull request en draft. El código lo escribes tú. |
 | «Guarda `src/users.js` con feat: count users by gender» | Commit de esos ficheros y push. |
 | «Que la revisen Ana y Luis» | Pide la revisión y saca la pull request de draft. |
+| «La PR pide cambios» | Spec, plan y tasks en un comentario de la misma issue, y se repite el ciclo. |
 
 **Tipos de tarea:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore` y `knowledge`. Las ramas se llaman `número-tipo-descripcion`.
 

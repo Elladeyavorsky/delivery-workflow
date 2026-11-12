@@ -130,6 +130,23 @@ else
   echo "Último commit: todavía no hay commits"
 fi
 
+if [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
+  pr_json=$(gh pr view --json number,reviewDecision,body 2>/dev/null || true)
+  if echo "$pr_json" | grep -q '"number"'; then
+    pr_line=$(printf '%s' "$pr_json" | node -e '
+      const fs = require("fs");
+      const p = JSON.parse(fs.readFileSync(0, "utf8"));
+      const body = p.body || "";
+      const match = body.match(/(?:closes|close|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/i);
+      const decision = p.reviewDecision || "—";
+      process.stdout.write("#" + p.number + " " + decision + (match ? " issue #" + match[1] : ""));
+    ')
+    echo "Pull request: ${pr_line}"
+  else
+    echo "Pull request: ninguna abierta en esta rama"
+  fi
+fi
+
 echo
 echo "Preparados para el commit:"
 list_changes "$(git diff --cached --name-status)"
