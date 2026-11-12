@@ -41,12 +41,12 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
      12. Si la parte de arriba de la issue tiene una línea `Revisan:`, el subagente `create-pr`, encargo de revisión, con esos nombres. Si no, para con la pull request en draft y dilo: la revisión se pide con «que la revisen». La task de la fase Pull request cuyo agente es `create-pr` se marca solo cuando las revisiones quedan pedidas.
    - **Guardar un trozo:** el subagente `create-commit` con los ficheros de ese trozo y la skill `launch-push`.
    - **Que la revisen:** la persona nombra revisores. Delega la PR y los nombres en el subagente `create-pr`, encargo de revisión, y espera su resultado. Si la PR tiene issue con tasks, toma una huella nueva con `issue-spec top-hash` y marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `create-pr`.
-   - **Cambios pedidos:** si `check-status` dice `CHANGES_REQUESTED` y nombra la issue, no abras otra issue, otra rama ni otra PR. El cuerpo de la issue no se reescribe.
+   - **Cambios pedidos:** si `check-status` dice `CHANGES_REQUESTED` y nombra la issue, no abras otra issue. El cuerpo de la issue no se reescribe.
      1. `issue-spec reviews N` deja el texto de la revisión.
      2. El subagente `concept-developer`, ronda 0, encargo de revisión: rellena las plantillas de spec, plan y tasks solo con lo pedido y las publica con `issue-spec revision N`. Guarda la huella que devuelve.
      3. El ciclo de la sección siguiente, con `--revision` y esa huella en cada encargo.
      4. El subagente `create-commit` con los ficheros del ciclo y el tipo de la issue, con `Refs #N` en el pie. Después, la skill `launch-push`. Marca con `issue-spec tick N TASK-08 --expect-top HUELLA --revision` la task de `create-commit`.
-     5. El subagente `create-pr`, encargo de revisión, con los logins que pidieron cambios. No crees otra PR ni la pongas en draft. Marca `TASK-09` con `--revision` cuando las revisiones queden pedidas.
+     5. El subagente `create-pr`, encargo de revisión, con los logins que pidieron cambios. Marca `TASK-09` con `--revision` cuando las revisiones queden pedidas.
    - **Otra pasada:** solo si la última pasada falló en la ronda 9 y la persona lo confirma en este chat con palabras propias («otra pasada», «sí, otra»). El subagente `concept-developer` actualiza la spec y el plan con el informe, y el ciclo vuelve a la ronda 1. Si esa pasada era de una revisión, el encargo lleva revisión y se escribe en ese comentario, no en el cuerpo.
 4. **Formateo:** Responde con lo que hizo cada paso: número de issue y etiqueta, nombre de rama, URL de la pull request, rondas con su veredicto, mensaje del commit final y revisores pedidos.
 

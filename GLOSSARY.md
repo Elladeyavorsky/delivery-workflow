@@ -21,7 +21,7 @@ Momento en que una parte del trabajo queda en un commit y en el remoto, a petici
 Momento en que la pull request recibe revisores y sale de draft.
 
 **Cambios pedidos**:
-Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. El ciclo se repite en la misma issue, la misma rama y la misma pull request, escribiendo spec, plan y tasks en un comentario de revisión.
+Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. Spec, plan y tasks van en un comentario de la issue y se repite el ciclo.
 
 **Revisión** (comentario):
 El comentario de la issue que empieza por `<!-- Revisión N -->` y lleva las plantillas de spec, plan y tasks de lo que pidió la persona revisora. No es la petición de revisores.

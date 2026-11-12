@@ -8,5 +8,5 @@ Se descartó reescribir `## Spec`, `## Plan` y `## Tasks` del cuerpo: se perder�
 
 - El ciclo de cambios pedidos opera con `--revision` sobre el último comentario `<!-- Revisión N -->`.
 - El estado Borrador / Implementada / Fallida de esa pasada vive en ese comentario. El cuerpo no se toca.
-- No se abre otra issue, otra rama ni otra pull request. El commit y el push van en la rama que ya existe, y se vuelve a pedir la revisión.
+- No se abre otra issue. El cuerpo no se reescribe.
 - Una segunda petición de cambios publica `<!-- Revisión 2 -->`. El ciclo usa siempre la última.
