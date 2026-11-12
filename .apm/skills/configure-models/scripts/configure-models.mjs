@@ -2,7 +2,7 @@
 import { execFile as execFileCb, execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
@@ -491,52 +491,14 @@ export function applyToFiles({ profiles, root, tool, choices }) {
   });
 }
 
-// --- .gitignore y archivos seguidos por git ---
-
-export function gitignoreEntries(profiles, tool) {
-  const t = profiles.tools[tool];
-  return Object.keys(profiles.agents).map((agent) => `${t.agentsDir}/${agent}.${t.extension}`);
-}
-
-const GITIGNORE_HEADER = "# delivery-workflow: agentes con el modelo de cada persona";
-
-export function updateGitignore(root, entries) {
-  const path = join(root, ".gitignore");
-  const current = existsSync(path) ? readFileSync(path, "utf8") : "";
-  const have = new Set(current.split(/\r?\n/).map((l) => l.trim().replace(/^\//, "")));
-  const added = entries.filter((e) => !have.has(e));
-  if (added.length === 0) return { added: [], already: entries };
-  let text = current === "" || current.endsWith("\n") ? current : `${current}\n`;
-  if (!have.has(GITIGNORE_HEADER)) text += `${GITIGNORE_HEADER}\n`;
-  text += `${added.join("\n")}\n`;
-  writeFileSync(path, text);
-  return { added, already: entries.filter((e) => have.has(e)) };
-}
-
-// Los archivos que git ya sigue: .gitignore no los suelta. Nunca se quitan solos.
-export async function trackedFiles(root, files) {
-  // Sin rutas, `git ls-files` lista todo el repositorio.
-  if (files.length === 0) return [];
-  const rel = files.map((f) => relative(root, f));
-  const asked = new Set(rel);
-  const out = await git(root, ["ls-files", "--", ...rel]);
-  return out ? out.split("\n").filter((l) => asked.has(l)) : [];
-}
-
-export function untrackHint(tracked) {
-  if (tracked.length === 0) return null;
-  return `git rm --cached ${tracked.map((f) => `"${f}"`).join(" ")}`;
-}
-
 // --- Órdenes ---
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv;
-  const opts = { command, yes: false, gitignore: false, target: null, root: null, set: {} };
+  const opts = { command, yes: false, target: null, root: null, set: {} };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === "--yes" || a === "-y") opts.yes = true;
-    else if (a === "--gitignore") opts.gitignore = true;
     else if (a === "--target") opts.target = rest[++i];
     else if (a === "--root") opts.root = rest[++i];
     else if (a === "--set") {
@@ -554,7 +516,7 @@ export const USAGE = [
   "  apply                  Escribe el modelo en cada agente. Sin --set usa lo guardado o la propuesta.",
   "  reset                  Quita la línea model de los agentes y borra lo guardado.",
   "  status                 Una línea para check-status.",
-  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --gitignore  --root RUTA",
+  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --root RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -635,13 +597,6 @@ async function applyOne({ profiles, root, tool, state, opts, runner }) {
     };
   }
   for (const f of files) if (f.result === "ausente") notes.push(`Falta el archivo de ${f.agent}: ejecuta apm install.`);
-  let gitignore = null;
-  if (opts.gitignore || opts.yes) gitignore = updateGitignore(root, gitignoreEntries(profiles, tool));
-  const tracked = await trackedFiles(root, files.filter((f) => f.result !== "ausente").map((f) => f.file));
-  const hint = untrackHint(tracked);
-  if (hint) {
-    notes.push("Git sigue estos archivos: el modelo de cada persona acabaría en los commits y .gitignore no lo evita. Para dejar de seguirlos, ejecuta tú:");
-  }
   return {
     tool,
     name: profiles.tools[tool].name,
@@ -654,9 +609,6 @@ async function applyOne({ profiles, root, tool, state, opts, runner }) {
       source: source[f.agent],
       result: f.result,
     })),
-    gitignore,
-    tracked,
-    hint,
     notes,
   };
 }
@@ -669,7 +621,7 @@ async function resetOne({ profiles, root, tool, state }) {
     tool,
     name: profiles.tools[tool].name,
     agents: files.map((f) => ({ agent: f.agent, result: f.result })),
-    notes: ["Los agentes vuelven a heredar el modelo del chat. El .gitignore no se toca."],
+    notes: ["Los agentes vuelven a heredar el modelo del chat."],
   };
 }
 

@@ -178,7 +178,7 @@ test("sin modelos detectados ninguna propuesta lleva modelo", async () => {
   assert.ok(r.proposal.every((p) => p.model === null));
 });
 
-// --- Escribir, deshacer, .gitignore ---
+// --- Escribir y deshacer ---
 
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, statSync } from "node:fs";
@@ -186,10 +186,6 @@ import {
   setModelMd,
   getModelMd,
   planChoices,
-  gitignoreEntries,
-  updateGitignore,
-  trackedFiles,
-  untrackHint,
   run,
   statusLine,
   STATE_FILE,
@@ -349,54 +345,6 @@ test("--set con un modelo de forma rara se rechaza y no escribe nada", async () 
   const original = snapshot(root);
   await assert.rejects(exec(root, ["apply", "--set", "create-pr=a b"]), /no válido/);
   assert.deepEqual(snapshot(root), original);
-});
-
-test("el .gitignore lleva los 8 archivos por nombre y no se duplica", async () => {
-  const root = project();
-  const entries = gitignoreEntries(profiles, "cursor");
-  assert.equal(entries.length, 8);
-  assert.ok(entries.every((e) => e.startsWith(".cursor/agents/") && e.endsWith(".md")));
-  await exec(root, ["apply", "--gitignore"]);
-  const once = readFileSync(join(root, ".gitignore"), "utf8");
-  await exec(root, ["apply", "--gitignore"]);
-  await exec(root, ["apply", "--yes"]);
-  assert.equal(readFileSync(join(root, ".gitignore"), "utf8"), once);
-  for (const e of entries) assert.equal(once.split("\n").filter((l) => l === e).length, 1);
-  assert.ok(!once.split("\n").includes(".cursor/agents/"));
-});
-
-test("el .gitignore existente se respeta y solo se añade lo que falta", () => {
-  const root = project();
-  writeFileSync(join(root, ".gitignore"), "node_modules\n/.cursor/agents/create-pr.md");
-  const r = updateGitignore(root, gitignoreEntries(profiles, "cursor"));
-  assert.equal(r.added.length, 7);
-  const text = readFileSync(join(root, ".gitignore"), "utf8");
-  assert.ok(text.startsWith("node_modules\n/.cursor/agents/create-pr.md\n"));
-  assert.ok(!text.includes("\n.cursor/agents/create-pr.md\n"));
-});
-
-test("sin --gitignore ni --yes no se toca el .gitignore", async () => {
-  const root = project();
-  await exec(root, ["apply"]);
-  assert.ok(!existsSync(join(root, ".gitignore")));
-});
-
-test("un archivo seguido por git da el aviso y el git rm --cached, y no se quita nada", async () => {
-  const root = project({ commit: true });
-  const [r] = await exec(root, ["apply", "--gitignore"]);
-  assert.equal(r.tracked.length, 8);
-  assert.match(r.hint, /^git rm --cached "\.cursor\/agents\/code-developer\.md"/);
-  assert.ok(r.notes.some((n) => n.includes("Git sigue estos archivos")));
-  const tracked = execFileSync("git", ["ls-files", ".cursor"], { cwd: root, encoding: "utf8" }).trim().split("\n");
-  assert.equal(tracked.length, 8);
-  assert.deepEqual(await trackedFiles(root, [join(root, ".cursor/agents/create-pr.md")]), [".cursor/agents/create-pr.md"]);
-  assert.equal(untrackHint([]), null);
-});
-
-test("si no hay archivos seguidos no hay aviso", async () => {
-  const [r] = await exec(project(), ["apply"]);
-  assert.deepEqual(r.tracked, []);
-  assert.equal(r.hint, null);
 });
 
 test("sin carpeta de agentes apply explica qué hacer", async () => {
@@ -613,11 +561,6 @@ test("apply en Codex escribe model en los .toml, es idempotente y reset lo desha
   assert.equal(readFileSync(file("create-pr"), "utf8"), original);
 });
 
-test("el .gitignore lleva los archivos de cada herramienta con su extensión", () => {
-  assert.ok(gitignoreEntries(profiles, "claude").every((e) => e.startsWith(".claude/agents/") && e.endsWith(".md")));
-  assert.ok(gitignoreEntries(profiles, "codex").every((e) => e.startsWith(".codex/agents/") && e.endsWith(".toml")));
-});
-
 test("con las tres herramientas, apply y status las cubren a todas", async () => {
   const root = projectFor("cursor");
   for (const tool of ["claude", "codex"]) {
@@ -665,27 +608,6 @@ test("status: si ningún agente lleva modelo no dice «configurado» a secas", a
 test("Claude: la nota enseña el plan y cómo cambiar un alias", async () => {
   const d = await detectClaude({ run: fake({ "claude auth status": { status: "ok", stdout: readFileSync(join(FIXTURES, "claude-auth-status.json"), "utf8") } }), root: tmpdir(), home: tmpdir(), profile: profiles.tools.claude });
   assert.match(d.note, /Plan detectado: .*--set agente=sonnet/);
-});
-
-test("trackedFiles con una lista vacía no lista el repositorio entero", async () => {
-  const root = mkdtempSync(join(tmpdir(), "cm-empty-"));
-  execFileSync("git", ["init", "-q"], { cwd: root });
-  mkdirSync(join(root, "src"));
-  writeFileSync(join(root, "README.md"), "x");
-  writeFileSync(join(root, "src", "app.js"), "x");
-  execFileSync("git", ["add", "."], { cwd: root });
-  assert.deepEqual(await trackedFiles(root, []), []);
-});
-
-test("apply con una carpeta de agentes vacía no propone git rm --cached", async () => {
-  const root = mkdtempSync(join(tmpdir(), "cm-emptyagents-"));
-  execFileSync("git", ["init", "-q"], { cwd: root });
-  mkdirSync(join(root, ".codex", "agents"), { recursive: true });
-  writeFileSync(join(root, "README.md"), "x");
-  execFileSync("git", ["add", "."], { cwd: root });
-  const [r] = await exec(root, ["apply"], allRuns);
-  assert.deepEqual(r.tracked ?? [], []);
-  assert.ok(!r.hint);
 });
 
 const TOML_ARRAY = [

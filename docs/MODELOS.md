@@ -1,13 +1,13 @@
 # Modelos de los agentes
 
-Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`). Si no se configura, los agentes usan el modelo del chat y el flujo funciona igualmente.
+Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`). Es un paso opcional: si no se configura, los agentes usan el modelo del chat y el flujo funciona igualmente.
 
 Compatible con **Cursor, Claude Code y Codex**, en las que tengan carpeta de agentes en el proyecto.
 
 ## Cómo se usa
 
 1. `apm install` (o `apm update`).
-2. `/configure-models`: detecta los modelos disponibles, propone uno por agente indicando el motivo y solicita confirmación una sola vez: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]». Con `--yes` se aceptan sin preguntar.
+2. `/configure-models`: detecta los modelos disponibles, propone uno por agente indicando el motivo y solicita confirmación una sola vez: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]».
 3. Para cambiar uno, indica el nombre del agente y el modelo (de la lista o escrito a mano). Enter equivale a no asignar modelo, de modo que el agente hereda el del chat.
 
 Las elecciones se guardan en `.git/delivery-workflow-models.json`: son personales y git no las registra. Sin la skill, desde la raíz del proyecto (la carpeta es `.claude/skills` en Claude Code y `.agents/skills` en Cursor y Codex):
@@ -39,13 +39,7 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 
 ## Por qué no se suben a git
 
-El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los 8 archivos de agentes del paquete se tratan como resultado de la instalación ([decisión 0009](adr/0009-los-modelos-son-personales.md)). `/configure-models` propone añadirlos al `.gitignore` de uno en uno (no la carpeta `agents/`, para que los agentes propios del equipo sigan versionándose), sin duplicados.
-
-**Si el proyecto ya los versiona**, `.gitignore` no es suficiente. `/configure-models` lo advierte y genera el comando; debe ejecutarlo la persona una sola vez, seguido de un commit (la skill nunca lo ejecuta):
-
-```bash
-git rm --cached ".cursor/agents/code-developer.md" ...
-```
+El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los agentes del paquete se tratan como resultado de la instalación y la línea `model` no debe incluirse en los commits ([decisión 0009](adr/0009-los-modelos-son-personales.md)). Gestionar el `.gitignore` queda fuera del alcance de `/configure-models`.
 
 ## Notas por herramienta
 
@@ -71,4 +65,4 @@ Cada comando externo tiene un límite de 10 s: si no responde (por ejemplo, por 
 
 ## Fuera de alcance
 
-Esfuerzo de razonamiento, instalaciones globales (`~/.claude`…) y presets de coste.
+Gestión del `.gitignore`, esfuerzo de razonamiento, instalaciones globales (`~/.claude`…) y presets de coste.
