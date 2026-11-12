@@ -62,7 +62,3 @@ El modelo depende de la suscripción de cada persona: si se versionara, quien no
 - Se escribe `model = "…"` en `.codex/agents/<agente>.toml`, a continuación de `name`. Según su documentación, es la clave que Codex lee como modelo del agente; no se ha comprobado.
 
 Cada comando externo tiene un límite de 10 s: si no responde (por ejemplo, por falta de sesión iniciada), el resultado es «desconocido» y los agentes heredan el modelo del chat.
-
-## Fuera de alcance
-
-Gestión del `.gitignore`, esfuerzo de razonamiento, instalaciones globales (`~/.claude`…) y presets de coste.
