@@ -1,6 +1,6 @@
 # Modelos de los agentes
 
-Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`). Es un paso opcional: si no se configura, los agentes usan el modelo del chat y el flujo funciona igualmente.
+Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`). Es un paso opcional.
 
 Compatible con **Cursor, Claude Code y Codex**, en las que tengan carpeta de agentes en el proyecto.
 

@@ -112,4 +112,3 @@ _Evitar_: referencias, fuentes
 
 **Nivel**:
 Grado de exigencia de la tarea de un agente: pesado, estándar o ligero. Cada herramienta determina qué modelo, entre los disponibles, corresponde a cada nivel.
-_Evitar_: tier, categoría
