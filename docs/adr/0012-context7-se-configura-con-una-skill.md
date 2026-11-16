@@ -1,6 +1,6 @@
 # Context7 se configura con una skill opcional
 
-Context7 da a los agentes la documentación actual de cada librería a través de un servidor MCP. Se configura con la skill `/setup-context7`, un paso opcional tras `apm install`, igual que `/configure-models`. La skill lee las dependencias del proyecto, sugiere para cuáles usar Context7, y tras la confirmación escribe el MCP en cada herramienta y una regla en el proyecto.
+Context7 da a los agentes la documentación actual de cada librería a través de un servidor MCP. Se configura con la skill `/setup-context7`, un paso opcional tras `apm install`. La skill lee las dependencias del proyecto, sugiere para cuáles usar Context7, y tras la confirmación escribe el MCP en cada herramienta y una regla en el proyecto.
 
 El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías distintas y cada persona decide si quiere un servicio de terceros, así que la configuración vive en el proyecto y no viaja con el paquete. Cada MCP nuevo tendrá su propia skill de configuración.
 
