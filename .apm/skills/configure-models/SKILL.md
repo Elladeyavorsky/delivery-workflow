@@ -19,6 +19,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 2. **`--set agente=modelo`** _(Opcional, repetible)_: el modelo de ese agente. `inherit` quita el modelo (el agente usa el del chat). Exige `--target` si hay más de una herramienta: cada herramienta nombra sus modelos a su manera.
 3. **`--yes` / `-y`** _(Opcional)_: acepta la propuesta sin preguntar.
 4. **`--target cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
+5. **`--models id1,id2,...`** _(Opcional)_: la lista de modelos de la herramienta, para cuando el script no puede leerla (por ejemplo, `cursor-agent` no está instalado). Sustituye a la detección y el script propone por nivel igual que si la hubiera leído. Exige `--target` si hay más de una herramienta. Úsala en `detect` y repítela en `apply`.
 
 #### Reglas de Invocación Críticas
 
@@ -30,6 +31,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
   3. Pregunta **una vez**: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]». Si hay `saved`, di que son los modelos guardados.
   4. Si responde con el nombre de un agente, pregunta su modelo. Enséñale los de la lista detectada y acepta cualquier otro escrito a mano; Enter = `inherit`. Repite la pregunta hasta que acepte.
   5. Lanza `apply` con un `--set` por cada cambio. Si hay varias herramientas, un `apply --target T` por cada una, con solo sus cambios, y las que no cambian con un `apply` sin `--set`. Muestra la tabla final con lo que devuelve el script.
+- **Si la detección es `unknown`** (por ejemplo, falta `cursor-agent`): no dejes todos los agentes en «heredar» ni calcules la propuesta a mano. Si tu propia sesión conoce los modelos que admite la herramienta para subagentes, pásalos con `--target T --models id1,id2,...` en `detect` y repite la misma lista en `apply`; la propuesta y las `notes` salen igual que con una lista leída. Usa solo ids que tu sesión liste de verdad; si no tienes una lista fiable, pídesela a la persona o déjalos heredar. Nunca inventes modelos.
 - **Un modelo escrito a mano**: Avisa de que si la herramienta no lo reconoce, Cursor usará el modelo del chat sin decir nada y Claude Code dará un error al llamar al agente. El script ya añade este aviso en `notes` si el modelo no está en la lista.
 - **Después de `apm install` o `apm update`**: Instalar borra las líneas `model`. Si ya hay elecciones guardadas, `apply` sin argumentos las vuelve a poner sin preguntar nada. Dilo así a la persona.
 - **Procesamiento de respuestas**: El script escribe JSON. `result` vale `cambiado`, `igual` o `ausente` (falta el archivo: pide `apm install`). Si el código de salida no es 0, lee el error y comunícalo. No inventes modelos ni resultados.

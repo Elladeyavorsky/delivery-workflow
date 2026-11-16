@@ -186,6 +186,7 @@ import {
   setModelMd,
   getModelMd,
   planChoices,
+  parseArgs,
   run,
   statusLine,
   STATE_FILE,
@@ -710,4 +711,55 @@ test("un modelo propuesto que desaparece de la lista sigue reemplazándose", asy
 test("una lista vacía es desconocido, no «sin modelos»", async () => {
   const [d] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent --list-models": { status: "ok", stdout: "Available models\n\n" } }) });
   assert.equal(d.status, "unknown");
+});
+
+// --- --models: catálogo facilitado desde fuera cuando la herramienta no lo da ---
+const noCursor = fake({});
+const SESSION_MODELS = "grok-4.7-high-fast,claude-sonnet-5-5-high,claude-opus-5-5-high,composer-2.5-fast";
+
+test("--models se lee separado por comas, repetido y sin duplicados", () => {
+  const o = parseArgs(["detect", "--models", "a-1, b-2", "--models", "a-1,c.3"]);
+  assert.deepEqual(o.models.map((m) => m.id), ["a-1", "b-2", "c.3"]);
+  assert.deepEqual(parseArgs(["detect"]).models, []);
+});
+
+test("--models rechaza ids raros o vacíos", () => {
+  assert.throws(() => parseArgs(["detect", "--models", "bueno,mal modelo"]), /no válido/);
+  assert.throws(() => parseArgs(["detect", "--models", ""]), /--models espera/);
+});
+
+test("sin cursor-agent, detect con --models propone por nivel y no dice que falló", async () => {
+  const root = project();
+  const [d] = JSON.parse(await run(["detect", "--root", root, "--models", SESSION_MODELS], { run: noCursor }));
+  assert.equal(d.status, "ok");
+  const by = Object.fromEntries(d.proposal.map((p) => [p.agent, p.model]));
+  assert.equal(by["concept-developer"], "claude-opus-5-5-high");
+  assert.equal(by["code-developer"], "claude-sonnet-5-5-high");
+  assert.equal(by["create-branch"], "composer-2.5-fast");
+  assert.ok(d.notes.some((n) => n.includes("--models")));
+  assert.ok(!d.notes.some((n) => n.includes("No se pudo leer")));
+});
+
+test("sin cursor-agent, apply con --models escribe los 8 agentes y lo guarda", async () => {
+  const root = project();
+  const [r] = await exec(root, ["apply", "--models", SESSION_MODELS], noCursor);
+  assert.equal(r.agents.length, 8);
+  assert.ok(r.agents.every((a) => a.model !== null && a.result === "cambiado"));
+  assert.equal(getModelMd(snapshot(root)["code-developer.md"]), "claude-sonnet-5-5-high");
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+});
+
+test("--models con --set fuera de la lista avisa; sin --models nada cambia", async () => {
+  const root = project();
+  const [r] = await exec(root, ["apply", "--models", SESSION_MODELS, "--set", "create-pr=otro-modelo"], noCursor);
+  assert.ok(r.notes.some((n) => n.includes("otro-modelo")));
+  const [plain] = JSON.parse(await run(["detect", "--root", project()], { run: noCursor }));
+  assert.equal(plain.status, "unknown");
+  assert.match(plain.reason, /--models/);
+});
+
+test("--models con varias herramientas exige --target", async () => {
+  const root = projectFor("cursor");
+  mkdirSync(join(root, ".claude", "agents"), { recursive: true });
+  await assert.rejects(exec(root, ["apply", "--models", SESSION_MODELS], noCursor), /--target/);
 });
