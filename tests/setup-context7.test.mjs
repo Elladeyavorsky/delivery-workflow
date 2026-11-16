@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,6 +23,9 @@ import {
   removeRule,
   ruleBlock,
   RULE_START,
+  envFileHasKey,
+  keyState,
+  applyAll,
   run,
   SetupContext7Error,
 } from "../.apm/skills/setup-context7/scripts/setup-context7.mjs";
@@ -79,14 +83,15 @@ test("Cargo.toml: dependencies, dev-dependencies y tablas en línea", () => {
   assert.deepEqual(parseCargo(text).sort(), ["axum", "criterion", "serde", "tokio"]);
 });
 
-test("classify: descarta herramientas de build y lint, sugiere por familia y deja el resto como otra", () => {
-  assert.equal(classify(profiles, "eslint").status, "descartada");
+test("classify: solo se descartan tipos y utilidades de build; todo lo demás se sugiere, linters incluidos", () => {
   assert.equal(classify(profiles, "@types/node").status, "descartada");
   assert.equal(classify(profiles, "typescript").status, "descartada");
-  assert.equal(classify(profiles, "react").status, "sugerida");
-  assert.equal(classify(profiles, "@prisma/client").status, "sugerida");
-  assert.equal(classify(profiles, "left-pad").status, "otra");
-  assert.ok(classify(profiles, "eslint").why.length > 5);
+  assert.equal(classify(profiles, "rimraf").status, "descartada");
+  assert.ok(classify(profiles, "typescript").why.length > 5);
+  for (const name of ["react", "@prisma/client", "left-pad", "eslint", "prettier", "ruff"]) {
+    assert.equal(classify(profiles, name).status, "sugerida", name);
+  }
+  assert.deepEqual(Object.keys(profiles), ["skip"]);
 });
 
 test("readDependencies junta manifiestos y no repite una librería", () => {
@@ -96,7 +101,7 @@ test("readDependencies junta manifiestos y no repite una librería", () => {
   const { manifests, dependencies } = readDependencies({ root, profiles });
   assert.deepEqual(manifests.map((m) => m.file), ["package.json", "requirements.txt"]);
   const by = Object.fromEntries(dependencies.map((d) => [d.name, d.status]));
-  assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "descartada", fastapi: "sugerida" });
+  assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "sugerida", fastapi: "sugerida" });
 });
 
 test("setServerJson crea el archivo, conserva otros MCP y es idempotente", () => {
@@ -225,11 +230,59 @@ test("con --with-key cada herramienta usa su sintaxis y el valor de la clave nun
   }
 });
 
-test("--with-key avisa si la variable no está definida en esta terminal", async () => {
+test("envFileHasKey lee el .env sin ejecutarlo: export, comillas, comentarios y valor vacío", () => {
+  assert.equal(envFileHasKey("A=1\nCONTEXT7_API_KEY=abc\n"), true);
+  assert.equal(envFileHasKey('export CONTEXT7_API_KEY="abc" # mía\n'), true);
+  assert.equal(envFileHasKey("CONTEXT7_API_KEY=\n"), false);
+  assert.equal(envFileHasKey('CONTEXT7_API_KEY=""\n'), false);
+  assert.equal(envFileHasKey("# CONTEXT7_API_KEY=abc\n"), false);
+  assert.equal(envFileHasKey("OTRA_CONTEXT7_API_KEY=abc\n"), false);
+  assert.equal(envFileHasKey("GITHUB_TOKEN=x\n"), false);
+});
+
+test("keyState dice si la clave está en el .env, en la terminal y si git ignora el .env, sin devolver el valor", async () => {
   const root = project(["cursor"]);
-  delete process.env.CONTEXT7_API_KEY;
-  const [r] = await exec(root, ["apply", "--with-key"]);
-  assert.ok(r.notes.some((n) => n.includes("no está definida")));
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  assert.deepEqual(await keyState(root, {}), { inEnv: false, inShell: false, envIgnored: null });
+  writeFileSync(join(root, ".env"), "CONTEXT7_API_KEY=ctx7sk-secreto\n");
+  const open = await keyState(root, { CONTEXT7_API_KEY: "x" });
+  assert.deepEqual(open, { inEnv: true, inShell: true, envIgnored: false });
+  writeFileSync(join(root, ".gitignore"), ".env\n");
+  assert.equal((await keyState(root, {})).envIgnored, true);
+  assert.ok(!JSON.stringify(await keyState(root, {})).includes("ctx7sk-secreto"));
+});
+
+test("--with-key sin la clave en el .env ni en la terminal avisa de dónde ponerla", async () => {
+  const root = project(["cursor"]);
+  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: true, key: { inEnv: false, inShell: false, envIgnored: null } });
+  assert.ok(out[0].notes.some((n) => n.includes("no está en tu .env ni en esta terminal")));
+});
+
+test("--with-key con la clave solo en el .env explica cómo cargarla y avisa si el .env no está ignorado", async () => {
+  const root = project(["cursor", "claude"]);
+  const out = applyAll({ root, tools: ["cursor", "claude"], libs: [], withKey: true, key: { inEnv: true, inShell: false, envIgnored: false } });
+  for (const r of out) assert.ok(r.notes.some((n) => n.includes("set -a; source .env; set +a")));
+  assert.equal(out.filter((r) => r.notes.some((n) => n.includes(".gitignore"))).length, 1, "el aviso del .gitignore sale una vez");
+});
+
+test("con la clave ya en la terminal no hace falta cargar el .env", () => {
+  const root = project(["cursor"]);
+  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: true, key: { inEnv: true, inShell: true, envIgnored: true } });
+  assert.ok(!out[0].notes.some((n) => n.includes("source .env")));
+});
+
+test("sin --with-key, si la clave está en el .env, sugiere usarla", () => {
+  const root = project(["cursor"]);
+  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: false, key: { inEnv: true, inShell: false, envIgnored: true } });
+  assert.ok(out[0].notes.some((n) => n.includes("repite con --with-key")));
+});
+
+test("detect incluye el estado de la clave y nunca su valor", async () => {
+  const root = project(["cursor"]);
+  writeFileSync(join(root, ".env"), "CONTEXT7_API_KEY=ctx7sk-secreto\n");
+  const raw = await run(["detect", "--root", root]);
+  assert.equal(JSON.parse(raw).key.inEnv, true);
+  assert.ok(!raw.includes("ctx7sk-secreto"));
 });
 
 test("apply no pisa otros MCP del archivo", async () => {
@@ -275,10 +328,10 @@ test("reset deja los archivos como estaban antes de apply", async () => {
 
 test("detect junta dependencias, herramientas y estado, y no escribe nada", async () => {
   const root = project(["cursor", "claude"]);
-  writeFileSync(join(root, "package.json"), JSON.stringify({ dependencies: { react: "1", prisma: "1" }, devDependencies: { eslint: "1" } }));
+  writeFileSync(join(root, "package.json"), JSON.stringify({ dependencies: { react: "1", prisma: "1" }, devDependencies: { eslint: "1", typescript: "5" } }));
   const out = await exec(root, ["detect"]);
   const by = Object.fromEntries(out.dependencies.map((d) => [d.name, d.status]));
-  assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "descartada" });
+  assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "sugerida", typescript: "descartada" });
   assert.deepEqual(out.tools.map((t) => [t.tool, t.configured]), [["cursor", false], ["claude", false]]);
   assert.ok(!existsSync(join(root, ".cursor/mcp.json")));
   await exec(root, ["apply", "--target", "cursor", "--libs", "react"]);

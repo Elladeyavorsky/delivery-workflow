@@ -181,15 +181,12 @@ export const MANIFESTS = [
   { file: "Cargo.toml", ecosystem: "rust", parse: parseCargo },
 ];
 
-// Descartadas (con motivo), sugeridas (por familia) u otras (se listan pero no se proponen).
+// Todo se sugiere salvo lo que está en la lista de descartes (con su motivo).
 export function classify(profiles, name) {
   for (const { why, match } of profiles.skip) {
     if (match.some((p) => new RegExp(p).test(name))) return { status: "descartada", why };
   }
-  for (const { label, match } of profiles.suggest) {
-    if (match.some((p) => new RegExp(p).test(name))) return { status: "sugerida", why: label };
-  }
-  return { status: "otra", why: "Sin criterio: se lista por si quieres añadirla." };
+  return { status: "sugerida", why: "Dependencia directa del proyecto." };
 }
 
 export function readDependencies({ root, profiles = loadProfiles() }) {
@@ -406,6 +403,37 @@ export function serverState(root, tool) {
   return { configured: entry !== undefined, withKey: Boolean(entry?.headers) };
 }
 
+// --- La clave: se mira si está, nunca se copia ---
+
+// Lee el .env línea a línea sin ejecutarlo (como gh.sh). Solo dice si la variable tiene valor.
+export function envFileHasKey(text) {
+  const line = new RegExp(`^\\s*(?:export\\s+)?${ENV_VAR}\\s*=\\s*(.*)$`);
+  for (const raw of String(text).replace(/\r/g, "").split("\n")) {
+    const m = line.exec(raw);
+    if (!m) continue;
+    const value = m[1].trim();
+    const quoted = /^(["'])(.*?)\1/.exec(value);
+    const plain = quoted ? quoted[2] : value.replace(/\s+#.*$/, "");
+    if (plain.trim() !== "") return true;
+  }
+  return false;
+}
+
+// {inEnv, inShell, envIgnored}: ¿está en el .env?, ¿en esta terminal?, ¿git ignora el .env? (null si no se sabe).
+export async function keyState(root, env = process.env) {
+  const text = readIfExists(join(root, ".env"));
+  const state = { inEnv: text !== null && envFileHasKey(text), inShell: Boolean(env[ENV_VAR]), envIgnored: null };
+  if (text !== null) {
+    try {
+      await execFile("git", ["check-ignore", "-q", ".env"], { cwd: root });
+      state.envIgnored = true;
+    } catch (e) {
+      state.envIgnored = e.code === 1 ? false : null;
+    }
+  }
+  return state;
+}
+
 // --- Órdenes ---
 
 export function parseArgs(argv) {
@@ -424,7 +452,7 @@ export function parseArgs(argv) {
 
 export const USAGE = [
   "Uso: setup-context7.mjs <detect|apply|reset> [opciones]",
-  "  detect                 Dependencias del proyecto (sugeridas, descartadas, otras) y estado de Context7 (JSON).",
+  "  detect                 Dependencias del proyecto (sugeridas y descartadas) y estado de Context7 (JSON).",
   "  apply                  Escribe el MCP de Context7 en cada herramienta y, con --libs, la regla del proyecto.",
   "  reset                  Quita el MCP de Context7 y la regla.",
   "Opciones: --target cursor|claude|codex  --libs a,b,c  --with-key (añade la cabecera con la variable CONTEXT7_API_KEY)  --root RUTA",
@@ -487,17 +515,28 @@ function applyRule(root, tool, libs) {
   return { file: t.ruleFile, result, libs };
 }
 
-export function applyAll({ root, tools, libs, withKey, env = process.env }) {
-  return tools.map((tool) => {
+export function applyAll({ root, tools, libs, withKey, key = { inEnv: false, inShell: false, envIgnored: null } }) {
+  return tools.map((tool, index) => {
     const t = TOOLS[tool];
     const config = applyConfig(root, tool, withKey);
     const rule = libs.length ? applyRule(root, tool, libs) : null;
     const notes = [];
     if (withKey) {
-      notes.push(`La config usa la variable ${ENV_VAR}: expórtala en la terminal desde la que abres ${t.name}.`);
-      if (!env[ENV_VAR]) notes.push(`${ENV_VAR} no está definida en esta terminal: sin ella, ${t.name} no podrá autenticarse.`);
+      notes.push(`La config usa la variable ${ENV_VAR}. El valor no se escribe en ningún archivo.`);
+      if (key.inShell) {
+        /* ya está en el entorno de esta terminal: nada que añadir */
+      } else if (key.inEnv) {
+        notes.push(`La clave está en tu .env, pero ${t.name} no lee el .env solo: cárgalo con «set -a; source .env; set +a» y abre ${t.name} desde esa misma terminal.`);
+      } else {
+        notes.push(`${ENV_VAR} no está en tu .env ni en esta terminal: añádela al .env y cárgalo antes de abrir ${t.name}, o no podrá autenticarse.`);
+      }
+      if (key.inEnv && key.envIgnored === false && index === 0) {
+        notes.push("El .env no está en .gitignore: añádelo («echo .env >> .gitignore») para no subir la clave.");
+      }
+    } else if (key.inEnv) {
+      notes.push(`Tienes ${ENV_VAR} en el .env: repite con --with-key para usarla.`);
     } else {
-      notes.push(`Sin clave: Context7 funciona con el límite por defecto. Para más peticiones, consigue una clave en context7.com/dashboard, expórtala como ${ENV_VAR} y repite con --with-key.`);
+      notes.push(`Sin clave: Context7 funciona con el límite por defecto. Para más peticiones, consigue una clave en context7.com/dashboard, añádela como ${ENV_VAR} a tu .env y repite con --with-key.`);
     }
     if (!libs.length) notes.push("No se ha escrito ninguna regla: pasa --libs con las librerías confirmadas.");
     notes.push(`Recarga ${t.name} para que cargue el MCP nuevo.`);
@@ -546,9 +585,9 @@ export async function run(argv) {
   if (tools.length === 0) {
     throw new SetupContext7Error("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
   }
-  if (opts.command === "detect") return JSON.stringify(detectReport({ root, tools }), null, 2);
+  if (opts.command === "detect") return JSON.stringify({ ...detectReport({ root, tools }), key: await keyState(root) }, null, 2);
   if (opts.command === "reset") return JSON.stringify(resetAll({ root, tools }), null, 2);
-  return JSON.stringify(applyAll({ root, tools, libs: opts.libs, withKey: opts.withKey }), null, 2);
+  return JSON.stringify(applyAll({ root, tools, libs: opts.libs, withKey: opts.withKey, key: await keyState(root) }), null, 2);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

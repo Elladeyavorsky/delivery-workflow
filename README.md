@@ -74,20 +74,22 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 ## Context7
 
-[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado. Es un paso opcional: tras `apm install`, ejecuta `/setup-context7` en el chat (`$setup-context7` en Codex).
+[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado.
 
-La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`. Recarga el editor para que cargue el MCP.
+La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
-**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard, guárdala en la variable `CONTEXT7_API_KEY` y abre el editor desde esa misma terminal:
+**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
-```bash
-export CONTEXT7_API_KEY=tu-clave
-cursor .      # o claude, o codex
+```
+CONTEXT7_API_KEY=tu-clave
 ```
 
-Después, cuando `/setup-context7` pregunte por la clave, responde que sí. La clave no se escribe en ningún archivo: solo se escribe el nombre de la variable.
+Los editores no leen el `.env` solos. Antes de abrir el editor, cárgalo en la terminal y ábrelo desde ahí:
 
-Context7 es un servicio de terceros: el nombre de la librería y el texto de la pregunta salen hacia Upstash. No incluyas secretos ni código privado en una consulta. Para quitarlo, ejecuta la skill con `reset`.
+```bash
+set -a; source .env; set +a
+cursor .      # o claude, o codex
+```
 
 ## Modelos de los agentes
 

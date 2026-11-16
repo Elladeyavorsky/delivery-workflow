@@ -8,7 +8,7 @@ El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías dist
 
 - Config del MCP, sin tocar otros servidores: `.cursor/mcp.json` (Cursor), `.mcp.json` (Claude Code) y `.codex/config.toml` (Codex), con el servidor remoto `https://mcp.context7.com/mcp`.
 - Un bloque entre marcadores con la lista de librerías en `AGENTS.md` (Cursor y Codex) o `CLAUDE.md` (Claude Code).
-- La clave sale del entorno ([ADR 0007](0007-el-token-sale-del-env.md)). Con `--with-key` la config nombra la variable `CONTEXT7_API_KEY` y cada herramienta la lee con su sintaxis: `${env:CONTEXT7_API_KEY}` en Cursor, `${CONTEXT7_API_KEY}` en Claude Code y `bearer_token_env_var` en Codex. El valor nunca se escribe.
+- La clave vive en el `.env` del proyecto, junto a `GITHUB_TOKEN` ([ADR 0007](0007-el-token-sale-del-env.md)). La skill lo lee solo para saber si `CONTEXT7_API_KEY` tiene valor y para avisar si el `.env` no está en `.gitignore`. Con `--with-key` la config nombra la variable `CONTEXT7_API_KEY` y cada herramienta la lee con su sintaxis: `${env:CONTEXT7_API_KEY}` en Cursor, `${CONTEXT7_API_KEY}` en Claude Code y `bearer_token_env_var` en Codex. El valor nunca se escribe.
 - Sin `--with-key` no se escribe ninguna cabecera: Context7 funciona con el límite por defecto. Una cabecera con la variable sin definir haría que Claude Code envíe el texto `${CONTEXT7_API_KEY}` y que Cursor envíe un valor vacío, y el servicio podría rechazar las peticiones.
 
 ## Opciones consideradas
@@ -22,5 +22,6 @@ El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías dist
 - Hay veintiuna skills en `.apm/skills/`. La nueva lleva script y tests.
 - `apm install` no toca los archivos de config MCP mientras el paquete no declare MCP en `apm.yml` (comprobado con APM 0.35.0 y Cursor). Si algún día los declara, habrá que repetir la comprobación.
 - Cursor y Codex comparten `AGENTS.md`: `reset` de una herramienta conserva la regla mientras la otra siga usando Context7.
+- Las herramientas solo resuelven `${VAR}` desde el entorno, no desde un fichero (ADR 0007): la persona carga el `.env` en la terminal antes de abrir el editor. Se descartó copiar el valor del `.env` a los archivos de config, porque `.cursor/mcp.json` y `.mcp.json` suelen subirse a git.
 - La sintaxis de la cabecera con variable de entorno viene de la documentación de cada herramienta y no se ha probado con un editor real.
-- Las sugerencias salen de una lista de familias y descartes en `assets/library-profiles.json`. Lo que no está en la lista se muestra como «otra» y no se propone.
+- Se sugiere toda dependencia directa salvo las de la lista de descartes de `assets/library-profiles.json` (tipos y utilidades de build). Los linters y formateadores se sugieren como cualquier otra: la persona quita los que no quiera al confirmar.
