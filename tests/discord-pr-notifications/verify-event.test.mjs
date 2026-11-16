@@ -145,9 +145,17 @@ test('omite una PR cerrada antes de consultar Discord', () => {
   assert.equal(result.output, 'eligible=false\n');
 });
 
-test('rechaza una PR en borrador o dirigida a otra base', () => {
+test('omite una PR en borrador sin fallar el workflow', () => {
+  const pullRequest = validPullRequest();
+  pullRequest.draft = true;
+  const result = runVerifier({ pullRequest });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.output, 'eligible=false\n');
+});
+
+test('rechaza una PR dirigida a otra base o con estado inválido', () => {
   for (const change of [
-    (pr) => { pr.draft = true; },
+    (pr) => { delete pr.draft; },
     (pr) => { pr.base.ref = 'main'; },
     (pr) => { pr.base.repo.full_name = 'other/repository'; },
     (pr) => { pr.number = 99; },

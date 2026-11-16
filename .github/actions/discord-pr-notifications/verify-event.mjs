@@ -62,9 +62,10 @@ function validatePullRequest(event, repository, baseBranch, runId, number, pullR
   if (pullRequest.state !== 'open') {
     throw new Error(`PR #${number} has an invalid state.`);
   }
+  // Una PR en borrador aún no pide revisión: se omite en ambos disparadores.
+  if (pullRequest.draft === true) return false;
   if (pullRequest.draft !== false) {
-    if (confirmationTrigger && pullRequest.draft === true) return false;
-    throw new Error(`PR #${number} is not ready for notification.`);
+    throw new Error(`PR #${number} has an invalid draft state.`);
   }
   if (reviewTrigger && !belongsToTriggerRun(run, pullRequest)) {
     throw new Error(`PR #${number} does not match the completed trigger run.`);
