@@ -4,9 +4,15 @@ La acción compuesta de `.github/actions/discord-pr-notifications/` verifica una
 
 ## Activación optativa y nombres distintos
 
-Ninguna skill ni agente del paquete consulta Discord o condiciona una solicitud de revisión. Instalar el paquete mediante APM no instala estos workflows: cada repositorio opta por ellos al añadir sus archivos de `.github/workflows/` y configurar el entorno protegido. `delivery-workflow` los incluye para sus propias PR; aTempo podrá activar la misma acción desde sus workflows fijados al SHA de una versión publicada.
+Ninguna skill ni agente del paquete consulta Discord o condiciona una solicitud de revisión. Instalar el paquete mediante APM no instala estos workflows: cada repositorio opta por ellos al añadir sus archivos de `.github/workflows/` y configurar el entorno protegido. `delivery-workflow` los incluye para sus propias PR; aTempo puede activar la misma acción desde un workflow fijado al SHA completo de un commit confiable del paquete.
 
 El emisor busca primero la relación cifrada de 48 horas y luego una coincidencia exacta y única entre login de GitHub y usuario de Discord. Si los nombres son distintos, el autor de la PR o un miembro autorizado puede escribir `/discord-map LOGIN_GITHUB ID_DISCORD` en un comentario de la PR, sustituyendo ambos valores por el login y el ID reales. El ID se obtiene desde Discord con el modo desarrollador y «Copiar ID de usuario». El emisor valida la autoría del comentario, que el login sea un revisor solicitado y que el ID pertenezca al servidor. El comentario es visible para quien pueda leer la PR y deja de utilizarse a las 48 horas, aunque permanece en su historial. No contiene tokens ni claves. Confirmar la relación es opcional: la PR y el aviso continúan sin esa mención.
+
+## Dos formas de llamar a la acción
+
+Este repositorio conserva el disparador sin secretos y el emisor `workflow_run` en su rama predeterminada `staging`. En ese modo se pasa `trigger-run-id`; la acción descarga únicamente el número de PR, comprueba la ejecución y vuelve a consultar la PR antes de acceder a Discord. Una PR cerrada, en borrador o con menos de dos revisores se omite sin fallar el emisor.
+
+En un repositorio cuya rama predeterminada sea `main`, como aTempo, un workflow de `main` puede usar `pull_request_target` para PR dirigidas a `staging` e `issue_comment` para `/discord-map`. En este modo pasa `pr-number` y `trusted-branch: main`, sin `trigger-run-id`. La acción comprueba el tipo de evento, el repositorio, la rama predeterminada, el número y la base de la PR consultada en GitHub. El workflow privilegiado **no descarga ni ejecuta código de la PR**: invoca solo la acción fijada a un SHA completo del paquete. Así el entorno protegido puede seguir limitado a `main` y basta con incorporar ese workflow a la rama predeterminada.
 
 ## Avisos de este repositorio
 

@@ -16,14 +16,19 @@ test('los agentes no incluyen el aviso optativo de Discord en la revisión', () 
 test('la acción declara todos los inputs y solo ejecuta módulos del paquete', () => {
   assert.match(action, /using: composite/);
   for (const input of ['github-token', 'bot-token', 'cache-key', 'guild-id', 'channel-id',
-    'expected-repository', 'base-branch', 'trigger-run-id']) {
+    'expected-repository', 'base-branch', 'trigger-run-id', 'pr-number', 'trusted-branch']) {
     assert.match(action, new RegExp(`^  ${input}:`, 'm'));
   }
   assert.match(action, /run-id: \$\{\{ inputs\.trigger-run-id \}\}/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/verify-event\.mjs"/);
+  assert.match(action, /node "\$GITHUB_ACTION_PATH\/verify-direct\.mjs"/);
+  assert.match(action, /if: \$\{\{ inputs\.trigger-run-id != '' \}\}/);
+  assert.match(action, /if: \$\{\{ inputs\.trigger-run-id == '' \}\}/);
+  assert.match(action, /PR_NUMBER: \$\{\{ steps\.verify\.outputs\.pr_number \|\| steps\.verify-direct\.outputs\.pr_number \}\}/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/state\.mjs" prepare/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/notify\.mjs"/);
   assert.match(action, /steps\.verify\.outputs\.eligible == 'true'/);
+  assert.match(action, /steps\.verify-direct\.outputs\.eligible == 'true'/);
   assert.match(action, /if: always\(\) && steps\.prepare\.outcome == 'success'/);
   assert.match(action, /retention-days: 2/);
   assert.doesNotMatch(action, /actions\/checkout|pull_request_target/);
