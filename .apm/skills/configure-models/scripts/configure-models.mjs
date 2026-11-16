@@ -122,7 +122,7 @@ const CURSOR_ATTEMPTS = [
 ];
 
 const REASONS = {
-  missing: "no está instalado el comando de Cursor (cursor-agent)",
+  missing: "no está instalado el comando de Cursor (cursor-agent); si conoces los modelos disponibles, pásalos con --models",
   timeout: "el comando de Cursor no respondió a tiempo; puede que falte iniciar sesión",
   error: "el comando de Cursor falló; puede que falte iniciar sesión",
   empty: "el comando de Cursor no devolvió una lista de modelos que se entienda",
@@ -256,11 +256,23 @@ export function toolsPresent(profiles, root, exists = existsSync) {
     .map(([tool]) => tool);
 }
 
-export async function detect({ profiles = loadProfiles(), root, tools, run, home } = {}) {
+// Lista de modelos dada con --models (p. ej. la que conoce la sesión del agente): sustituye al detector de la herramienta.
+export function manualDetection(models, toolName) {
+  return {
+    status: "ok",
+    models,
+    reason: null,
+    note: `Lista de modelos facilitada con --models: no se leyó de ${toolName}.`,
+  };
+}
+
+export async function detect({ profiles = loadProfiles(), root, tools, run, home, models } = {}) {
   const present = tools ?? toolsPresent(profiles, root);
   const result = [];
   for (const tool of present) {
-    let detection = await DETECTORS[tool]({ run, root, home, profile: profiles.tools[tool] });
+    let detection = models?.length
+      ? manualDetection(models, profiles.tools[tool].name)
+      : await DETECTORS[tool]({ run, root, home, profile: profiles.tools[tool] });
     // Una lista vacía no es «no hay modelos»: es que no se pudo saber. Así no se guardan nulos por error.
     if (detection.status === "ok" && detection.models.length === 0) {
       detection = { ...detection, status: "unknown", reason: "la herramienta devolvió una lista de modelos vacía" };
@@ -495,10 +507,19 @@ export function applyToFiles({ profiles, root, tool, choices }) {
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv;
-  const opts = { command, yes: false, target: null, root: null, set: {} };
+  const opts = { command, yes: false, target: null, root: null, set: {}, models: [] };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === "--yes" || a === "-y") opts.yes = true;
+    else if (a === "--models") {
+      for (const raw of String(rest[++i] ?? "").split(",")) {
+        const id = raw.trim();
+        if (id === "") continue;
+        if (!isModelShape(id)) throw new ConfigureModelsError(`Modelo no válido en --models: «${id}». Sin espacios ni comillas.`, 2);
+        if (!opts.models.some((m) => m.id === id)) opts.models.push({ id, name: id });
+      }
+      if (opts.models.length === 0) throw new ConfigureModelsError("--models espera una lista de ids separados por comas.", 2);
+    }
     else if (a === "--target") opts.target = rest[++i];
     else if (a === "--root") opts.root = rest[++i];
     else if (a === "--set") {
@@ -516,7 +537,7 @@ export const USAGE = [
   "  apply                  Escribe el modelo en cada agente. Sin --set usa lo guardado o la propuesta.",
   "  reset                  Quita la línea model de los agentes y borra lo guardado.",
   "  status                 Una línea para check-status.",
-  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --root RUTA",
+  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --models id1,id2,... (lista de modelos si la herramienta no la da)  --root RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -546,8 +567,11 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
   if (opts.command === "apply" && Object.keys(opts.set).length > 0 && tools.length > 1) {
     throw new ConfigureModelsError("--set vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target cursor|claude|codex.", 2);
   }
+  if (opts.models.length > 0 && opts.command !== "reset" && tools.length > 1) {
+    throw new ConfigureModelsError("--models vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target cursor|claude|codex.", 2);
+  }
   if (opts.command === "detect") {
-    return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner }), null, 2);
+    return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner, models: opts.models }), null, 2);
   }
   const dir = await gitDir(root);
   const state = readState(dir);
@@ -560,14 +584,14 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
 }
 
 // La propuesta parte de lo guardado (si sigue valiendo) y, si no hay nada guardado, del nivel de cada agente.
-export async function detectWithSaved({ profiles, root, tools, runner }) {
+export async function detectWithSaved({ profiles, root, tools, runner, models }) {
   let state = { tools: {} };
   try {
     state = readState(await gitDir(root));
   } catch {
     /* sin repositorio git no hay elecciones guardadas */
   }
-  const detections = await detect({ profiles, root, tools, run: runner });
+  const detections = await detect({ profiles, root, tools, run: runner, models });
   return detections.map((d) => {
     const saved = state.tools[d.tool]?.agents ?? null;
     const manual = state.tools[d.tool]?.manual ?? [];
@@ -582,7 +606,7 @@ export async function detectWithSaved({ profiles, root, tools, runner }) {
 }
 
 async function applyOne({ profiles, root, tool, state, opts, runner }) {
-  const [detection] = await detect({ profiles, root, tools: [tool], run: runner });
+  const [detection] = await detect({ profiles, root, tools: [tool], run: runner, models: opts.models });
   const saved = state.tools[tool]?.agents ?? null;
   const wasManual = state.tools[tool]?.manual ?? [];
   const { choices, source, notes } = planChoices({ profiles, tool, detection, saved, manual: wasManual, overrides: opts.set });

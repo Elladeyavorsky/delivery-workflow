@@ -44,7 +44,7 @@ El modelo depende de la suscripción de cada persona: si se versionara, quien no
 ## Notas por herramienta
 
 **Cursor** (verificado con `cursor-agent` 2026.11.11, plan Plus)
-- Lista de modelos: `cursor-agent --list-models` y, si falla, `cursor-agent models`. No se ejecuta `agent`, por ser un nombre demasiado genérico. Sin la CLI no hay lista: el modelo debe indicarse manualmente.
+- Lista de modelos: `cursor-agent --list-models` y, si falla, `cursor-agent models`. No se ejecuta `agent`, por ser un nombre demasiado genérico. Sin la CLI no hay lista: se facilita con `--models id1,id2,...` (por ejemplo, la que conoce la sesión de Cursor para subagentes) y la propuesta por nivel funciona igual, o el modelo se indica manualmente con `--set`.
 - El nombre exacto que figura en la lista es válido en el frontmatter (`grok-4.7-medium` se ejecutó con ese modelo). Un nombre desconocido **no genera error**: el agente usa el modelo del chat y solo se deja una nota en el resultado.
 - La lista incluye modelos que el plan no permite (`grok-4.7-low` y `grok-4.7-high` fallaron como subagente). Los patrones son por familia (`claude-*`, `gpt-5*`, `composer`), sin versiones fijas; si uno falla, se cambia con `--set`. Un administrador Enterprise puede restringir más modelos.
 - Un `cursor-agent` de 2025 interpreta `models` como una instrucción al agente. Por ello se ejecuta después de `--list-models`, en una carpeta temporal vacía, con un límite de 10 s, y solo se acepta una salida que empiece por «Available models».
