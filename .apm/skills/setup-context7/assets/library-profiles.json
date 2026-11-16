@@ -1,0 +1,16 @@
+{
+  "skip": [
+    { "why": "Tipos: no tienen documentación que consultar.", "match": ["^@types/.+", "^types-.+", "^typescript$"] },
+    { "why": "Linter o formateador: su configuración rara vez cambia el código que se escribe.", "match": ["^eslint($|-.+)", "^@eslint/.+", "^prettier($|-.+)", "^stylelint($|-.+)", "^black$", "^flake8$", "^ruff$", "^mypy$", "^isort$", "^pylint$", "^golangci-lint$", "^rustfmt$", "^clippy$", "^husky$", "^lint-staged$", "^@commitlint/.+"] },
+    { "why": "Utilidad de build o de scripts.", "match": ["^rimraf$", "^cross-env$", "^dotenv(-cli)?$", "^nodemon$", "^ts-node$", "^tsx$", "^concurrently$", "^npm-run-all2?$", "^wheel$", "^setuptools$", "^pip$", "^twine$", "^build$", "^pip-tools$"] }
+  ],
+  "suggest": [
+    { "id": "frameworks", "label": "Framework", "match": ["^react$", "^react-dom$", "^next$", "^vue$", "^nuxt$", "^svelte$", "^@sveltejs/.+", "^@angular/.+", "^express$", "^fastify$", "^koa$", "^hono$", "^@nestjs/.+", "^astro$", "^@remix-run/.+", "^solid-js$", "^django$", "^flask$", "^fastapi$", "^starlette$", "^github\\.com/gin-gonic/gin$", "^github\\.com/gofiber/fiber(/.+)?$", "^github\\.com/labstack/echo(/.+)?$", "^axum$", "^actix-web$", "^rocket$"] },
+    { "id": "datos", "label": "Base de datos u ORM", "match": ["^prisma$", "^@prisma/.+", "^drizzle-orm$", "^typeorm$", "^sequelize$", "^mongoose$", "^knex$", "^sqlalchemy$", "^alembic$", "^pydantic$", "^gorm\\.io/.+", "^diesel$", "^sqlx$"] },
+    { "id": "sdk", "label": "SDK de servicio", "match": ["^openai$", "^@anthropic-ai/.+", "^anthropic$", "^stripe$", "^@supabase/.+", "^supabase$", "^firebase$", "^@aws-sdk/.+", "^boto3$", "^langchain($|-.+)", "^@langchain/.+"] },
+    { "id": "ui", "label": "UI o estilos", "match": ["^tailwindcss$", "^@mui/.+", "^@radix-ui/.+", "^styled-components$", "^@chakra-ui/.+", "^framer-motion$"] },
+    { "id": "estado", "label": "Estado y validación", "match": ["^@tanstack/.+", "^redux$", "^@reduxjs/.+", "^zustand$", "^zod$", "^@trpc/.+", "^swr$"] },
+    { "id": "tests", "label": "Tests", "match": ["^vitest$", "^jest$", "^playwright$", "^@playwright/.+", "^cypress$", "^pytest$"] },
+    { "id": "runtime", "label": "Runtime o librería base", "match": ["^tokio$", "^serde$", "^reqwest$", "^vite$", "^webpack$", "^requests$", "^httpx$", "^numpy$", "^pandas$"] }
+  ]
+}

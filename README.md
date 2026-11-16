@@ -56,6 +56,18 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 5. (Opcional) Elige el modelo de cada agente con `/configure-models`, según se describe en [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
 
+6. (Opcional) Configura Context7 con `/setup-context7`, según se describe en [Context7](#context7).
+
+## Context7
+
+[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado. Es un paso opcional: tras `apm install`, ejecuta `/setup-context7` en el chat (`$setup-context7` en Codex).
+
+La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`. Recarga el editor para que cargue el MCP.
+
+**La clave es opcional.** Sin ella Context7 funciona con el límite por defecto. Con una clave gratuita (context7.com/dashboard) tienes más peticiones: expórtala como `CONTEXT7_API_KEY` en la terminal desde la que abres el editor y responde que sí cuando la skill pregunte. La clave no se escribe en ningún archivo, solo el nombre de la variable.
+
+Context7 es un servicio de terceros: el nombre de la librería y el texto de la pregunta salen hacia Upstash. No incluyas secretos ni código privado en una consulta. Para quitarlo, ejecuta la skill con `reset`.
+
 ## Modelos de los agentes
 
 Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete. Es un paso opcional: tras `apm install`, ejecuta `/configure-models` en el chat. La skill detecta los modelos disponibles en tu cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno.
