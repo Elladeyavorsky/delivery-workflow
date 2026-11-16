@@ -70,6 +70,27 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 5. (Opcional) Elige el modelo de cada agente con `/configure-models`, según se describe en [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
 
+6. (Opcional) Configura Context7 con `/setup-context7`, según se describe en [Context7](#context7).
+
+## Context7
+
+[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado.
+
+La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+
+**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
+
+```
+CONTEXT7_API_KEY=tu-clave
+```
+
+Los editores no leen el `.env` solos. Antes de abrir el editor, cárgalo en la terminal y ábrelo desde ahí:
+
+```bash
+set -a; source .env; set +a
+cursor .      # o claude, o codex
+```
+
 ## Modelos de los agentes
 
 Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete. Es un paso opcional: tras `apm install`, ejecuta `/configure-models` en el chat. La skill detecta los modelos disponibles en tu cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno.

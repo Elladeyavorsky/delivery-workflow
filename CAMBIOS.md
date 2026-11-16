@@ -27,6 +27,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/<skill>/scripts/gh.sh` | Nuevo, igual en cada skill que llama a GitHub: lanza `gh` con el `GITHUB_TOKEN` del `.env`. |
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas ([ADR 0011](docs/adr/0011-say-it-straight.md)). |
+| — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP y la regla del proyecto ([ADR 0012](docs/adr/0012-context7-se-configura-con-una-skill.md)). |
 | — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/MANTENIMIENTO.md`, `docs/adr/`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
