@@ -78,7 +78,14 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`. Recarga el editor para que cargue el MCP.
 
-**La clave es opcional.** Sin ella Context7 funciona con el límite por defecto. Con una clave gratuita (context7.com/dashboard) tienes más peticiones: expórtala como `CONTEXT7_API_KEY` en la terminal desde la que abres el editor y responde que sí cuando la skill pregunte. La clave no se escribe en ningún archivo, solo el nombre de la variable.
+**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard, guárdala en la variable `CONTEXT7_API_KEY` y abre el editor desde esa misma terminal:
+
+```bash
+export CONTEXT7_API_KEY=tu-clave
+cursor .      # o claude, o codex
+```
+
+Después, cuando `/setup-context7` pregunte por la clave, responde que sí. La clave no se escribe en ningún archivo: solo se escribe el nombre de la variable.
 
 Context7 es un servicio de terceros: el nombre de la librería y el texto de la pregunta salen hacia Upstash. No incluyas secretos ni código privado en una consulta. Para quitarlo, ejecuta la skill con `reset`.
 
