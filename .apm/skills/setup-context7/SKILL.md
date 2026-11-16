@@ -13,7 +13,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 #### Especificación de Argumentos
 
 1. **Orden** _(Obligatorio)_:
-   - `detect`: devuelve las dependencias del proyecto (`sugerida`, o `descartada` con su motivo), los manifiestos leídos, `key` (si la clave está en el `.env` o en la terminal, y si git ignora el `.env`) y, por herramienta, si Context7 ya está configurado. No escribe nada.
+   - `detect`: devuelve las dependencias del proyecto (`sugerida`, o `descartada` con su motivo), los manifiestos leídos (en la raíz y en subcarpetas de hasta 3 niveles; cada dependencia trae `sources` con los archivos de donde sale, y un manifiesto ilegible trae `error` sin parar el resto), `key` (si la clave está en el `.env` o en la terminal, y si git ignora el `.env`) y, por herramienta, si Context7 ya está configurado. No escribe nada.
    - `apply`: escribe el MCP de Context7 en cada herramienta y, con `--libs`, la regla del proyecto. Repetirlo no cambia nada.
    - `reset`: quita el MCP de Context7 y la regla.
 2. **`--libs a,b,c`** _(Opcional)_: las librerías confirmadas por la persona. Con ellas se escribe el bloque «Context7» en `AGENTS.md` (Cursor y Codex) o `CLAUDE.md` (Claude Code).
@@ -24,8 +24,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 - **Tú hablas, el script no**: El script nunca pregunta. Las preguntas las haces tú y le pasas las respuestas con `--libs` y `--with-key`.
 - **Flujo**:
-  1. Lanza `detect`. Si falla porque no hay carpeta de agentes, dile a la persona que ejecute `apm install`. Si no hay manifiestos (`manifests` vacío), dilo y ofrece configurar solo el MCP, o que la persona escriba las librerías a mano.
-  2. Muestra las dependencias `sugerida` en una tabla con librería y ecosistema. Después, en una línea, las `descartada` con su motivo. Si Context7 ya está configurado en alguna herramienta, dilo.
+  1. Lanza `detect`. Si falla porque no hay carpeta de agentes, dile a la persona que ejecute `apm install`. Si no hay manifiestos (`manifests` vacío), di que se buscó en la raíz y en las subcarpetas hasta 3 niveles, y ofrece configurar solo el MCP, o que la persona escriba las librerías a mano.
+  2. Muestra las dependencias `sugerida` en una tabla con librería, ecosistema y carpeta (de `sources`; si hay varias, la primera y cuántas más). Después, en una línea, las `descartada` con su motivo. Si Context7 ya está configurado en alguna herramienta, dilo.
   3. Pregunta **una vez**: «¿Las aceptas? [Enter = sí | nombre de una librería para quitarla o añadir otra]». Repite hasta que acepte.
   4. Mira `key` en la salida de `detect`. Si `key.inEnv` es `true`, la clave ya está en el `.env`: propón usarla con `--with-key`. Si no, pregunta si quiere usar una (gratis en context7.com/dashboard; da más límite de peticiones). Si dice que sí, dile que añada `CONTEXT7_API_KEY=su-clave` a su `.env`, junto a `GITHUB_TOKEN`, y que lo haga ella misma: no le pidas la clave ni la pegues en el chat. Si no la quiere, no pases la opción: Context7 funciona sin clave con el límite por defecto.
   5. Lanza `apply --libs LISTA` (con `--with-key` si procede). Muestra una tabla final con herramienta, archivo de configuración, archivo de regla y `result`, y las `notes`.

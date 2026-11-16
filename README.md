@@ -76,7 +76,7 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 [Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado.
 
-La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en las subcarpetas (hasta 3 niveles, sin `node_modules`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
 **La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 

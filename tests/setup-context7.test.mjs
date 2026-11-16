@@ -15,6 +15,7 @@ import {
   parseCargo,
   classify,
   readDependencies,
+  projectDirs,
   setServerJson,
   removeServerJson,
   setServerToml,
@@ -102,6 +103,64 @@ test("readDependencies junta manifiestos y no repite una librería", () => {
   assert.deepEqual(manifests.map((m) => m.file), ["package.json", "requirements.txt"]);
   const by = Object.fromEntries(dependencies.map((d) => [d.name, d.status]));
   assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "sugerida", fastapi: "sugerida" });
+});
+
+const writePkg = (root, dir, deps) => {
+  mkdirSync(join(root, dir), { recursive: true });
+  writeFileSync(join(root, dir, "package.json"), JSON.stringify({ dependencies: deps }));
+};
+
+test("projectDirs recorre hasta 3 niveles y se salta ocultas, node_modules y carpetas de build", () => {
+  const root = project();
+  for (const d of ["app", "app/src", "app/src/ui", "app/src/ui/deep", "node_modules/x", ".git/y", "dist", "packages/a"]) {
+    mkdirSync(join(root, d), { recursive: true });
+  }
+  const dirs = projectDirs(root);
+  assert.equal(dirs[0], "");
+  assert.ok(dirs.includes("app") && dirs.includes("app/src") && dirs.includes("app/src/ui") && dirs.includes("packages/a"));
+  assert.ok(!dirs.includes("app/src/ui/deep"), "nivel 4");
+  assert.ok(!dirs.some((d) => d.includes("node_modules") || d.startsWith(".") || d === "dist"));
+});
+
+test("readDependencies encuentra el package.json de una subcarpeta y dice de dónde sale", () => {
+  const root = project();
+  writePkg(root, "app", { react: "19", typescript: "5" });
+  const { manifests, dependencies } = readDependencies({ root, profiles });
+  assert.deepEqual(manifests.map((m) => m.file), ["app/package.json"]);
+  const react = dependencies.find((d) => d.name === "react");
+  assert.deepEqual(react.sources, ["app/package.json"]);
+  assert.equal(dependencies.find((d) => d.name === "typescript").status, "descartada");
+});
+
+test("una librería en varias carpetas sale una vez, con todas sus fuentes; la raíz va primero", () => {
+  const root = project();
+  writePkg(root, "", { react: "19" });
+  writePkg(root, "web", { react: "19", vue: "3" });
+  writePkg(root, "node_modules/dep", { fantasma: "1" });
+  const { manifests, dependencies } = readDependencies({ root, profiles });
+  assert.deepEqual(manifests.map((m) => m.file), ["package.json", "web/package.json"]);
+  assert.deepEqual(dependencies.find((d) => d.name === "react").sources, ["package.json", "web/package.json"]);
+  assert.ok(!dependencies.some((d) => d.name === "fantasma"));
+});
+
+test("un manifiesto roto en una subcarpeta no impide leer los demás y queda anotado", () => {
+  const root = project();
+  writePkg(root, "app", { react: "19" });
+  mkdirSync(join(root, "otra"), { recursive: true });
+  writeFileSync(join(root, "otra", "package.json"), "{roto");
+  const { manifests, dependencies } = readDependencies({ root, profiles });
+  assert.deepEqual(dependencies.map((d) => d.name), ["react"]);
+  const broken = manifests.find((m) => m.file === "otra/package.json");
+  assert.equal(broken.count, 0);
+  assert.match(broken.error, /no es un JSON válido/);
+});
+
+test("detect por la CLI encuentra las dependencias de una subcarpeta", async () => {
+  const root = project(["cursor"]);
+  writePkg(root, "desktop", { electron: "30", react: "19" });
+  const out = await exec(root, ["detect"]);
+  assert.deepEqual(out.manifests.map((m) => m.file), ["desktop/package.json"]);
+  assert.deepEqual(out.dependencies.map((d) => d.name).sort(), ["electron", "react"]);
 });
 
 test("setServerJson crea el archivo, conserva otros MCP y es idempotente", () => {

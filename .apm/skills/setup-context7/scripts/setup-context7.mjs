@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFile as execFileCb } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -189,23 +189,60 @@ export function classify(profiles, name) {
   return { status: "sugerida", why: "Dependencia directa del proyecto." };
 }
 
+// Un proyecto suele tener su package.json (o similar) en una subcarpeta: app/, desktop/, packages/x…
+export const MAX_DEPTH = 3;
+const SKIP_DIRS = new Set(["node_modules", "vendor", "dist", "build", "out", "target", "venv", "coverage", "__pycache__", "apm_modules", "storybook-static"]);
+
+// Carpetas del proyecto (relativas a la raíz), la raíz primero y por niveles. Sin ocultas ni de dependencias o build.
+export function projectDirs(root, maxDepth = MAX_DEPTH) {
+  const dirs = [""];
+  let level = [""];
+  for (let depth = 1; depth <= maxDepth; depth++) {
+    const next = [];
+    for (const rel of level) {
+      let entries = [];
+      try {
+        entries = readdirSync(join(root, rel), { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const e of entries.sort((x, y) => x.name.localeCompare(y.name))) {
+        if (!e.isDirectory() || e.name.startsWith(".") || SKIP_DIRS.has(e.name)) continue;
+        next.push(rel ? `${rel}/${e.name}` : e.name);
+      }
+    }
+    dirs.push(...next);
+    level = next;
+  }
+  return dirs;
+}
+
 export function readDependencies({ root, profiles = loadProfiles() }) {
   const manifests = [];
-  const dependencies = [];
-  const seen = new Set();
-  for (const { file, ecosystem, parse } of MANIFESTS) {
-    const path = join(root, file);
-    if (!existsSync(path)) continue;
-    const names = parse(readFileSync(path, "utf8"));
-    manifests.push({ file, ecosystem, count: names.length });
-    for (const name of names) {
-      const key = `${ecosystem}:${name}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      dependencies.push({ name, ecosystem, source: file, ...classify(profiles, name) });
+  const byKey = new Map();
+  for (const dir of projectDirs(root)) {
+    for (const { file, ecosystem, parse } of MANIFESTS) {
+      const rel = dir ? `${dir}/${file}` : file;
+      const path = join(root, rel);
+      if (!existsSync(path)) continue;
+      let names;
+      try {
+        names = parse(readFileSync(path, "utf8"));
+      } catch (e) {
+        if (!(e instanceof SetupContext7Error)) throw e;
+        manifests.push({ file: rel, ecosystem, count: 0, error: e.message });
+        continue;
+      }
+      manifests.push({ file: rel, ecosystem, count: names.length });
+      for (const name of names) {
+        const key = `${ecosystem}:${name}`;
+        const known = byKey.get(key);
+        if (known) known.sources.push(rel);
+        else byKey.set(key, { name, ecosystem, sources: [rel], ...classify(profiles, name) });
+      }
     }
   }
-  return { manifests, dependencies };
+  return { manifests, dependencies: [...byKey.values()] };
 }
 
 // --- Herramientas presentes ---
