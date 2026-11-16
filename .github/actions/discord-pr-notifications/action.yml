@@ -24,11 +24,18 @@ inputs:
     required: true
   trigger-run-id:
     description: Completed unprivileged trigger workflow run ID.
-    required: true
+    required: false
+  pr-number:
+    description: PR number from a trusted default-branch event instead of a trigger run.
+    required: false
+  trusted-branch:
+    description: Default branch that contains the direct event workflow.
+    required: false
 runs:
   using: composite
   steps:
     - name: Download PR number
+      if: ${{ inputs.trigger-run-id != '' }}
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
       with:
         name: discord-pr-number
@@ -37,6 +44,7 @@ runs:
         github-token: ${{ inputs.github-token }}
     - name: Verify trigger and current PR
       id: verify
+      if: ${{ inputs.trigger-run-id != '' }}
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
@@ -46,9 +54,21 @@ runs:
         TRIGGER_RUN_ID: ${{ inputs.trigger-run-id }}
         PR_NUMBER_FILE: ${{ runner.temp }}/discord-pr-number/pr-number
       run: node "$GITHUB_ACTION_PATH/verify-event.mjs"
+    - name: Verify direct event and current PR
+      id: verify-direct
+      if: ${{ inputs.trigger-run-id == '' }}
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        EXPECTED_REPOSITORY: ${{ inputs.expected-repository }}
+        PR_BASE_BRANCH: ${{ inputs.base-branch }}
+        TRUSTED_BRANCH: ${{ inputs.trusted-branch }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+      run: node "$GITHUB_ACTION_PATH/verify-direct.mjs"
     - name: Restore encrypted reviewer relations
       id: prepare
-      if: steps.verify.outputs.eligible == 'true'
+      if: steps.verify.outputs.eligible == 'true' || steps.verify-direct.outputs.eligible == 'true'
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
@@ -58,14 +78,14 @@ runs:
         RELATIONS_FILE: ${{ runner.temp }}/discord-pr-relations/relations.enc.json
       run: node "$GITHUB_ACTION_PATH/state.mjs" prepare
     - name: Notify reviewers
-      if: steps.verify.outputs.eligible == 'true'
+      if: steps.verify.outputs.eligible == 'true' || steps.verify-direct.outputs.eligible == 'true'
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         EXPECTED_REPOSITORY: ${{ inputs.expected-repository }}
         PR_BASE_BRANCH: ${{ inputs.base-branch }}
-        PR_NUMBER: ${{ steps.verify.outputs.pr_number }}
+        PR_NUMBER: ${{ steps.verify.outputs.pr_number || steps.verify-direct.outputs.pr_number }}
         DISCORD_BOT_TOKEN: ${{ inputs.bot-token }}
         DISCORD_CACHE_KEY: ${{ inputs.cache-key }}
         DISCORD_GUILD_ID: ${{ inputs.guild-id }}
