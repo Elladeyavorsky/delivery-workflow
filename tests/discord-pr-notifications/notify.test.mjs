@@ -148,15 +148,16 @@ test('no elige entre un usuario y el apodo exacto de otra persona', async () => 
   assert.match(result.problems[0], /not a unique/);
 });
 
-test('el mensaje contiene resumen y enlace sin menciones suministradas por la PR', () => {
+test('el mensaje separa avisos y omite el cuerpo de la PR', () => {
   const message = buildMessage('owner/repo', {
     number: 40, title: '@everyone **New**', body: 'Please <@999999999999999999> review',
   }, [{ login: 'alice', discordId: aliceId }, { login: 'bob', discordId: bobId }]);
-  assert.match(message, /^\*\*Repositorio: owner\/repo\*\*\n/);
+  assert.match(message, /^-----\n📦 \*\*Repositorio:\*\* owner\/repo\n📝 \*\*PR para revisar:\*\*/);
   assert.match(message, /New/);
   assert.match(message, /https:\/\/github\.com\/owner\/repo\/pull\/40/);
   assert.match(message, new RegExp(`<@${aliceId}>.*<@${bobId}>`));
   assert.doesNotMatch(message, /@everyone|<@999999999999999999>/);
+  assert.doesNotMatch(message, /Please|review/);
 });
 
 test('la cabecera muestra el repositorio verificado y todos los revisores', () => {
@@ -165,18 +166,17 @@ test('la cabecera muestra el repositorio verificado y todos los revisores', () =
     { login: 'alice', discordId: aliceId }, { login: 'bob', discordId: bobId },
     { login: 'carol', discordId: carolId },
   ]);
-  assert.match(message, /^\*\*Repositorio: venturars\/delivery-workflow\*\*/);
+  assert.match(message, /^-----\n📦 \*\*Repositorio:\*\* venturars\/delivery-workflow/);
   assert.match(message, new RegExp(`<@${aliceId}>.*<@${bobId}>.*<@${carolId}>`));
 });
 
-test('el resumen ignora referencias, títulos y viñetas y etiqueta el enlace final', () => {
+test('el cuerpo de la PR no aparece y el enlace final queda etiquetado', () => {
   const message = buildMessage('owner/repo', {
     number: 40, title: 'Attendance update',
     body: 'Closes #83\n\n## Qué cambia\n- Primer detalle\nUna descripción clara de la PR.\n\nFixes #42',
   }, [{ login: 'alice' }, { login: 'bob' }]);
-  assert.match(message, /Una descripción clara de la PR\./);
-  assert.doesNotMatch(message, /Closes|Fixes|Qué cambia|Primer detalle/);
-  assert.match(message, /Enlace a la PR: https:\/\/github\.com\/owner\/repo\/pull\/40$/);
+  assert.doesNotMatch(message, /Closes|Fixes|Qué cambia|Primer detalle|Una descripción clara/);
+  assert.match(message, /🔗 \*\*Enlace a la PR:\*\* https:\/\/github\.com\/owner\/repo\/pull\/40$/);
 });
 
 test('el aviso usa el mapa fijo para mencionar usuarios con nombres distintos', async (t) => {

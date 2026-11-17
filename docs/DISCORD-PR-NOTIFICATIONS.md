@@ -1,6 +1,6 @@
 # Avisos de revisión de PR en Discord
 
-La acción compuesta de `.github/actions/discord-pr-notifications/` verifica una PR hacia la base configurada y publica el repositorio, un resumen, el enlace y los revisores solicitados en GitHub. No utiliza código de la PR. Con al menos dos revisores solicitados, publica aunque ninguno tenga relación conocida con Discord; menciona solo a los verificados y muestra los demás logins como «sin mención de Discord». Si una relación se confirma más tarde, envía un aviso adicional solo para esa persona.
+La acción compuesta de `.github/actions/discord-pr-notifications/` verifica una PR hacia la base configurada y publica una línea separadora, el repositorio, el título, el enlace y los revisores solicitados en GitHub. Cada parte lleva un icono. No incluye el cuerpo de la PR ni ejecuta su código. Con al menos dos revisores solicitados, publica aunque ninguno tenga relación conocida con Discord; menciona solo a los verificados y muestra los demás logins como «sin mención de Discord». Si una relación se confirma más tarde, envía un aviso adicional solo para esa persona.
 
 ## Activación optativa y nombres distintos
 

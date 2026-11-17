@@ -98,38 +98,16 @@ function plainText(value, limit) {
     .slice(0, limit);
 }
 
-function prDescription(body) {
-  const paragraph = [];
-  for (const rawLine of String(body ?? '').split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line) {
-      if (paragraph.length) break;
-      continue;
-    }
-    // Ignora metadatos y títulos para elegir solo el primer párrafo descriptivo.
-    if (/^(?:Closes|Fixes|Resolves)\s+#\d+\b/i.test(line) ||
-        /^#{1,6}\s/.test(line) || /^[-*+]\s/.test(line) || /^\d+[.)]\s/.test(line) ||
-        /^>\s/.test(line) || /^```/.test(line) || /^---+$/.test(line)) {
-      if (paragraph.length) break;
-      continue;
-    }
-    paragraph.push(line);
-  }
-  return plainText(paragraph.join(' '), 180);
-}
-
 export function buildMessage(repository, pr, reviewers, update = false) {
   const title = plainText(pr.title, 120);
-  const description = prDescription(pr.body);
   const link = `https://github.com/${repository}/pull/${pr.number}`;
   const names = reviewers.map(({ login, discordId }) =>
     `${discordId ? `<@${discordId}>` : plainText(login, 39)} ` +
     `(${discordId ? `GitHub: ${plainText(login, 39)}` : 'sin mención de Discord'})`).join(', ');
   const label = update ? 'Nuevos revisores o menciones' : 'Revisores';
-  // El repositorio validado identifica el origen de los avisos del mismo canal.
-  return `**Repositorio: ${repository}**\n**PR para revisar:** ${title || `#${pr.number}`}\n` +
-    (description ? `${description}\n` : '') +
-    `**${label}:** ${names}\nEnlace a la PR: ${link}`;
+  // La línea inicial separa los avisos consecutivos en el mismo canal.
+  return `-----\n📦 **Repositorio:** ${repository}\n📝 **PR para revisar:** ${title || `#${pr.number}`}\n` +
+    `👥 **${label}:** ${names}\n🔗 **Enlace a la PR:** ${link}`;
 }
 
 async function currentPullRequest(repository, baseBranch, number, token) {
