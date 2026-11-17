@@ -265,6 +265,49 @@ for agent in concept-developer concept-tester create-issue create-pr; do
   check "${agent} precarga say-it-straight" grep -q -- "- say-it-straight" "${package}/.apm/agents/${agent}.agent.md"
 done
 
+# docker-best-practices: check-docker.sh avisa de lo que no tiene versión fija.
+checkdocker="${skills}/docker-best-practices/scripts/check-docker.sh"
+mkdir -p "${work}/docker-good" "${work}/docker-bad"
+cat >"${work}/docker-good/Dockerfile" <<'DOCKERFILE'
+FROM node:24.22.3-trixie AS base
+ARG TOOL_SHA256=abc
+RUN npm install --global "pnpm@10.33.0"
+RUN curl -fsSL -o /tmp/t.tgz https://example.org/t.tgz \
+  && echo "${TOOL_SHA256}  /tmp/t.tgz" | sha256sum -c -
+USER node
+FROM base AS gui
+USER root
+RUN apt-get update --snapshot 20261116T000000Z \
+  && apt-get install -y --no-install-recommends --snapshot 20261116T000000Z \
+    libgtk-3-0t64=3.24.49-3 \
+  && rm -rf /var/lib/apt/lists/*
+USER node
+DOCKERFILE
+echo '*' >"${work}/docker-good/.dockerignore"
+cat >"${work}/docker-bad/Dockerfile" <<'DOCKERFILE'
+FROM node:24-bookworm
+RUN apt-get update && apt-get install -y python3-venv
+RUN npm install --global pnpm
+RUN pip install apm-cli
+RUN curl -fsSL -o /tmp/t.tgz https://example.org/t.tgz
+DOCKERFILE
+check "check-docker no avisa de un Dockerfile con todo fijado" bash "$checkdocker" "${work}/docker-good/Dockerfile"
+bad=$(bash "$checkdocker" "${work}/docker-bad/Dockerfile" 2>&1) && bad_status=0 || bad_status=$?
+check "check-docker sale con 1 si hay avisos" test "$bad_status" -eq 1
+check "check-docker avisa de FROM sin versión exacta" grep -q ":1: FROM node:24-bookworm" <<<"$bad"
+check "check-docker avisa de apt-get sin versión" grep -q "apt-get install sin versión fija: python3-venv" <<<"$bad"
+check "check-docker avisa de apt-get sin --snapshot" grep -q "apt-get sin --snapshot" <<<"$bad"
+check "check-docker avisa de npm --global sin versión" grep -q "npm install --global sin versión: pnpm" <<<"$bad"
+check "check-docker avisa de pip sin versión" grep -q "pip install sin versión: apm-cli" <<<"$bad"
+check "check-docker avisa de curl sin sha256sum" grep -q "curl o wget sin comprobar su sha256sum" <<<"$bad"
+check "check-docker avisa si la imagen termina con root" grep -q "termina con root" <<<"$bad"
+check "check-docker avisa si falta .dockerignore" grep -q "no hay .dockerignore" <<<"$bad"
+check "check-docker sale con 2 si falta el Dockerfile" bash -c "bash '$checkdocker' '${work}/no-existe' 2>/dev/null; test \$? -eq 2"
+for reference in versiones-fijas compose-y-volumenes devcontainer gui-en-contenedores; do
+  check "docker-best-practices enlaza references/${reference}.md" grep -q "references/${reference}.md" "${skills}/docker-best-practices/SKILL.md"
+  check "docker-best-practices trae references/${reference}.md" test -f "${skills}/docker-best-practices/references/${reference}.md"
+done
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."
