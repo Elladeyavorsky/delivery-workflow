@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFile as execFileCb } from "node:child_process";
+import { execFile as execFileCb, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -190,8 +190,11 @@ export function classify(profiles, name) {
 }
 
 // Un proyecto suele tener su package.json (o similar) en una subcarpeta: app/, desktop/, packages/x…
+// Sin git se recorren las carpetas hasta MAX_DEPTH niveles.
 export const MAX_DEPTH = 3;
 const SKIP_DIRS = new Set(["node_modules", "vendor", "dist", "build", "out", "target", "venv", "coverage", "__pycache__", "apm_modules", "storybook-static"]);
+
+const skipped = (name) => name.startsWith(".") || SKIP_DIRS.has(name);
 
 // Carpetas del proyecto (relativas a la raíz), la raíz primero y por niveles. Sin ocultas ni de dependencias o build.
 export function projectDirs(root, maxDepth = MAX_DEPTH) {
@@ -207,7 +210,7 @@ export function projectDirs(root, maxDepth = MAX_DEPTH) {
         continue;
       }
       for (const e of entries.sort((x, y) => x.name.localeCompare(y.name))) {
-        if (!e.isDirectory() || e.name.startsWith(".") || SKIP_DIRS.has(e.name)) continue;
+        if (!e.isDirectory() || skipped(e.name)) continue;
         next.push(rel ? `${rel}/${e.name}` : e.name);
       }
     }
@@ -217,29 +220,55 @@ export function projectDirs(root, maxDepth = MAX_DEPTH) {
   return dirs;
 }
 
+// Rutas (relativas a la raíz) de los manifiestos que git conoce, a cualquier profundidad y sin lo que .gitignore ignora.
+// Devuelve null si la raíz no es un repositorio git o git no está instalado.
+function gitManifests(root) {
+  let out;
+  try {
+    out = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...MANIFESTS.map((m) => `:(glob)**/${m.file}`)], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return null;
+  }
+  return out.split("\0").filter(Boolean);
+}
+
+// Manifiestos del proyecto: [{rel, ecosystem, parse}], la raíz primero, luego por nivel, carpeta y orden de MANIFESTS.
+export function findManifests(root) {
+  const fromGit = gitManifests(root);
+  const rels = fromGit ?? projectDirs(root).flatMap((dir) => MANIFESTS.map(({ file }) => (dir ? `${dir}/${file}` : file)));
+  const found = [];
+  for (const rel of new Set(rels)) {
+    const parts = rel.split("/");
+    const index = MANIFESTS.findIndex((m) => m.file === parts[parts.length - 1]);
+    if (index === -1 || parts.slice(0, -1).some(skipped) || !existsSync(join(root, rel))) continue;
+    found.push({ rel, dir: parts.slice(0, -1).join("/"), depth: parts.length - 1, index });
+  }
+  found.sort((a, b) => a.depth - b.depth || a.dir.localeCompare(b.dir) || a.index - b.index);
+  return found.map(({ rel, index }) => ({ rel, ...MANIFESTS[index] }));
+}
+
 export function readDependencies({ root, profiles = loadProfiles() }) {
   const manifests = [];
   const byKey = new Map();
-  for (const dir of projectDirs(root)) {
-    for (const { file, ecosystem, parse } of MANIFESTS) {
-      const rel = dir ? `${dir}/${file}` : file;
-      const path = join(root, rel);
-      if (!existsSync(path)) continue;
-      let names;
-      try {
-        names = parse(readFileSync(path, "utf8"));
-      } catch (e) {
-        if (!(e instanceof SetupContext7Error)) throw e;
-        manifests.push({ file: rel, ecosystem, count: 0, error: e.message });
-        continue;
-      }
-      manifests.push({ file: rel, ecosystem, count: names.length });
-      for (const name of names) {
-        const key = `${ecosystem}:${name}`;
-        const known = byKey.get(key);
-        if (known) known.sources.push(rel);
-        else byKey.set(key, { name, ecosystem, sources: [rel], ...classify(profiles, name) });
-      }
+  for (const { rel, ecosystem, parse } of findManifests(root)) {
+    let names;
+    try {
+      names = parse(readFileSync(join(root, rel), "utf8"));
+    } catch (e) {
+      if (!(e instanceof SetupContext7Error)) throw e;
+      manifests.push({ file: rel, ecosystem, count: 0, error: e.message });
+      continue;
+    }
+    manifests.push({ file: rel, ecosystem, count: names.length });
+    for (const name of names) {
+      const key = `${ecosystem}:${name}`;
+      const known = byKey.get(key);
+      if (known) known.sources.push(rel);
+      else byKey.set(key, { name, ecosystem, sources: [rel], ...classify(profiles, name) });
     }
   }
   return { manifests, dependencies: [...byKey.values()] };

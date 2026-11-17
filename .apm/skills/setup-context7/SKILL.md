@@ -15,7 +15,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 1. **Orden** _(Obligatorio)_:
    - `detect`: no escribe nada. Devuelve:
      - Las dependencias del proyecto: `sugerida`, o `descartada` con su motivo. Cada una trae `sources` con los archivos de donde sale.
-     - Los manifiestos leídos, en la raíz y en subcarpetas de hasta 3 niveles. Un manifiesto ilegible trae `error` y no para el resto.
+     - Los manifiestos leídos, en la raíz y en cualquier subcarpeta (con `git ls-files`, sin lo que `.gitignore` ignora; sin git, hasta 3 niveles). Un manifiesto ilegible trae `error` y no para el resto.
      - `key`: si la clave está en el `.env` o en la terminal, y si git ignora el `.env`.
      - Por herramienta, si Context7 ya está configurado.
    - `apply`: escribe el MCP de Context7 en cada herramienta y, con `--libs`, la regla del proyecto. Repetirlo no cambia nada.
@@ -28,7 +28,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 - **Tú hablas, el script no**: El script nunca pregunta. Las preguntas las haces tú y le pasas las respuestas con `--libs` y `--with-key`.
 - **Flujo**:
-  1. Lanza `detect`. Si falla porque no hay carpeta de agentes, dile a la persona que ejecute `apm install`. Si no hay manifiestos (`manifests` vacío), di que se buscó en la raíz y en las subcarpetas hasta 3 niveles, y ofrece configurar solo el MCP, o que la persona escriba las librerías a mano.
+  1. Lanza `detect`. Si falla porque no hay carpeta de agentes, dile a la persona que ejecute `apm install`. Si no hay manifiestos (`manifests` vacío), di que se buscó en toda la carpeta del proyecto salvo lo que `.gitignore` ignora (sin git, hasta 3 niveles), y ofrece configurar solo el MCP, o que la persona escriba las librerías a mano.
   2. Muestra las dependencias `sugerida` en una tabla con librería, ecosistema y carpeta (de `sources`; si hay varias, la primera y cuántas más). Después, en una línea, las `descartada` con su motivo. Si Context7 ya está configurado en alguna herramienta, dilo.
   3. Pregunta **una vez**: «¿Las aceptas? [Enter = sí | nombre de una librería para quitarla o añadir otra]». Repite hasta que acepte.
   4. Mira `key` en la salida de `detect`:

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -16,6 +16,7 @@ import {
   classify,
   readDependencies,
   projectDirs,
+  findManifests,
   setServerJson,
   removeServerJson,
   setServerToml,
@@ -153,6 +154,51 @@ test("un manifiesto roto en una subcarpeta no impide leer los demás y queda ano
   const broken = manifests.find((m) => m.file === "otra/package.json");
   assert.equal(broken.count, 0);
   assert.match(broken.error, /no es un JSON válido/);
+});
+
+// Un proyecto desechable que es un repo git (sin commits: basta con el índice y lo no ignorado).
+function gitProject() {
+  const root = project(["cursor"]);
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  return root;
+}
+
+test("con git, findManifests llega a cualquier profundidad y respeta .gitignore", () => {
+  const root = gitProject();
+  writeFileSync(join(root, ".gitignore"), "node_modules/\ngenerado/\n");
+  writePkg(root, "a/b/c/d/e", { react: "19" });
+  writePkg(root, "node_modules/dep", { fantasma: "1" });
+  writePkg(root, "generado", { otro: "1" });
+  assert.deepEqual(findManifests(root).map((m) => m.rel), ["a/b/c/d/e/package.json"]);
+});
+
+test("con git, un manifiesto nuevo sin añadir cuenta, uno borrado no, y vendor y ocultas se saltan aunque estén versionados", () => {
+  const root = gitProject();
+  writePkg(root, "web", { vue: "3" });
+  writePkg(root, "vendor/lib", { fantasma: "1" });
+  writePkg(root, ".hidden", { fantasma: "1" });
+  writePkg(root, "viejo", { fantasma: "1" });
+  execFileSync("git", ["add", "-f", "."], { cwd: root });
+  rmSync(join(root, "viejo"), { recursive: true });
+  writePkg(root, "nuevo", { react: "19" });
+  const { manifests } = readDependencies({ root, profiles });
+  assert.deepEqual(manifests.map((m) => m.file), ["nuevo/package.json", "web/package.json"]);
+});
+
+test("con git, el orden es la raíz primero, luego por nivel y carpeta", () => {
+  const root = gitProject();
+  writePkg(root, "z", { a: "1" });
+  writePkg(root, "a/b", { a: "1" });
+  writePkg(root, "", { a: "1" });
+  writeFileSync(join(root, "go.mod"), "module x\n");
+  assert.deepEqual(findManifests(root).map((m) => m.rel), ["package.json", "go.mod", "z/package.json", "a/b/package.json"]);
+});
+
+test("sin git, findManifests recorre las carpetas hasta 3 niveles", () => {
+  const root = project();
+  writePkg(root, "a/b/c", { react: "19" });
+  writePkg(root, "a/b/c/d", { fantasma: "1" });
+  assert.deepEqual(findManifests(root).map((m) => m.rel), ["a/b/c/package.json"]);
 });
 
 test("detect por la CLI encuentra las dependencias de una subcarpeta", async () => {
