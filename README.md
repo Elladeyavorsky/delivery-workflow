@@ -78,9 +78,9 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 `/setup-context7` lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en las subcarpetas (hasta 3 niveles, sin `node_modules`). Propone todas salvo los tipos y las utilidades de build, y pide confirmación una sola vez: quita las que no quieras. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
-**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
+**La clave es opcional.** Context7 funciona sin ella, con un límite menor de peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
-```
+```dotenv
 CONTEXT7_API_KEY=tu-clave
 ```
 

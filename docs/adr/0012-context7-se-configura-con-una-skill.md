@@ -2,7 +2,7 @@
 
 Context7 da a los agentes la documentación actual de cada librería a través de un servidor MCP. Se configura con la skill `/setup-context7`, un paso opcional tras `apm install`. La skill lee las dependencias del proyecto, sugiere para cuáles usar Context7, y tras la confirmación escribe el MCP en cada herramienta y una regla en el proyecto.
 
-El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías distintas y cada persona decide si quiere un servicio de terceros, así que la configuración vive en el proyecto y no viaja con el paquete. Cada MCP nuevo tendrá su propia skill de configuración.
+El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías distintas y cada persona decide si quiere un servicio de terceros, así que la configuración vive en el proyecto y no viaja con el paquete.
 
 ## Qué escribe
 
@@ -20,8 +20,8 @@ El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías dist
 ## Consecuencias
 
 - Hay veintiuna skills en `.apm/skills/`. La nueva lleva script y tests.
-- `apm install` no toca los archivos de config MCP mientras el paquete no declare MCP en `apm.yml` (comprobado con APM 0.35.0 y Cursor). Si algún día los declara, habrá que repetir la comprobación.
+- `apm install` no toca los archivos de config MCP mientras el paquete no declare MCP en `apm.yml` (comprobado con APM 0.35.0 y Cursor). Si los declara, hay que repetir la comprobación.
 - Cursor y Codex comparten `AGENTS.md`: `reset` de una herramienta conserva la regla mientras la otra siga usando Context7.
-- Las herramientas solo resuelven `${VAR}` desde el entorno, no desde un fichero (ADR 0007): la persona carga el `.env` en la terminal antes de abrir el editor. Se descartó copiar el valor del `.env` a los archivos de config, porque `.cursor/mcp.json` y `.mcp.json` suelen subirse a git.
+- Las herramientas solo resuelven `${VAR}` desde el entorno, no desde un fichero (ADR 0007). El README explica cómo cargar el `.env` antes de abrir el editor. Se descartó copiar el valor del `.env` a los archivos de config, porque `.cursor/mcp.json` y `.mcp.json` suelen subirse a git.
 - La sintaxis de la cabecera con variable de entorno viene de la documentación de cada herramienta y no se ha probado con un editor real.
 - Qué dependencias se sugieren y dónde se buscan los manifiestos está en la sección «Context7» del [README](../../README.md), no aquí.
