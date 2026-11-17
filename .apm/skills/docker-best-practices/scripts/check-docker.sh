@@ -40,8 +40,8 @@ check() {
       fi
       tag=""
       [[ "${image##*/}" == *:* ]] && tag=${image##*:}
-      if [[ -z "$tag" || "$tag" == latest || ! "$tag" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
-        warn "$at" "FROM ${image}: fija la versión exacta de la imagen (X.Y.Z), o su @sha256."
+      if [[ -z "$tag" || "$tag" == latest || ! "$tag" =~ ([0-9]+\.[0-9]+\.[0-9]+|[0-9]{8}) ]]; then
+        warn "$at" "FROM ${image}: fija la versión exacta de la imagen (X.Y.Z, o la fecha en imágenes de sistema como debian:trixie-AAAAMMDD), o su @sha256."
       fi
       ;;
     USER)
@@ -62,8 +62,10 @@ check() {
           || warn "$at" "apt-get install sin apt-get update en el mismo RUN."
         grep -q -- '--snapshot' <<<"$rest" \
           || warn "$at" "apt-get sin --snapshot: las versiones fijadas desaparecen cuando Debian publica otras."
-        grep -q '/var/lib/apt/lists' <<<"$rest" \
+        grep -qE '/var/lib/apt/lists|target=/var/lib/apt' <<<"$rest" \
           || warn "$at" "apt-get sin rm -rf /var/lib/apt/lists/* en el mismo RUN."
+      elif grep -qE 'apt-get[[:space:]]+update' <<<"$rest"; then
+        warn "$at" "apt-get update sin apt-get install en el mismo RUN: su capa queda en caché con una lista vieja."
       fi
       if grep -qE '(curl|wget)[[:space:]]' <<<"$rest" && grep -qE '(curl|wget).*https?://' <<<"$rest" \
         && ! grep -qE 'sha(256|512)sum' <<<"$rest"; then

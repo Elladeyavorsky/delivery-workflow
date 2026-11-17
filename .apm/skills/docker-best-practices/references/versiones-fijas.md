@@ -15,6 +15,8 @@ FROM node:24.22.3-trixie
 FROM node:24.22.3-trixie@sha256:<digest>
 ```
 
+Las imágenes de sistema (Debian, Ubuntu) no llevan `X.Y.Z`: su etiqueta exacta lleva la fecha (`debian:trixie-20261104-slim`), o se fija con el digest. `debian:13` o `ubuntu:24.04` cambian con cada actualización.
+
 El digest sale de `docker buildx imagetools inspect node:24.22.3-trixie`. Comprueba que la etiqueta existe con `docker manifest inspect IMAGEN:ETIQUETA` antes de escribirla.
 
 Si el proyecto ya fija la versión del runtime (`.nvmrc`, `engines`, `.python-version`), usa la misma.

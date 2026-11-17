@@ -290,7 +290,19 @@ RUN apt-get update && apt-get install -y python3-venv
 RUN npm install --global pnpm
 RUN pip install apm-cli
 RUN curl -fsSL -o /tmp/t.tgz https://example.org/t.tgz
+RUN apt-get update
 DOCKERFILE
+mkdir -p "${work}/docker-cache"
+cat >"${work}/docker-cache/Dockerfile" <<'DOCKERFILE'
+FROM debian:trixie-20261104-slim
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean \
+    && apt-get update --snapshot 20261116T000000Z \
+    && apt-get install -y --no-install-recommends --snapshot 20261116T000000Z curl=8.14.1-2
+USER nobody
+DOCKERFILE
+echo '*' >"${work}/docker-cache/.dockerignore"
 check "check-docker no avisa de un Dockerfile con todo fijado" bash "$checkdocker" "${work}/docker-good/Dockerfile"
 bad=$(bash "$checkdocker" "${work}/docker-bad/Dockerfile" 2>&1) && bad_status=0 || bad_status=$?
 check "check-docker sale con 1 si hay avisos" test "$bad_status" -eq 1
@@ -300,10 +312,12 @@ check "check-docker avisa de apt-get sin --snapshot" grep -q "apt-get sin --snap
 check "check-docker avisa de npm --global sin versión" grep -q "npm install --global sin versión: pnpm" <<<"$bad"
 check "check-docker avisa de pip sin versión" grep -q "pip install sin versión: apm-cli" <<<"$bad"
 check "check-docker avisa de curl sin sha256sum" grep -q "curl o wget sin comprobar su sha256sum" <<<"$bad"
+check "check-docker avisa de apt-get update sin install en el mismo RUN" grep -q ":6: apt-get update sin apt-get install" <<<"$bad"
+check "check-docker acepta la caché de apt montada con BuildKit" bash "$checkdocker" "${work}/docker-cache/Dockerfile"
 check "check-docker avisa si la imagen termina con root" grep -q "termina con root" <<<"$bad"
 check "check-docker avisa si falta .dockerignore" grep -q "no hay .dockerignore" <<<"$bad"
 check "check-docker sale con 2 si falta el Dockerfile" bash -c "bash '$checkdocker' '${work}/no-existe' 2>/dev/null; test \$? -eq 2"
-for reference in versiones-fijas compose-y-volumenes devcontainer gui-en-contenedores; do
+for reference in versiones-fijas cache-de-capas compose-y-volumenes devcontainer gui-en-contenedores; do
   check "docker-best-practices enlaza references/${reference}.md" grep -q "references/${reference}.md" "${skills}/docker-best-practices/SKILL.md"
   check "docker-best-practices trae references/${reference}.md" test -f "${skills}/docker-best-practices/references/${reference}.md"
 done

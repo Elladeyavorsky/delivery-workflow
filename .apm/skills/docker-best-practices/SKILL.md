@@ -1,20 +1,20 @@
 ---
 name: docker-best-practices
-description: "Buenas prácticas para Dockerfile, docker-compose.yml y devcontainer.json: decidir para qué es Docker, fijar versiones, instalar lo mínimo, separar node_modules por proyecto y comprobar antes de la PR. Úsala al crear, cambiar o revisar esos ficheros, o al decidir qué se ejecuta en Docker. Fuera de alcance: despliegues, Kubernetes y registros de imágenes."
+description: "Buenas prácticas para Dockerfile, docker-compose.yml y devcontainer.json: decidir para qué es Docker, fijar versiones, instalar lo mínimo, separar node_modules por proyecto y comprobar antes de la PR. Úsala al crear, cambiar o revisar esos ficheros, o al decidir qué se ejecuta en Docker. Fuera de alcance: Kubernetes."
 ---
 
 # Skill: Docker best practices
 
 ## 1. Perfil y Rol
 
-- **Rol:** Reglas para el Docker de desarrollo de un proyecto: instalar, ejecutar y comprobar con las mismas versiones para todo el equipo.
+- **Rol:** Reglas para el Docker de un proyecto: construir, instalar, ejecutar y comprobar con las mismas versiones para todo el equipo.
 - **Objetivo Principal:** Una imagen reproducible, que cualquiera construye igual hoy y dentro de un mes, y que no rompe la carpeta del proyecto en ningún sistema.
 - **Tono de Comunicación:** Neutro, directo, en español.
 
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** Al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml`, un `.dockerignore` o un `.devcontainer/devcontainer.json`, y al decidir qué parte del trabajo va en Docker.
-- **Fuera de alcance:** Imágenes de producción, despliegues, Kubernetes y registros de imágenes.
+- **Fuera de alcance:** Kubernetes.
 - **Límites de conocimiento:** Comprueba cada versión, nombre de paquete y checksum en su fuente (la imagen, el índice de paquetes, la release). No escribas uno de memoria.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/docker-best-practices`.
@@ -67,6 +67,16 @@ Una app gráfica (Electron, un navegador) no tiene pantalla dentro de un contene
 - `git config --system --add safe.directory '*'` si git trabaja sobre un repositorio montado.
 - `ENV CI=true` para que ninguna herramienta espere una respuesta.
 
+### Caché de capas
+
+- Ordena de lo que menos cambia a lo que más: base, paquetes del sistema, herramientas, dependencias y, al final, el código.
+- Cada `ARG`, justo antes del `RUN` que lo usa: todos los `RUN` posteriores lo reciben, y cambiar su valor invalida la caché desde el primero.
+- Si la imagen copia el proyecto: primero el manifiesto y el lockfile, después la instalación y al final el resto del código.
+- `apt-get update` nunca en un `RUN` sin el `install`: su capa quedaría en caché con una lista vieja.
+- Lo que se descarga y se borra, en el mismo `RUN`: borrarlo en otra capa no reduce la imagen.
+- `RUN --mount=type=cache` para las descargas del gestor de paquetes, y `cache-from` y `cache-to` en CI.
+- Detalle: `<carpeta de esta skill>/references/cache-de-capas.md`.
+
 ### docker-compose.yml
 
 - El proyecto, montado. Los `node_modules` (o `.venv`, `vendor`…), en volúmenes con nombre: los binarios de Linux rompen la app en macOS y Windows.
@@ -97,7 +107,7 @@ Una app gráfica (Electron, un navegador) no tiene pantalla dentro de un contene
 
 ## 6. Comprobar antes de la pull request
 
-1. Construir sin caché (`--no-cache`), y una vez con un checksum erróneo, que tiene que fallar.
+1. Construir sin caché (`--no-cache`), y una vez con un checksum erróneo, que tiene que fallar. Después, construir dos veces seguidas: la segunda tiene que reutilizar todas las capas (`CACHED`).
 2. Construir para la otra arquitectura (`--platform linux/amd64` o `linux/arm64`).
 3. Lanzar los flujos de verdad: instalación, servidor o app, y las comprobaciones del proyecto.
 4. `git status` limpio después, y la carpeta de dependencias vacía en el ordenador.

@@ -1,15 +1,15 @@
 # Las buenas prácticas de Docker son una skill general
 
-La skill `docker-best-practices` reúne las reglas para el Docker de desarrollo de un proyecto. El agente la usa al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml` o un `devcontainer.json`, o al decidir qué se ejecuta en Docker. No forma parte del ciclo de entrega: el orquestador no la llama.
+La skill `docker-best-practices` reúne las reglas para el Docker de un proyecto. El agente la usa al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml` o un `devcontainer.json`, o al decidir qué se ejecuta en Docker. No forma parte del ciclo de entrega: el orquestador no la llama.
 
 Sale de la instalación con Docker de aTempo (venturars/aTempo#74) y de su revisión. Cada regla responde a algo que pasó allí: una imagen base sin versión exacta, un `apt-get` sin versión fija, Python instalado solo para una herramienta que tenía binario, `node_modules` de Linux en la carpeta del proyecto, un Dev Container que Docker Compose 5 no construía y una ventana de Electron que no tenía pantalla.
 
 ## Qué trae
 
 - `SKILL.md`: la decisión de para qué es Docker, las reglas y las comprobaciones antes de la pull request.
-- `references/`: versiones fijas, Compose y volúmenes, Dev Container y apps gráficas en contenedores, con ejemplos.
+- `references/`: versiones fijas, caché de capas, Compose y volúmenes, Dev Container y apps gráficas en contenedores, con ejemplos.
 - `assets/`: plantillas de `Dockerfile` y `docker-compose.yml` con valores por rellenar.
-- `scripts/check-docker.sh`: revisa un `Dockerfile` y avisa de una imagen sin versión exacta, de paquetes de `apt-get`, npm o pip sin versión, de `apt-get` sin `--snapshot`, de descargas sin `sha256sum`, de una imagen que termina con root y de un `.dockerignore` que falta.
+- `scripts/check-docker.sh`: revisa un `Dockerfile` y avisa de una imagen sin versión exacta, de paquetes de `apt-get`, npm o pip sin versión, de `apt-get` sin `--snapshot`, de descargas sin `sha256sum`, de `apt-get update` sin `install` en el mismo `RUN`, de una imagen que termina con root y de un `.dockerignore` que falta.
 
 ## Opciones consideradas
 
