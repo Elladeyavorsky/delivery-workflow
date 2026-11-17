@@ -74,13 +74,13 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 ## Context7
 
-[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado.
+[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código para versiones antiguas.
 
-La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+`/setup-context7` lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git los busca con `git ls-files`, así que respeta `.gitignore` (sin `node_modules` ni `dist`) y no tiene límite de profundidad; sin git recorre hasta 3 niveles. Propone todas salvo los tipos y las utilidades de build, y pide confirmación una sola vez: quita las que no quieras. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
-**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
+**La clave es opcional.** Context7 funciona sin ella, con un límite menor de peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
-```
+```dotenv
 CONTEXT7_API_KEY=tu-clave
 ```
 
