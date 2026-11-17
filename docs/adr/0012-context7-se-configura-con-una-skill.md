@@ -9,7 +9,7 @@ El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías dist
 - Config del MCP, sin tocar otros servidores: `.cursor/mcp.json` (Cursor), `.mcp.json` (Claude Code) y `.codex/config.toml` (Codex), con el servidor remoto `https://mcp.context7.com/mcp`.
 - Un bloque entre marcadores con la lista de librerías en `AGENTS.md` (Cursor y Codex) o `CLAUDE.md` (Claude Code).
 - La clave vive en el `.env` del proyecto, junto a `GITHUB_TOKEN` ([ADR 0007](0007-el-token-sale-del-env.md)). La skill lo lee solo para saber si `CONTEXT7_API_KEY` tiene valor y para avisar si el `.env` no está en `.gitignore`. Con `--with-key` la config nombra la variable `CONTEXT7_API_KEY` y cada herramienta la lee con su sintaxis: `${env:CONTEXT7_API_KEY}` en Cursor, `${CONTEXT7_API_KEY}` en Claude Code y `bearer_token_env_var` en Codex. El valor nunca se escribe.
-- Sin `--with-key` no se escribe ninguna cabecera: Context7 funciona con el límite por defecto. Una cabecera con la variable sin definir haría que Claude Code envíe el texto `${CONTEXT7_API_KEY}` y que Cursor envíe un valor vacío, y el servicio podría rechazar las peticiones.
+- Sin `--with-key` no se escribe ninguna cabecera y Context7 funciona con el límite por defecto. Con la variable sin definir, Claude Code enviaría el texto `${CONTEXT7_API_KEY}` y Cursor un valor vacío. No se probó si el servicio rechaza esas peticiones; por eso la cabecera es opcional.
 
 ## Opciones consideradas
 
@@ -24,5 +24,4 @@ El paquete no declara Context7 en `apm.yml`. Cada proyecto tiene librerías dist
 - Cursor y Codex comparten `AGENTS.md`: `reset` de una herramienta conserva la regla mientras la otra siga usando Context7.
 - Las herramientas solo resuelven `${VAR}` desde el entorno, no desde un fichero (ADR 0007): la persona carga el `.env` en la terminal antes de abrir el editor. Se descartó copiar el valor del `.env` a los archivos de config, porque `.cursor/mcp.json` y `.mcp.json` suelen subirse a git.
 - La sintaxis de la cabecera con variable de entorno viene de la documentación de cada herramienta y no se ha probado con un editor real.
-- Se sugiere toda dependencia directa salvo las de la lista de descartes de `assets/library-profiles.json` (tipos y utilidades de build). Los linters y formateadores se sugieren como cualquier otra: la persona quita los que no quiera al confirmar.
-- Los manifiestos se buscan en la raíz y en las subcarpetas hasta 3 niveles, sin carpetas ocultas ni `node_modules`, `vendor`, `dist`, `build`, `target`, `venv`. Un proyecto con el `package.json` en `app/` o `desktop/` es lo normal. Un manifiesto ilegible se anota con su error y no impide leer los demás. La regla del proyecto sigue yendo en `AGENTS.md` y `CLAUDE.md` de la raíz.
+- Qué dependencias se sugieren y dónde se buscan los manifiestos está en la sección «Context7» del [README](../../README.md), no aquí.
