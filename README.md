@@ -91,6 +91,18 @@ set -a; source .env; set +a
 cursor .      # o claude, o codex
 ```
 
+## Docker
+
+La skill `docker-best-practices` reúne las reglas para el Docker de desarrollo de un proyecto: decidir para qué es Docker, fijar cada versión (imagen, herramientas, binarios con su checksum y paquetes de `apt-get` con fecha de snapshot), separar las dependencias de cada proyecto en volúmenes, y comprobar antes de la pull request. El agente la usa al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml` o un `devcontainer.json`. También puedes pedirla tú: «Revisa el Dockerfile con docker-best-practices».
+
+Trae plantillas de `Dockerfile` y `docker-compose.yml`, y un script que revisa un `Dockerfile` y avisa de lo que no tiene versión fija:
+
+```bash
+bash .agents/skills/docker-best-practices/scripts/check-docker.sh Dockerfile
+```
+
+En Claude Code, la carpeta es `.claude/skills/docker-best-practices/`.
+
 ## Modelos de los agentes
 
 Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete. Es un paso opcional: tras `apm install`, ejecuta `/configure-models` en el chat. La skill detecta los modelos disponibles en tu cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno.
