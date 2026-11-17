@@ -167,6 +167,7 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 
 ## Más información
 
+- [CONTRIBUTING.md](CONTRIBUTING.md): cómo proponer un cambio: issues, ramas, commits y pull requests.
 - [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/MODELOS.md](docs/MODELOS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
 - [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
