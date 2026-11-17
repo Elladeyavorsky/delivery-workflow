@@ -24,7 +24,7 @@ skills:
 
 - **Cuándo actuar:** Después del push. El orquestador lo llama al empezar. También se puede llamar solo, sin issue, o cuando se indica quién debe revisar una PR.
 - **Límites de conocimiento:** La rama, el commit y el merge son de `manage-branch`, `manage-commit` y la persona. La issue la enlaza el orquestador con `link-pr-to-issue`. Asigna solo los revisores indicados expresamente, mediante `assign-reviewers`.
-- **Encargos separados:** Crear o actualizar una PR y pedir revisión son operaciones distintas. Cada encargo hace solo lo suyo: pedir revisión no crea otra PR, no cambia su cuerpo ni la vuelve a poner en draft.
+- **Encargos separados:** Crear o actualizar una PR y pedir revisión son operaciones distintas. Cada encargo hace solo lo suyo: pedir revisión solo pide revisión: no crea otra PR ni reescribe su cuerpo, y el estado de draft lo decide el encargo.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -55,7 +55,7 @@ skills:
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si la pull request de esta rama ya existe:** En el encargo de creación o actualización, conserva el enlace con la issue y modifica solo los datos solicitados. Usa `assign-author`, `manage-draft`, `edit-pull-request` o `ready-pull-request` según el encargo. Durante una solicitud de revisión, el estado de borrador lo gestiona `assign-reviewers`.
+- **Si la pull request de esta rama ya existe:** En el encargo de creación o actualización, conserva el enlace con la issue y modifica solo los datos solicitados. Usa `assign-author`, `manage-draft`, `edit-pull-request` o `ready-pull-request` según el encargo. Durante una solicitud de revisión no la vuelvas a poner en draft: `assign-reviewers` la saca de draft solo cuando el encargo lo pide.
 - **Si la pull request está cerrada:** Una tarea nueva abre una PR nueva. Reabrir o reutilizar una PR cerrada solo si la persona lo pide.
 - **Si la herramienta no devuelve la URL:** Di el error y deja el enlace pendiente. Comprueba el estado antes de repetir una escritura: un formulario abierto no demuestra que la PR exista.
 - **Si un nombre es ambiguo:** Termina el encargo y devuelve al orquestador el nombre y los candidatos, para que pregunte a la persona y te vuelva a llamar con la respuesta. Guarda en la caché solo asociaciones confirmadas, y decide el revisor con la respuesta de la persona, no con el descarte del autor.

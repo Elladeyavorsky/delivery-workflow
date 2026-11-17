@@ -1,6 +1,6 @@
 ---
 name: code-tester
-description: "Escribe y ejecuta los tests de la ronda (unitarios, de lógica de negocio, de UI y de punta a punta) que pide el plan de la issue. No edita producción ni documentación. Lo llama el orquestador delivery-workflow en cada ronda, siempre nuevo."
+description: "Escribe y ejecuta los tests de la ronda (unitarios, de lógica de negocio, de UI y de punta a punta) que pide el plan de la issue. Producción y documentación quedan fuera de su alcance. Lo llama el orquestador delivery-workflow en cada ronda, siempre nuevo."
 skills:
   - issue-spec
 ---
@@ -33,7 +33,7 @@ skills:
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si la task no cambia código:** Ejecuta la suite que ya haya y no añadas tests nuevos.
+- **Si la task no cambia código:** Ejecuta la suite que ya haya: sin cambio de código no hace falta añadir tests.
 - **Si no hay tests y el plan no pide ninguno:** El veredicto lo dice. Una suite se crea solo si el plan la pide, y con el framework que propone el plan.
 - **Si un test falla:** El veredicto es fallo. Deja la producción como está: el arreglo lo hace `code-developer` en la ronda siguiente.
 - **Si encuentras un secreto o un test necesita uno:** Para. Nombra el fichero, no el valor.

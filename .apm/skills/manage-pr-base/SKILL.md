@@ -16,7 +16,7 @@ Fuente de la forma del cuerpo: [github-pr](https://www.skills.sh/gentleman-progr
 
 1. **RAMA** _(Obligatorio)_: La rama subida, que se pasa como `--head`.
 2. **TITULO** _(Obligatorio)_: El título de la issue, con su misma forma: En inglés, de menos de 72 caracteres, empieza por un verbo en imperativo con mayúscula (`Add`, `Fix`, `Document`…), sin el tipo delante, sin número de issue y sin punto final. Ejemplo: `Add a delivery-workflow test note`, no `docs: añadir nota de prueba`. Si te llega en español o con el tipo delante, tradúcelo y reescríbelo antes de seguir. El script lo comprueba con `check-title.sh` y no abre la PR si no pasa.
-3. **CUERPO** _(Obligatorio)_: Ruta de un fichero temporal con la descripción en español y la plantilla del tipo, `<carpeta de esta skill>/assets/<tipo>-pull-request.md`. Deja la sección Issue con `Closes #` sin número: lo completa `link-pr-to-issue`. No nombres la issue en ninguna otra parte del cuerpo: ni «la issue #N» ni el número suelto. Si el tipo no tiene plantilla, usa la más cercana.
+3. **CUERPO** _(Obligatorio)_: Ruta de un fichero temporal con la descripción en español y la plantilla del tipo, `<carpeta de esta skill>/assets/<tipo>-pull-request.md`. Deja la sección Issue con `Closes #` sin número: lo completa `link-pr-to-issue`. Nombra la issue solo en la línea `Closes #`: en el resto del cuerpo no hace falta ni el número ni «la issue #N». Si el tipo no tiene plantilla, usa la más cercana.
 4. **TIPO** _(Obligatorio)_: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. Es también la etiqueta.
 5. **BASE** _(Opcional)_: La base con la que se creó la rama, si no es la rama base detectada.
 

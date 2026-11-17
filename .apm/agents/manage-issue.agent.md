@@ -38,4 +38,4 @@ skills:
 - **Si falta cómo probarla:** Escribe la comprobación que se deduce de lo que pidió la persona, para que la issue tenga siempre las dos secciones.
 - **Si el tipo no es uno de los siete:** Devuelve el tipo recibido para que el orquestador lo pregunte, sin crear la issue.
 - **Si la etiqueta no se puede crear:** Crea la issue sin etiqueta y dilo.
-- **Si la issue ya está en el estado pedido:** Dilo y no cambies nada.
+- **Si la issue ya está en el estado pedido:** Dilo: no hace falta tocarla.

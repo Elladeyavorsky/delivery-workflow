@@ -17,25 +17,25 @@ Antes de tocar nada, lee:
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
 3. [docs/adr/](docs/adr/): las decisiones ya tomadas y su motivo.
 
-## Reglas que no se rompen
+## Reglas del proyecto
 
 Haz:
 
 - Trabaja siempre a partir de una issue.
-- Abre la pull request contra `staging`, nunca contra `main`.
+- Abre la pull request contra `staging`: `main` recibe cambios solo desde `staging`, en el release.
 - Escribe los commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/).
 - Escribe issues, pull requests y documentación en español, con la skill [say-it-straight](.apm/skills/say-it-straight/SKILL.md).
 - Pregunta en la issue cuando falte un dato o dos documentos se contradigan.
 
-No hagas:
+Para no romper nada:
 
-- No cambies una decisión de [docs/adr/](docs/adr/) sin una issue aprobada antes. Si el cambio la sustituye, añade un ADR nuevo.
-- No subas el `.env` ni tu token de GitHub.
-- No subas la línea `model` de los agentes: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
-- No edites a mano `apm_modules/` ni `apm.lock.yaml`: los genera `apm`.
-- No cambies `version` en `apm.yml` salvo en el commit de release.
-- No hagas push a `main` ni a `staging`.
-- No des por bueno un cambio que no hayas probado.
+- Cambiar una decisión de [docs/adr/](docs/adr/) pide una issue aprobada antes. Si el cambio la sustituye, añade un ADR nuevo.
+- El `.env` y tu token de GitHub quedan fuera de los commits: dan acceso a tu cuenta.
+- La línea `model` de los agentes también queda fuera de los commits: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
+- `apm_modules/` y `apm.lock.yaml` los genera `apm`: cámbialos a través de `apm`, no a mano.
+- `version` en `apm.yml` cambia solo en el commit de release.
+- `main` y `staging` cambian por pull request: sube tus cambios a tu rama de trabajo.
+- Da por bueno un cambio cuando lo hayas probado.
 
 ## Qué cambios se aceptan
 
@@ -52,9 +52,9 @@ Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issue
 
 - **Título** en inglés, empezando por un verbo. Ejemplo: `Fix the manifest search in setup-context7`.
 - **Etiqueta** con el tipo de cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`.
-- **Descripción** en español. Si usas `/delivery-workflow`, la skill `create-issue` la escribe con la plantilla del tipo.
+- **Descripción** en español. Si usas `/delivery-workflow`, la skill `manage-issue` la escribe con la plantilla del tipo.
 
-Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MANTENIMIENTO.md#probar-el-paquete), anota también la herramienta y el paso.
+Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MAINTENANCE.md#probar-el-paquete), anota también la herramienta y el paso.
 
 ## Flujo de trabajo
 
@@ -69,7 +69,7 @@ Cada paso espera a que el anterior esté hecho. Puedes hacerlo a mano o pedirlo 
 7. **Abre una pull request contra `staging`.** En la descripción escribe `Closes #número` con el número de la issue.
 8. **Atiende la revisión.** Si piden cambios, súbelos a la misma rama.
 
-Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` a `main` y publica la versión ([Publicar una versión](docs/MANTENIMIENTO.md#publicar-una-versión)).
+Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` a `main` y publica la versión ([Publicar una versión](docs/MAINTENANCE.md#publicar-una-versión)).
 
 ## Comprobaciones antes de pedir revisión
 
@@ -82,9 +82,9 @@ bash tests/scripts.test.sh
 apm audit --ci
 ```
 
-Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MANTENIMIENTO.md#probar-el-paquete).
+Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MAINTENANCE.md#probar-el-paquete).
 
-Si una comprobación falla, arréglala antes de seguir. Si no puedes ejecutarla, dilo en la pull request. No digas que algo funciona si no lo has probado.
+Si una comprobación falla, arréglala antes de seguir. Si no puedes ejecutarla, dilo en la pull request. Di que algo funciona solo después de probarlo.
 
 ## Convenciones de commits
 
@@ -114,11 +114,11 @@ Sigue los documentos del repositorio. Mandan sobre cualquier otra costumbre:
 
 - [README.md](README.md): instalación, uso y permisos.
 - [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.
-- [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
+- [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/adr/](docs/adr/): decisiones de diseño.
-- [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba manual y release.
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba manual y release.
 
-Si dos documentos se contradicen, o ninguno cubre tu caso, no decidas por tu cuenta: pregunta en la issue.
+Si dos documentos se contradicen, o ninguno cubre tu caso, pregunta en la issue antes de decidir.
 
 ## Licencia
 

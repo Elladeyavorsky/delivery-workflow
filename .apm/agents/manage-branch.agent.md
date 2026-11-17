@@ -31,5 +31,5 @@ skills:
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si el script rechaza el tipo:** Devuelve el error para que el tipo coincida con el de la issue. El tipo no se cambia por otro.
+- **Si el script rechaza el tipo:** Devuelve el error para que el tipo coincida con el de la issue. Conserva el tipo de la issue: una rama con otro tipo no casa con ella.
 - **Si la rama ya existe:** Sigue en esa rama y dilo. Mantén el nombre que ya tiene.

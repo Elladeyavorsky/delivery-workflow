@@ -41,7 +41,7 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
      12. Si la parte de arriba de la issue tiene una línea `Revisan:`, el subagente `manage-pr`, encargo de revisión, con esos nombres. Si no, para con la pull request en draft y dilo: la revisión se pide con «que la revisen». La task de la fase Pull request cuyo agente es `manage-pr` se marca solo cuando las revisiones quedan pedidas.
    - **Guardar un trozo:** el subagente `manage-commit` con los ficheros de ese trozo y la skill `launch-push`.
    - **Que la revisen:** la persona nombra revisores. Delega la PR y los nombres en el subagente `manage-pr`, encargo de revisión, y espera su resultado. Si la PR tiene issue con tasks, toma una huella nueva con `issue-spec top-hash` y marca con `issue-spec tick` la task de la fase Pull request cuyo agente es `manage-pr`.
-   - **Cambios pedidos:** si `check-status` dice `CHANGES_REQUESTED` y nombra la issue, no abras otra issue. El cuerpo de la issue no se reescribe.
+   - **Cambios pedidos:** si `check-status` dice `CHANGES_REQUESTED` y nombra la issue, reutiliza esa issue: abrir otra separaría la revisión de su tarea. El cuerpo de la issue no se reescribe.
      1. `issue-spec reviews N` deja el texto de la revisión.
      2. El subagente `concept-developer`, ronda 0, encargo de revisión: rellena las plantillas de spec, plan y tasks solo con lo pedido y las publica con `issue-spec revision N`. Guarda la huella que devuelve.
      3. El ciclo de la sección siguiente, con `--revision` y esa huella en cada encargo.
@@ -84,7 +84,7 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
 - **Subagente `concept-developer`:** Spec, plan, tasks y documentación.
 - **Subagente `code-developer`:** El código de la ronda. Siempre nuevo.
 - **Subagente `code-tester`:** Los tests de la ronda. Siempre nuevo.
-- **Subagente `concept-tester`:** Documentación y spec frente a código. Siempre nuevo. No edita.
+- **Subagente `concept-tester`:** Documentación y spec frente a código. Siempre nuevo. Solo lee.
 
 ## 5. Manejo de Errores y Excepciones
 

@@ -21,6 +21,6 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 #### Reglas de Invocación Críticas
 
-- **Estado previo**: Lee el estado con `issue view`. Si ya está en el estado pedido, no cambies nada y dilo.
+- **Estado previo**: Lee el estado con `issue view`. Si ya está en el estado pedido, dilo y deja la issue como está.
 - **Motivo**: Al cerrar, usa solo `completed` o `not planned`.
 - **Procesamiento de respuestas**: Confirma el estado final con `issue view`. Si falla, comunica el error.

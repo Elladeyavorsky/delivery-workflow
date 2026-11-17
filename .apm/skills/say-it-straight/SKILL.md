@@ -18,7 +18,7 @@ description: "Prosa en español para issues, spec, PRs y docs: declarativa, conc
 
 Precedencia:
 
-1. Verdad y **Huecos** (no inventes; si falta un dato, hueco y para).
+1. Verdad y **Huecos** (lo que falta va como hueco, y si falta un dato, se para).
 2. Plantillas del tipo y de `issue-spec`. **Fuera de esto** es alcance: no lo borres como disclaimer.
 3. `docs/STYLE.md` del proyecto consumidor, si existe.
 4. Esta skill.

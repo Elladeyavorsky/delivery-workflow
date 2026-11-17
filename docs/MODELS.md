@@ -39,7 +39,7 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 
 ## Por qué no se suben a git
 
-El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los agentes del paquete se tratan como resultado de la instalación y la línea `model` no debe incluirse en los commits ([decisión 0009](adr/0009-los-modelos-son-personales.md)). Gestionar el `.gitignore` queda fuera del alcance de `/configure-models`.
+El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los agentes del paquete se tratan como resultado de la instalación y la línea `model` se deja fuera de los commits ([decisión 0009](adr/0009-los-modelos-son-personales.md)). Gestionar el `.gitignore` queda fuera del alcance de `/configure-models`.
 
 ## Notas por herramienta
 

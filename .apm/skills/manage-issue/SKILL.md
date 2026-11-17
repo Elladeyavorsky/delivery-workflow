@@ -22,7 +22,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 #### Reglas de Invocación Críticas
 
 - **Etiqueta**: Si la cuenta no puede crear la etiqueta, el script crea la issue sin ella y lo dice: comunícalo.
-- **Título**: Si el script sale con 1 por el título, corrige el título según su mensaje y vuelve a lanzarlo. No crees la issue con `gh.sh issue create` para saltarte la comprobación.
+- **Título**: Si el script sale con 1 por el título, corrige el título según su mensaje y vuelve a lanzarlo. Crea la issue solo con `manage-issue.sh`: es el camino que comprueba el título antes de llamar a `gh`.
 - **Otros errores**: Si sale con 1 por el tipo o el cuerpo, o con 3 porque falta el token del `.env`, comunica el error. No se ha creado la issue.
 - **Sin spec**: Deja el cuerpo con la plantilla del tipo. `concept-developer` añade debajo `## Spec`, `## Plan` y `## Tasks`.
-- **Procesamiento de respuestas**: `gh` escribe la URL de la issue: el número es su última parte. Quédate con el número, el título, la URL y la etiqueta. Si `gh` devuelve un error, comunícalo y no inventes el número.
+- **Procesamiento de respuestas**: `gh` escribe la URL de la issue: el número es su última parte. Quédate con el número, el título, la URL y la etiqueta. Si `gh` devuelve un error, comunícalo: el número no se supone.

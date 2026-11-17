@@ -19,7 +19,7 @@ La forma de las tres secciones está en `<carpeta de esta skill>/assets/spec.md`
 - `write N --expect-top HUELLA [--revision] [--spec F] [--plan F] [--tasks F]`: sustituye solo las secciones indicadas con el contenido de cada fichero, con o sin su encabezado `##`. Las demás se conservan.
 - `tick N TASK-NN --expect-top HUELLA [--revision]`: marca esa task.
 - `state N Borrador|Implementada|Fallida --expect-top HUELLA [--revision]`: cambia la línea Estado de la spec y le pone la fecha de hoy.
-- `comment N F`: publica el fichero como comentario de la issue. No puede empezar por `<!-- Revisión`.
+- `comment N F`: publica el fichero como comentario de la issue. Debe empezar por otra cosa que `<!-- Revisión`, que reserva la cabecera de los comentarios de revisión.
 - `reviews N`: escribe el texto de la revisión de la PR abierta que cierra la issue: decisión, cuerpos que piden cambios y comentarios de línea sin resolver.
 - `revision N F`: publica el fichero como comentario de revisión. Si no trae `<!-- Revisión N -->`, lo añade. Devuelve la huella de esa cabecera.
 
