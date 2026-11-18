@@ -16,7 +16,7 @@ test('los agentes no incluyen el aviso optativo de Discord en la revisión', () 
 test('la acción declara todos los inputs y solo ejecuta módulos del paquete', () => {
   assert.match(action, /using: composite/);
   for (const input of ['github-token', 'bot-token', 'cache-key', 'guild-id', 'channel-id',
-    'expected-repository', 'base-branch', 'trigger-run-id', 'pr-number', 'trusted-branch']) {
+    'user-map', 'expected-repository', 'base-branch', 'trigger-run-id', 'pr-number', 'trusted-branch']) {
     assert.match(action, new RegExp(`^  ${input}:`, 'm'));
   }
   assert.match(action, /run-id: \$\{\{ inputs\.trigger-run-id \}\}/);
@@ -27,6 +27,7 @@ test('la acción declara todos los inputs y solo ejecuta módulos del paquete', 
   assert.match(action, /PR_NUMBER: \$\{\{ steps\.verify\.outputs\.pr_number \|\| steps\.verify-direct\.outputs\.pr_number \}\}/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/state\.mjs" prepare/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/notify\.mjs"/);
+  assert.match(action, /DISCORD_USER_MAP: \$\{\{ inputs\.user-map \}\}/);
   assert.match(action, /steps\.verify\.outputs\.eligible == 'true'/);
   assert.match(action, /steps\.verify-direct\.outputs\.eligible == 'true'/);
   assert.match(action, /if: always\(\) && steps\.prepare\.outcome == 'success'/);
@@ -77,6 +78,7 @@ test('delivery-workflow publica desde su staging con la acción local confiable'
   assert.match(packagePublisher, /expected-repository: venturars\/delivery-workflow/);
   assert.match(packagePublisher, /base-branch: staging/);
   assert.match(packagePublisher, /trigger-run-id: \$\{\{ github\.event\.workflow_run\.id \}\}/);
+  assert.match(packagePublisher, /user-map: \$\{\{ vars\.DISCORD_USER_MAP \}\}/);
   assert.doesNotMatch(packagePublisher, /head_sha|pull_request_target/);
 });
 

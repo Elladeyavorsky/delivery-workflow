@@ -74,13 +74,13 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 ## Context7
 
-[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código con una foto del pasado.
+[Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código para versiones antiguas.
 
-La skill lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), propone para cuáles usar Context7 y pide confirmación una sola vez. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+`/setup-context7` lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git los busca con `git ls-files`, así que respeta `.gitignore` (sin `node_modules` ni `dist`) y no tiene límite de profundidad; sin git recorre hasta 3 niveles. Propone todas salvo los tipos y las utilidades de build, y pide confirmación una sola vez: quita las que no quieras. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
-**La clave es opcional.** Context7 funciona sin ella, pero con menos peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
+**La clave es opcional.** Context7 funciona sin ella, con un límite menor de peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
-```
+```dotenv
 CONTEXT7_API_KEY=tu-clave
 ```
 
@@ -165,8 +165,25 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 - **Actualizar:** cambia la versión en `apm.yml` (por ejemplo, `#v0.2.0`), lanza `apm install` y haz commit.
 - **Desinstalar:** `apm uninstall venturars/delivery-workflow`. El `.env` es tuyo: bórralo o déjalo.
 
+## Trabajar en este repositorio
+
+Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así tienes los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) y trabajas en este repositorio con la misma herramienta que lo usa.
+
+1. Clona el repositorio y entra en su raíz.
+2. Instala el paquete para tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
+
+   ```bash
+   apm install --target claude
+   ```
+
+3. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
+4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`) para abrir la issue, la rama y la pull request de tu cambio.
+
+`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta. No los edites a mano. Las normas del cambio (issues, ramas, commits y pull requests) están en [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Más información
 
+- [CONTRIBUTING.md](CONTRIBUTING.md): cómo proponer un cambio: issues, ramas, commits y pull requests.
 - [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/MODELOS.md](docs/MODELOS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
 - [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
