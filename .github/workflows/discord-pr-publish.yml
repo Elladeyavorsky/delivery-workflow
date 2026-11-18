@@ -36,6 +36,7 @@ jobs:
           cache-key: ${{ secrets.DISCORD_CACHE_KEY }}
           guild-id: ${{ vars.DISCORD_GUILD_ID }}
           channel-id: ${{ vars.DISCORD_GIT_CHANNEL_ID }}
+          user-map: ${{ vars.DISCORD_USER_MAP }}
           expected-repository: venturars/delivery-workflow
           base-branch: staging
           trigger-run-id: ${{ github.event.workflow_run.id }}

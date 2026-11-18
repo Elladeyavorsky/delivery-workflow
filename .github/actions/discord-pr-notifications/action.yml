@@ -16,6 +16,9 @@ inputs:
   channel-id:
     description: Discord channel ID.
     required: true
+  user-map:
+    description: Optional JSON object mapping GitHub logins to Discord user IDs.
+    required: false
   expected-repository:
     description: Full repository name allowed to publish notifications.
     required: true
@@ -90,6 +93,7 @@ runs:
         DISCORD_CACHE_KEY: ${{ inputs.cache-key }}
         DISCORD_GUILD_ID: ${{ inputs.guild-id }}
         DISCORD_GIT_CHANNEL_ID: ${{ inputs.channel-id }}
+        DISCORD_USER_MAP: ${{ inputs.user-map }}
         RELATIONS_FILE: ${{ runner.temp }}/discord-pr-relations/relations.enc.json
       run: node "$GITHUB_ACTION_PATH/notify.mjs"
     - name: Save encrypted reviewer relations
