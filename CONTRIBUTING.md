@@ -9,33 +9,34 @@ delivery-workflow es un paquete [APM](https://github.com/microsoft/apm) para Cla
 - `.apm/skills/` y `.apm/agents/`: las skills y los agentes del paquete.
 - `.github/`: los workflows de release y de avisos de PR en Discord.
 - `tests/`: los tests del paquete.
-- `docs/`: mantenimiento, modelos, avisos de Discord y decisiones de diseño (`docs/adr/`).
+- `docs/`: mantenimiento, modelos, avisos de Discord.
 
 Antes de tocar nada, lee:
 
 1. [README.md](README.md): qué hace el paquete, cómo se instala y cómo se usa.
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
-3. [docs/adr/](docs/adr/): las decisiones ya tomadas y su motivo.
+3. [AGENTS.md](AGENTS.md): formato de la issue en este repositorio (sección `## Decisión`).
+4. La issue del cambio: qué se decide, por qué y qué alternativas se descartaron.
 
-## Reglas que no se rompen
+## Reglas del proyecto
 
 Haz:
 
 - Trabaja siempre a partir de una issue.
-- Abre la pull request contra `staging`, nunca contra `main`.
+- Abre la pull request contra `staging`: `main` recibe cambios solo desde `staging`, en el release.
 - Escribe los commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/).
 - Escribe issues, pull requests y documentación en español, con la skill [say-it-straight](.apm/skills/say-it-straight/SKILL.md).
 - Pregunta en la issue cuando falte un dato o dos documentos se contradigan.
 
-No hagas:
+Para no romper nada:
 
-- No cambies una decisión de [docs/adr/](docs/adr/) sin una issue aprobada antes. Si el cambio la sustituye, añade un ADR nuevo.
-- No subas el `.env` ni tu token de GitHub.
-- No subas la línea `model` de los agentes: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
-- No edites a mano `apm_modules/` ni `apm.lock.yaml`: los genera `apm`.
-- No cambies `version` en `apm.yml` salvo en el commit de release.
-- No hagas push a `main` ni a `staging`.
-- No des por bueno un cambio que no hayas probado.
+- Un cambio de diseño del paquete (orquestador, dónde vive la spec, el token, los modelos, una skill o un agente nuevos) pide una issue aprobada antes. Esa issue deja escrita la decisión, el motivo y las alternativas descartadas.
+- El `.env` y tu token de GitHub quedan fuera de los commits: dan acceso a tu cuenta.
+- La línea `model` de los agentes también queda fuera de los commits: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
+- `apm_modules/` y `apm.lock.yaml` los genera `apm`: cámbialos a través de `apm`, no a mano.
+- `version` en `apm.yml` cambia solo en el commit de release.
+- `main` y `staging` cambian por pull request: sube tus cambios a tu rama de trabajo.
+- Da por bueno un cambio cuando lo hayas probado.
 
 ## Qué cambios se aceptan
 
@@ -52,16 +53,17 @@ Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issue
 
 - **Título** en inglés, empezando por un verbo. Ejemplo: `Fix the manifest search in setup-context7`.
 - **Etiqueta** con el tipo de cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`.
-- **Descripción** en español. Si usas `/delivery-workflow`, la skill `create-issue` la escribe con la plantilla del tipo.
+- **Descripción** en español. Si usas `/delivery-workflow`, la skill `manage-issue` la escribe con la plantilla del tipo.
+- **Decisión** en el cuerpo: qué se decide, por qué, y qué alternativas se descartaron. Quien revise la pull request solo lee la issue: el motivo del cambio tiene que estar ahí.
 
-Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MANTENIMIENTO.md#probar-el-paquete), anota también la herramienta y el paso.
+Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MAINTENANCE.md#probar-el-paquete), anota también la herramienta y el paso.
 
 ## Flujo de trabajo
 
 Cada paso espera a que el anterior esté hecho. Puedes hacerlo a mano o pedirlo a `/delivery-workflow`, que sigue los mismos pasos.
 
 1. **Localiza la issue** y entiende qué hay que resolver.
-2. **Escribe la spec, el plan y las tasks en la issue**, bajo `## Spec`, `## Plan` y `## Tasks` ([ADR 0005](docs/adr/0005-la-spec-vive-en-la-issue.md)).
+2. **Escribe la spec, el plan y las tasks en la issue**, bajo `## Spec`, `## Plan` y `## Tasks`.
 3. **Crea la rama** desde `staging` con el formato `número-tipo-descripcion`. Ejemplo: `44-fix-setup-context7-subfolders`.
 4. **Desarrolla** la tarea.
 5. **Prueba** lo desarrollado con las comprobaciones de abajo.
@@ -69,7 +71,7 @@ Cada paso espera a que el anterior esté hecho. Puedes hacerlo a mano o pedirlo 
 7. **Abre una pull request contra `staging`.** En la descripción escribe `Closes #número` con el número de la issue.
 8. **Atiende la revisión.** Si piden cambios, súbelos a la misma rama.
 
-Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` a `main` y publica la versión ([Publicar una versión](docs/MANTENIMIENTO.md#publicar-una-versión)).
+Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` a `main` y publica la versión ([Publicar una versión](docs/MAINTENANCE.md#publicar-una-versión)).
 
 ## Comprobaciones antes de pedir revisión
 
@@ -82,9 +84,9 @@ bash tests/scripts.test.sh
 apm audit --ci
 ```
 
-Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MANTENIMIENTO.md#probar-el-paquete).
+Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MAINTENANCE.md#probar-el-paquete).
 
-Si una comprobación falla, arréglala antes de seguir. Si no puedes ejecutarla, dilo en la pull request. No digas que algo funciona si no lo has probado.
+Si una comprobación falla, arréglala antes de seguir. Si no puedes ejecutarla, dilo en la pull request. Di que algo funciona solo después de probarlo.
 
 ## Convenciones de commits
 
@@ -106,7 +108,7 @@ tipo: qué hace el cambio
 
 El mensaje va en inglés, en imperativo y sin punto final. Un cambio que rompe algo que ya funcionaba lleva `!` tras el tipo (`feat!:`) y `BREAKING CHANGE:` en el cuerpo.
 
-Los commits no deciden la versión. La decide `version` en `apm.yml` ([ADR 0008](docs/adr/0008-la-version-de-apm-yml-crea-la-etiqueta.md)).
+Los commits no deciden la versión. La decide `version` en `apm.yml`.
 
 ## Cómo se escribe el código
 
@@ -114,11 +116,11 @@ Sigue los documentos del repositorio. Mandan sobre cualquier otra costumbre:
 
 - [README.md](README.md): instalación, uso y permisos.
 - [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.
-- [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
-- [docs/adr/](docs/adr/): decisiones de diseño.
-- [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba manual y release.
+- [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba manual y release.
+- La issue del cambio: la decisión, el motivo y las alternativas descartadas.
 
-Si dos documentos se contradicen, o ninguno cubre tu caso, no decidas por tu cuenta: pregunta en la issue.
+Si dos documentos se contradicen, o ninguno cubre tu caso, pregunta en la issue antes de decidir.
 
 ## Licencia
 

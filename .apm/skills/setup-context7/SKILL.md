@@ -5,7 +5,7 @@ description: "Configura Context7 (documentación actual de librerías) en Cursor
 
 ### Herramienta: SETUP_CONTEXT7
 
-- **Descripción**: Úsala única y exclusivamente para configurar Context7 con la persona: leer las dependencias del proyecto, sugerir para cuáles consultarlo, escribir el MCP en cada herramienta y dejar una regla en el proyecto. Sin esta configuración los agentes funcionan igual, pero sin la documentación al día de las librerías. Funciona con Cursor, Claude Code y Codex.
+- **Descripción**: Úsala para configurar Context7 con la persona: leer las dependencias del proyecto, sugerir para cuáles consultarlo, escribir el MCP en cada herramienta y dejar una regla en el proyecto. Sin esta configuración los agentes funcionan igual, pero sin la documentación al día de las librerías. Funciona con Cursor, Claude Code y Codex.
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/setup-context7.mjs" ORDEN [OPCIONES]`, desde la raíz del repositorio.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/setup-context7`.
@@ -33,12 +33,12 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
   3. Pregunta **una vez**: «¿Las aceptas? [Enter = sí | nombre de una librería para quitarla o añadir otra]». Repite hasta que acepte.
   4. Mira `key` en la salida de `detect`:
      - Si `key.inEnv` es `true`, la clave ya está en el `.env`: propón usarla con `--with-key`.
-     - Si no, pregunta si quiere usar una (gratis en context7.com/dashboard; da más límite de peticiones). Si dice que sí, dile que añada `CONTEXT7_API_KEY=su-clave` a su `.env`, junto a `GITHUB_TOKEN`, y que lo haga ella misma: no le pidas la clave ni la pegues en el chat.
-     - Si no la quiere, no pases la opción: Context7 funciona sin clave con el límite por defecto.
+     - Si no, pregunta si quiere usar una (gratis en context7.com/dashboard; da más límite de peticiones). Si dice que sí, dile que añada `CONTEXT7_API_KEY=su-clave` a su `.env`, junto a `GITHUB_TOKEN`, y que la añada ella misma: la clave no se pega en el chat, porque quedaría en el historial.
+     - Si no la quiere, sigue sin `--with-key`: Context7 funciona sin clave con el límite por defecto.
   5. Lanza `apply --libs LISTA` (con `--with-key` si procede). Muestra una tabla final con herramienta, archivo de configuración, archivo de regla y `result`, y las `notes`.
   6. Recuerda recargar el editor, o la sesión de Claude Code o Codex, para que cargue el MCP.
 - **La clave nunca se escribe en los archivos de config**: El script guarda solo el nombre de la variable. Lee el `.env` únicamente para saber si `CONTEXT7_API_KEY` tiene valor y nunca lo devuelve.
 - **El `.env` hay que cargarlo**: Cursor, Claude Code y Codex no lo leen solos. Las `notes` de `apply` explican cómo cargarlo y avisan si el `.env` no está en `.gitignore`. Con `--with-key` y sin la clave en el `.env` ni en la terminal, la herramienta no podrá autenticarse.
-- **Es un servicio de terceros**: El nombre de la librería y el texto de la pregunta salen hacia Upstash. Dilo una vez y no metas secretos ni código privado en una consulta.
+- **Es un servicio de terceros**: El nombre de la librería y el texto de la pregunta salen hacia Upstash. Dilo una vez y mantén secretos y código privado fuera de la consulta.
 - **Después de `apm install` o `apm update`**: Los archivos de config MCP no se tocan. No hace falta repetir `/setup-context7`, salvo que se quieran cambiar las librerías.
-- **Procesamiento de respuestas**: El script escribe JSON. `result` vale `cambiado`, `igual` o `ausente`. Si el código de salida no es 0, lee el error y comunícalo; un archivo de configuración con JSON inválido no se modifica. No inventes librerías ni resultados.
+- **Procesamiento de respuestas**: El script escribe JSON. `result` vale `cambiado`, `igual` o `ausente`. Si el código de salida no es 0, lee el error y comunícalo; un archivo de configuración con JSON inválido no se modifica. Usa solo las librerías y los resultados que devuelve el script.

@@ -1,12 +1,12 @@
 ---
 name: link-pr-to-issue
-description: "Deja Closes #N en el cuerpo de la pull request y la enlaza con la issue en Development. Úsala desde el orquestador delivery-workflow después de create-pr."
+description: "Deja Closes #N en el cuerpo de la pull request y la enlaza con la issue en Development. Úsala desde el orquestador delivery-workflow después de manage-pr."
 ---
 
 ### Herramienta: LINK_PR_TO_ISSUE
 
-- **Descripción**: Úsala desde el orquestador, después de `create-pr`, para dejar `Closes #N` en el cuerpo y enlazar la issue en Development. `create-pr` no la llama: puede abrir la pull request sin issue. No la uses para abrir la pull request ni para cambiar la base. No cierres la issue tú: no llames a la API para cerrarla. La línea `Closes #N` de la plantilla de la pull request es el cierre.
-- **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. No llames a `gh` directamente: usaría otra cuenta.
+- **Descripción**: Úsala desde el orquestador, después de `manage-pr`, para dejar `Closes #N` en el cuerpo y enlazar la issue en Development. `manage-pr` no la llama: puede abrir la pull request sin issue. Para abrir la pull request o cambiar su base, usa `manage-pr`. La línea `Closes #N` de la plantilla es la que cierra la issue al fusionar; esta skill no la cierra a mano.
+- **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la acción queda a nombre de la cuenta del token.
 - **Abreviatura**: Abajo, `gh.sh` es `bash "<carpeta de esta skill>/scripts/gh.sh"`.
 - **Cuerpo**: Léelo con `gh.sh pr view M --json body --jq .body`, escribe el cuerpo corregido en un fichero temporal y guárdalo con `gh.sh pr edit M --body-file FICHERO`.
 - **Development**: `gh.sh api graphql`.
@@ -35,6 +35,6 @@ El enlace:
 bash "<carpeta de esta skill>/scripts/gh.sh" api graphql -f query='mutation($issueId:ID!,$pullRequestId:ID!) { addCloseIssueReferences(input:{issueId:$issueId, pullRequestIds:[$pullRequestId]}) { issue { number } } }' -f issueId=ID_DE_LA_ISSUE -f pullRequestId=ID_DE_LA_PULL_REQUEST
 ```
 
-No cierres la issue ahora. GitHub la cierra al fusionar la pull request que lleva `Closes #N` en la rama por defecto del repositorio. Si la rama base es otra (por ejemplo `staging` cuando la rama por defecto es `main`), fusionar en la rama base no la cierra.
+La issue sigue abierta después de enlazarla: GitHub la cierra al fusionar la pull request que lleva `Closes #N` en la rama por defecto del repositorio. Si la rama base es otra (por ejemplo `staging` cuando la rama por defecto es `main`), fusionar en la rama base no la cierra.
 
-- **Si falla**: Comunica el error. No inventes el enlace. Si `gh` no está instalado o falta el token del `.env`, dilo: el cuerpo ya lleva `Closes #N`, solo falta el enlace en Development.
+- **Si falla**: Comunica el error y deja el enlace pendiente. Solo da la issue por enlazada cuando `gh` lo confirme. Si `gh` no está instalado o falta el token del `.env`, dilo: el cuerpo ya lleva `Closes #N`, solo falta el enlace en Development.
