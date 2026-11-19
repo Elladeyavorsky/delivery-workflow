@@ -27,7 +27,9 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/<skill>/scripts/gh.sh` | Nuevo, igual en cada skill que llama a GitHub: lanza `gh` con el `GITHUB_TOKEN` del `.env`. |
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas. |
-| — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP y la regla del proyecto. |
+| — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP en la config de usuario y la regla del proyecto. |
+| — | `.apm/skills/setup-docs-rag/` | Nueva: RAG local de la documentación de las dependencias y runtimes, en su versión exacta, con su propio MCP (`docs-rag`). Alternativa a Context7: un solo canal por ordenador. |
+| — | `docs/research/` | Nueva: el informe con la receta del RAG local. |
 | — | `apm.yml`, `README.md`, `CHANGES.md`, `GLOSSARY.md`, `docs/MAINTENANCE.md`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
@@ -58,6 +60,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **Otra pasada sin contraseña.** En ChromaDB, otra pasada solo arranca si el mensaje trae una contraseña. Aquí el orquestador es una skill en la conversación: basta con que la persona la confirme en el chat. No hay que manejar ningún secreto.
 - **`code-developer` siempre nuevo.** ChromaDB reanuda el mismo `code_developer` en las rondas 2 y 3, 5 y 6, y 8 y 9. Aquí cada ronda abre uno nuevo, porque no está claro que Cursor y Codex puedan reanudar un subagente. Lo que necesita de rondas anteriores está en la issue.
 - **Tests.** `code-tester` cubre tests unitarios, de lógica de negocio (los escenarios de la spec), de UI y de punta a punta, los que diga el plan, con los frameworks del proyecto. Si el plan propone uno que el proyecto no tiene, lo añade. En ChromaDB es pytest.
+- **Documentación de las dependencias.** `code-developer` y `code-tester` consultan el MCP de documentación configurado (Context7 o el RAG local `docs-rag`) antes de usar una API, un módulo o una opción de una dependencia: resuelven el paquete, hacen una pregunta por decisión, en inglés y con el nombre exacto de la API, y preguntan por sus restricciones. Si el MCP no está, no tiene índice o no encuentra la API, lo dicen al cerrar y esperan a confirmarla.
 - **Documentos del proyecto.** Los agentes leen los que existan (`README.md`, `AGENTS.md`, `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/STYLE.md`, `docs/COMMANDS.md`) y no crean los que faltan. Los comandos salen de `docs/COMMANDS.md` o del manifiesto del proyecto. Se quitan `skills/python-docs`, Black, Ruff y el puerto 8000.
 - **Secretos.** La «llave» de ChromaDB pasa a una regla general: si un subagente encuentra una credencial en un fichero que toca o necesita una para seguir, el ciclo para sin commit ni revisión y nombra el fichero, no el valor.
 - **Al terminar.** «Para lo que hayas arrancado» deja de ser el servidor de Chroma: cualquier servidor, navegador o proceso que el ciclo arrancó se para antes del informe.

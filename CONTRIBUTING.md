@@ -81,6 +81,7 @@ Desde la raíz del repositorio:
 node --test tests/*.mjs
 node --test tests/discord-pr-notifications/*.test.mjs
 bash tests/scripts.test.sh
+uv run --no-project --with pytest --with markdownify --with beautifulsoup4 python -m pytest -p no:cacheprovider tests/docs_rag
 apm audit --ci
 ```
 
