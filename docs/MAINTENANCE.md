@@ -72,8 +72,8 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
 1. En `staging`, sube `version` en `apm.yml` con un commit `chore: release X.Y.Z`, por pull request como cualquier otro cambio. Quien prepara la versión elige el número.
-2. Abre la pull request de `staging` a `main`. La comprobación *Comprobar la versión* falla si `vX.Y.Z` ya existe o es menor que la última etiqueta.
-3. Al hacer merge, el workflow `.github/workflows/release.yml` crea la etiqueta `vX.Y.Z` en ese commit de `main` y la release con las notas que genera GitHub. No hace falta etiquetar a mano.
+2. Abre la pull request de `staging` a `main`. *Comprobar la versión* mira si `vX.Y.Z` se puede publicar. Si la etiqueta ya existe o la versión es menor que la última, sube `version` en la rama con un commit `chore: release X.Y.Z`.
+3. Al hacer merge, el mismo job corre otra vez sobre el push a `main`. Si ese commit no se puede publicar, sube la versión en `main` y la release sale de ese commit. Si se puede publicar, crea la etiqueta `vX.Y.Z` y la release ahí. No hace falta etiquetar a mano.
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
 
