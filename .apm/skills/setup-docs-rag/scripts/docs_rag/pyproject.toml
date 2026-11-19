@@ -2,7 +2,7 @@
 name = "docs-rag"
 version = "0.1.0"
 description = "RAG local de la documentación de las dependencias de un proyecto, servido por MCP (delivery-workflow)."
-requires-python = ">=3.15"
+requires-python = "==3.15.*"
 dependencies = [
   "qdrant-client>=1.12",
   "ollama>=0.4",
