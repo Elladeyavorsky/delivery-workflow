@@ -30,6 +30,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP en la config de usuario y la regla del proyecto. |
 | — | `.apm/skills/setup-docs-rag/` | Nueva: RAG local de la documentación de las dependencias y runtimes, en su versión exacta, con su propio MCP (`docs-rag`). Alternativa a Context7: un solo canal por ordenador. |
 | — | `docs/research/` | Nueva: el informe con la receta del RAG local. |
+| — | `.apm/skills/docker-best-practices/` | Nueva: reglas para el Docker de un proyecto (versiones fijas, caché de capas, volúmenes, Dev Container, hooks, apps gráficas) y un script que revisa el `Dockerfile`. |
 | — | `apm.yml`, `README.md`, `CHANGES.md`, `GLOSSARY.md`, `docs/MAINTENANCE.md`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
