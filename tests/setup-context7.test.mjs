@@ -21,6 +21,9 @@ import {
   removeServerJson,
   setServerToml,
   removeServerToml,
+  setServerTomlBlock,
+  tomlStdioBlock,
+  serverStateIn,
   setRule,
   removeRule,
   ruleBlock,
@@ -41,7 +44,14 @@ function project(tools = ["cursor"]) {
   return root;
 }
 const read = (root, file) => readFileSync(join(root, file), "utf8");
-const exec = async (root, args) => JSON.parse(await run([...args, "--root", root]));
+// La config de usuario de cada prueba vive en una carpeta personal falsa, nunca en la de verdad.
+const homeOf = (root) => join(root, "_home");
+const readHome = (root, file) => read(homeOf(root), file);
+const writeHome = (root, file, text) => {
+  mkdirSync(join(homeOf(root), file, ".."), { recursive: true });
+  writeFileSync(join(homeOf(root), file), text);
+};
+const exec = async (root, args) => JSON.parse(await run([...args, "--root", root, "--home", homeOf(root)]));
 
 test("parseLibs separa por comas, quita duplicados y rechaza nombres raros", () => {
   assert.deepEqual(parseLibs("react, prisma,react,@tanstack/query"), ["react", "prisma", "@tanstack/query"]);
@@ -297,14 +307,14 @@ test("apply escribe config y regla en Cursor, y un segundo apply no cambia nada"
   const [r1] = await exec(root, ["apply", "--libs", "react,prisma"]);
   assert.equal(r1.config.result, "cambiado");
   assert.equal(r1.rule.result, "cambiado");
-  const cfg = JSON.parse(read(root, ".cursor/mcp.json"));
+  const cfg = JSON.parse(readHome(root, ".cursor/mcp.json"));
   assert.deepEqual(cfg.mcpServers.context7, { url: "https://mcp.context7.com/mcp" });
   assert.match(read(root, "AGENTS.md"), /- react\n- prisma/);
-  const before = [read(root, ".cursor/mcp.json"), read(root, "AGENTS.md")];
+  const before = [readHome(root, ".cursor/mcp.json"), read(root, "AGENTS.md")];
   const [r2] = await exec(root, ["apply", "--libs", "react,prisma"]);
   assert.equal(r2.config.result, "igual");
   assert.equal(r2.rule.result, "igual");
-  assert.deepEqual([read(root, ".cursor/mcp.json"), read(root, "AGENTS.md")], before);
+  assert.deepEqual([readHome(root, ".cursor/mcp.json"), read(root, "AGENTS.md")], before);
 });
 
 test("apply sin --libs escribe solo la config y lo dice", async () => {
@@ -325,12 +335,15 @@ test("con --with-key cada herramienta usa su sintaxis y el valor de la clave nun
   } finally {
     delete process.env.CONTEXT7_API_KEY;
   }
-  assert.equal(JSON.parse(read(root, ".cursor/mcp.json")).mcpServers.context7.headers.Authorization, "Bearer ${env:CONTEXT7_API_KEY}");
-  const claude = JSON.parse(read(root, ".mcp.json")).mcpServers.context7;
+  assert.equal(JSON.parse(readHome(root, ".cursor/mcp.json")).mcpServers.context7.headers.Authorization, "Bearer ${env:CONTEXT7_API_KEY}");
+  const claude = JSON.parse(readHome(root, ".claude.json")).mcpServers.context7;
   assert.equal(claude.type, "http");
   assert.equal(claude.headers.Authorization, "Bearer ${CONTEXT7_API_KEY}");
-  assert.match(read(root, ".codex/config.toml"), /bearer_token_env_var = "CONTEXT7_API_KEY"/);
-  for (const f of [".cursor/mcp.json", ".mcp.json", ".codex/config.toml", "AGENTS.md", "CLAUDE.md"]) {
+  assert.match(readHome(root, ".codex/config.toml"), /bearer_token_env_var = "CONTEXT7_API_KEY"/);
+  for (const f of [".cursor/mcp.json", ".claude.json", ".codex/config.toml"]) {
+    assert.ok(!readHome(root, f).includes(secret), `${f} contiene la clave`);
+  }
+  for (const f of ["AGENTS.md", "CLAUDE.md"]) {
     assert.ok(!read(root, f).includes(secret), `${f} contiene la clave`);
   }
 });
@@ -359,26 +372,26 @@ test("keyState dice si la clave está en el .env, en la terminal y si git ignora
 
 test("--with-key sin la clave en el .env ni en la terminal avisa de dónde ponerla", async () => {
   const root = project(["cursor"]);
-  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: true, key: { inEnv: false, inShell: false, envIgnored: null } });
+  const out = applyAll({ root, home: homeOf(root), tools: ["cursor"], libs: [], withKey: true, key: { inEnv: false, inShell: false, envIgnored: null } });
   assert.ok(out[0].notes.some((n) => n.includes("no está en tu .env ni en esta terminal")));
 });
 
 test("--with-key con la clave solo en el .env explica cómo cargarla y avisa si el .env no está ignorado", async () => {
   const root = project(["cursor", "claude"]);
-  const out = applyAll({ root, tools: ["cursor", "claude"], libs: [], withKey: true, key: { inEnv: true, inShell: false, envIgnored: false } });
+  const out = applyAll({ root, home: homeOf(root), tools: ["cursor", "claude"], libs: [], withKey: true, key: { inEnv: true, inShell: false, envIgnored: false } });
   for (const r of out) assert.ok(r.notes.some((n) => n.includes("set -a; source .env; set +a")));
   assert.equal(out.filter((r) => r.notes.some((n) => n.includes(".gitignore"))).length, 1, "el aviso del .gitignore sale una vez");
 });
 
 test("con la clave ya en la terminal no hace falta cargar el .env", () => {
   const root = project(["cursor"]);
-  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: true, key: { inEnv: true, inShell: true, envIgnored: true } });
+  const out = applyAll({ root, home: homeOf(root), tools: ["cursor"], libs: [], withKey: true, key: { inEnv: true, inShell: true, envIgnored: true } });
   assert.ok(!out[0].notes.some((n) => n.includes("source .env")));
 });
 
 test("sin --with-key, si la clave está en el .env, sugiere usarla", () => {
   const root = project(["cursor"]);
-  const out = applyAll({ root, tools: ["cursor"], libs: [], withKey: false, key: { inEnv: true, inShell: false, envIgnored: true } });
+  const out = applyAll({ root, home: homeOf(root), tools: ["cursor"], libs: [], withKey: false, key: { inEnv: true, inShell: false, envIgnored: true } });
   assert.ok(out[0].notes.some((n) => n.includes("repite con --with-key")));
 });
 
@@ -392,18 +405,19 @@ test("detect incluye el estado de la clave y nunca su valor", async () => {
 
 test("apply no pisa otros MCP del archivo", async () => {
   const root = project(["claude"]);
-  writeFileSync(join(root, ".mcp.json"), JSON.stringify({ mcpServers: { github: { type: "http", url: "https://g/mcp" } } }));
+  writeHome(root, ".claude.json", JSON.stringify({ numStartups: 3, mcpServers: { github: { type: "http", url: "https://g/mcp" } } }));
   await exec(root, ["apply"]);
-  const servers = JSON.parse(read(root, ".mcp.json")).mcpServers;
-  assert.deepEqual(Object.keys(servers).sort(), ["context7", "github"]);
+  const cfg = JSON.parse(readHome(root, ".claude.json"));
+  assert.deepEqual(Object.keys(cfg.mcpServers).sort(), ["context7", "github"]);
+  assert.equal(cfg.numStartups, 3, "conserva las demás claves de ~/.claude.json");
+  assert.ok(!existsSync(join(root, ".mcp.json")), "no escribe en el proyecto");
 });
 
 test("un JSON inválido en la config sale con 3 y no escribe nada más", async () => {
   const root = project(["cursor"]);
-  mkdirSync(join(root, ".cursor"), { recursive: true });
-  writeFileSync(join(root, ".cursor/mcp.json"), "{roto");
+  writeHome(root, ".cursor/mcp.json", "{roto");
   await assert.rejects(exec(root, ["apply", "--libs", "react"]), (e) => e.code === 3);
-  assert.equal(read(root, ".cursor/mcp.json"), "{roto");
+  assert.equal(readHome(root, ".cursor/mcp.json"), "{roto");
   assert.ok(!existsSync(join(root, "AGENTS.md")));
 });
 
@@ -414,21 +428,21 @@ test("Cursor y Codex comparten AGENTS.md: reset de uno conserva la regla, reset 
   assert.equal((read(root, "AGENTS.md").match(new RegExp(RULE_START, "g")) ?? []).length, 1);
   await exec(root, ["reset", "--target", "cursor"]);
   assert.ok(read(root, "AGENTS.md").includes(RULE_START), "codex sigue usando Context7");
-  assert.ok(!existsSync(join(root, ".cursor/mcp.json")));
+  assert.ok(!existsSync(join(homeOf(root), ".cursor/mcp.json")));
   await exec(root, ["reset", "--target", "codex"]);
   assert.equal(read(root, "AGENTS.md"), "# Reglas mías\n");
-  assert.ok(!existsSync(join(root, ".codex/config.toml")), "el archivo solo tenía la tabla de Context7");
+  assert.ok(!existsSync(join(homeOf(root), ".codex/config.toml")), "el archivo solo tenía la tabla de Context7");
 });
 
 test("reset deja los archivos como estaban antes de apply", async () => {
   const root = project(["claude"]);
-  writeFileSync(join(root, ".mcp.json"), `${JSON.stringify({ mcpServers: { github: { type: "http", url: "u" } } }, null, 2)}\n`);
+  writeHome(root, ".claude.json", `${JSON.stringify({ mcpServers: { github: { type: "http", url: "u" } } }, null, 2)}\n`);
   writeFileSync(join(root, "CLAUDE.md"), "# Mi proyecto\n");
-  const before = [read(root, ".mcp.json"), read(root, "CLAUDE.md")];
+  const before = [readHome(root, ".claude.json"), read(root, "CLAUDE.md")];
   await exec(root, ["apply", "--libs", "react"]);
   const [r] = await exec(root, ["reset"]);
   assert.equal(r.config.result, "cambiado");
-  assert.deepEqual([read(root, ".mcp.json"), read(root, "CLAUDE.md")], before);
+  assert.deepEqual([readHome(root, ".claude.json"), read(root, "CLAUDE.md")], before);
 });
 
 test("detect junta dependencias, herramientas y estado, y no escribe nada", async () => {
@@ -437,12 +451,14 @@ test("detect junta dependencias, herramientas y estado, y no escribe nada", asyn
   const out = await exec(root, ["detect"]);
   const by = Object.fromEntries(out.dependencies.map((d) => [d.name, d.status]));
   assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "sugerida", typescript: "descartada" });
-  assert.deepEqual(out.tools.map((t) => [t.tool, t.configured]), [["cursor", false], ["claude", false]]);
-  assert.ok(!existsSync(join(root, ".cursor/mcp.json")));
+  assert.deepEqual(out.tools.map((t) => [t.tool, t.configured, t.channel]), [["cursor", false, "ninguno"], ["claude", false, "ninguno"]]);
+  assert.ok(!existsSync(join(homeOf(root), ".cursor/mcp.json")));
   await exec(root, ["apply", "--target", "cursor", "--libs", "react"]);
   const after = await exec(root, ["detect"]);
   const cursor = after.tools.find((t) => t.tool === "cursor");
   assert.equal(cursor.configured, true);
+  assert.equal(cursor.channel, "context7");
+  assert.equal(cursor.configFile, "~/.cursor/mcp.json");
   assert.equal(cursor.rule, true);
   assert.equal(cursor.withKey, false);
 });
@@ -453,4 +469,44 @@ test("--target rechaza una herramienta desconocida o sin carpeta, y sin carpetas
   await assert.rejects(exec(root, ["apply", "--target", "codex"]), (e) => e.code === 3);
   await assert.rejects(exec(project([]), ["apply"]), /apm install/);
   await assert.rejects(run(["otra"]), (e) => e.code === 2);
+});
+
+test("apply registra context7 en la config de usuario y quita docs-rag", async () => {
+  const root = project(["claude", "codex"]);
+  writeHome(root, ".claude.json", JSON.stringify({ mcpServers: { otro: { command: "echo" }, "docs-rag": { command: "uv" } } }));
+  writeHome(root, ".codex/config.toml", `[mcp_servers."docs-rag"]\ncommand = "uv"\n\n[mcp_servers.otro]\ncommand = "echo"\n`);
+  const out = await exec(root, ["apply"]);
+  for (const r of out) {
+    assert.deepEqual(r.config.removed, ["docs-rag"]);
+    assert.ok(r.notes.some((n) => n.includes("pasa a ser Context7")));
+  }
+  const claude = JSON.parse(readHome(root, ".claude.json")).mcpServers;
+  assert.deepEqual(Object.keys(claude).sort(), ["context7", "otro"]);
+  const codex = readHome(root, ".codex/config.toml");
+  assert.doesNotMatch(codex, /docs-rag/);
+  assert.match(codex, /\[mcp_servers\.otro\]/);
+  assert.match(codex, /\[mcp_servers\.context7\]/);
+  assert.ok(!existsSync(join(root, ".mcp.json")) && !existsSync(join(root, ".codex/config.toml")), "nada en el proyecto");
+  const detect = await exec(root, ["detect"]);
+  assert.deepEqual(detect.tools.map((t) => t.channel), ["context7", "context7"]);
+});
+
+test("detect y apply avisan de un context7 antiguo en la config del proyecto sin tocarlo", async () => {
+  const root = project(["claude"]);
+  const legacy = JSON.stringify({ mcpServers: { context7: { type: "http", url: "https://mcp.context7.com/mcp" } } });
+  writeFileSync(join(root, ".mcp.json"), legacy);
+  const detect = await exec(root, ["detect"]);
+  assert.equal(detect.tools[0].legacyProjectConfig, ".mcp.json");
+  const [r] = await exec(root, ["apply"]);
+  assert.ok(r.notes.some((n) => n.includes(".mcp.json del proyecto")));
+  assert.equal(read(root, ".mcp.json"), legacy);
+});
+
+test("las tablas TOML con guion van entre comillas y se reconocen al quitarlas", () => {
+  const block = tomlStdioBlock("docs-rag", { command: "uv", args: ["run", "x"], env: { A: "1" } });
+  assert.deepEqual(block, ['[mcp_servers."docs-rag"]', 'command = "uv"', 'args = ["run", "x"]', 'env = { A = "1" }']);
+  const set = setServerTomlBlock("a = 1\n", "docs-rag", block);
+  assert.equal(serverStateIn(set.text, "toml", "docs-rag").configured, true);
+  assert.equal(setServerTomlBlock(set.text, "docs-rag", block).result, "igual");
+  assert.equal(removeServerToml(set.text, "docs-rag").text, "a = 1\n");
 });
