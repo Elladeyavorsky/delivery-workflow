@@ -1,10 +1,11 @@
 # LOPDGDD · Artículo 11. Transparencia e información al afectado
 
-- **Fuente:** BOE, API de datos abiertos, texto consolidado
+- **Fuente de los datos:** Agencia Estatal Boletín Oficial del Estado
 - **Enlace:** https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/bloque/a1-3
 - **Versión:** BOE-A-2018-16673, vigente desde 2018-12-07
+- **Última actualización:** 2018-12-06
 - **Fecha de descarga:** 2026-11-19
-- **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
+- **Aviso:** Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **Adaptación:** Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.
 
 1. Cuando los datos personales sean obtenidos del afectado el responsable del tratamiento podrá dar cumplimiento al deber de información establecido en el artículo 13 del Reglamento (UE) 2016/679 facilitando al afectado la información básica a la que se refiere el apartado siguiente e indicándole una dirección electrónica u otro medio que permita acceder de forma sencilla e inmediata a la restante información.

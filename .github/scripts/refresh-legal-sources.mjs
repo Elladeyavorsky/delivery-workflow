@@ -18,7 +18,12 @@ export const BOE_BASE = "https://www.boe.es/datosabiertos/api/legislacion-consol
 export const BOE_INDEX_HEADERS = { Accept: "application/json" };
 export const BOE_BLOCK_HEADERS = { Accept: "application/xml" };
 
-export const AVISO = "Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.";
+// Cada norma lleva su aviso. El de la LOPDGDD y su fuente siguen las condiciones de reutilización del BOE.
+export const AVISO = {
+  rgpd: "Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.",
+  lopdgdd: "Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.",
+};
+export const FUENTE_BOE = "Agencia Estatal Boletín Oficial del Estado";
 export const ADAPTACION = {
   rgpd: "Extracto de un artículo del texto consolidado, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto; se conservan las marcas ▼B y ▼C del consolidado.",
   lopdgdd: "Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.",
@@ -228,6 +233,15 @@ function compactDate(value) {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : String(value ?? "");
 }
 
+/** `fecha_actualizacion` del bloque del índice, en AAAA-MM-DD. Error con el número si falta o no es AAAAMMDD. */
+export function boeUpdateDate(bloque, numero) {
+  const value = bloque?.fecha_actualizacion;
+  if (typeof value !== "string" || !/^\d{8}$/.test(value)) {
+    throw new RefreshError(`El bloque del índice del BOE del artículo ${numero} no trae fecha_actualizacion con la forma AAAAMMDD.`);
+  }
+  return compactDate(value);
+}
+
 /** Texto, id_norma, fecha_publicacion y fecha_vigencia de la última versión del bloque. */
 export function lastBoeVersion(bloqueXml) {
   const versions = [...bloqueXml.matchAll(/<version\b([^>]*)>([\s\S]*?)<\/version>/g)];
@@ -246,15 +260,33 @@ export function lastBoeVersion(bloqueXml) {
 
 // ---------- Fichero de artículo ----------
 
-export function renderArticle({ norma, titulo, fuente, enlace, version, fechaDescarga, adaptacion, texto }) {
+/**
+ * Escribe el fichero de artículo con la cabecera de su norma (`norma` es «RGPD» o «LOPDGDD»).
+ * RGPD: Fuente, Enlace, Versión, Fecha de descarga, Aviso y Adaptación.
+ * LOPDGDD: Fuente de los datos, Enlace, Versión, Última actualización, Fecha de descarga, Aviso y Adaptación.
+ */
+export function renderArticle({ norma, titulo, fuente, enlace, version, ultimaActualizacion, fechaDescarga, adaptacion, texto }) {
+  const id = String(norma).toLowerCase();
+  const aviso = AVISO[id];
+  if (!aviso) throw new RefreshError(`Norma sin aviso: ${norma}.`);
+  const campos = id === "lopdgdd"
+    ? [
+      `- **Fuente de los datos:** ${FUENTE_BOE}`,
+      `- **Enlace:** ${enlace}`,
+      `- **Versión:** ${version}`,
+      `- **Última actualización:** ${ultimaActualizacion}`,
+    ]
+    : [
+      `- **Fuente:** ${fuente}`,
+      `- **Enlace:** ${enlace}`,
+      `- **Versión:** ${version}`,
+    ];
   return [
     `# ${norma} · ${titulo}`,
     "",
-    `- **Fuente:** ${fuente}`,
-    `- **Enlace:** ${enlace}`,
-    `- **Versión:** ${version}`,
+    ...campos,
     `- **Fecha de descarga:** ${fechaDescarga}`,
-    `- **Aviso:** ${AVISO}`,
+    `- **Aviso:** ${aviso}`,
     `- **Adaptación:** ${adaptacion}`,
     "",
     texto.trim(),
@@ -302,25 +334,31 @@ async function refreshLopdgdd(norma, { fetchImpl, fechaDescarga, files }) {
   } catch {
     throw new RefreshError(`${enlace} no devolvió JSON.`);
   }
-  const bloques = norma.articulos.map((a) => ({ a, bloque: findBoeBlock(indice, a.numero) }));
+  // Antes de descargar ningún bloque: cada artículo tiene su bloque y su fecha de actualización (CB-02, CB-07).
+  const bloques = norma.articulos.map((a) => {
+    const bloque = findBoeBlock(indice, a.numero);
+    return { a, bloque, fechaActualizacion: boeUpdateDate(bloque, a.numero) };
+  });
   const articulos = [];
-  for (const { a, bloque } of bloques) {
+  for (const { a, bloque, fechaActualizacion } of bloques) {
     const url = boeBlockUrl(norma.version, bloque.id);
     const v = lastBoeVersion(await download(fetchImpl, url, BOE_BLOCK_HEADERS));
     const fichero = articleFile(norma.id, a.numero);
     files.set(fichero, renderArticle({
       norma: "LOPDGDD",
       titulo: v.titulo || `Artículo ${a.numero}`,
-      fuente: norma.fuente,
       enlace: url,
       version: `${v.idNorma}, vigente desde ${v.fechaVigencia}`,
+      ultimaActualizacion: fechaActualizacion,
       fechaDescarga,
       adaptacion: ADAPTACION.lopdgdd,
       texto: v.texto,
     }));
-    articulos.push({ ...a, numero: a.numero, fichero, bloque: bloque.id, idNorma: v.idNorma, fechaVigencia: v.fechaVigencia });
+    articulos.push({
+      ...a, numero: a.numero, fichero, bloque: bloque.id, idNorma: v.idNorma, fechaVigencia: v.fechaVigencia, fechaActualizacion,
+    });
   }
-  return { ...norma, enlace, fechaDescarga, articulos };
+  return { ...norma, fuente: FUENTE_BOE, enlace, fechaDescarga, articulos };
 }
 
 const REFRESHERS = { rgpd: refreshRgpd, lopdgdd: refreshLopdgdd };

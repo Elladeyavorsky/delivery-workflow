@@ -136,18 +136,44 @@ test("lastBoeVersion falla si el bloque no tiene versiones", () => {
   assert.throws(() => lastBoeVersion("<bloque></bloque>"), RefreshError);
 });
 
-test("renderArticle escribe los seis campos de cabecera y el texto", () => {
-  const md = renderArticle({
+const AVISO_RGPD = "Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.";
+const AVISO_LOPDGDD = "Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.";
+const FUENTE_LOPDGDD = "Agencia Estatal Boletín Oficial del Estado";
+
+// Campos de la cabecera, en orden, tal como aparecen en el fichero.
+function camposCabecera(md) {
+  return [...md.matchAll(/^- \*\*([^*]+):\*\* (.+)$/gm)].map(([, nombre, valor]) => [nombre, valor]);
+}
+
+// Escenario 11
+test("renderArticle escribe la cabecera de cada norma", () => {
+  assert.deepEqual(AVISO, { rgpd: AVISO_RGPD, lopdgdd: AVISO_LOPDGDD });
+
+  const rgpdMd = renderArticle({
     norma: "RGPD", titulo: "Artículo 5. Principios", fuente: "F", enlace: "E", version: "V", fechaDescarga: "2026-11-19", adaptacion: "A", texto: "Texto.",
   });
-  const lines = md.split("\n");
-  assert.equal(lines[0], "# RGPD · Artículo 5. Principios");
-  for (const campo of ["Fuente", "Enlace", "Versión", "Fecha de descarga", "Aviso", "Adaptación"]) {
-    assert.match(md, new RegExp(`^- \\*\\*${campo}:\\*\\* .+$`, "m"), campo);
-  }
-  assert.match(md, new RegExp(`^- \\*\\*Aviso:\\*\\* ${AVISO.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"));
-  assert.equal(AVISO, "Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.");
-  assert.ok(md.endsWith("Texto.\n"));
+  assert.equal(rgpdMd.split("\n")[0], "# RGPD · Artículo 5. Principios");
+  assert.deepEqual(camposCabecera(rgpdMd), [
+    ["Fuente", "F"], ["Enlace", "E"], ["Versión", "V"], ["Fecha de descarga", "2026-11-19"], ["Aviso", AVISO_RGPD], ["Adaptación", "A"],
+  ]);
+  assert.ok(rgpdMd.endsWith("Texto.\n"));
+
+  const lopdgddMd = renderArticle({
+    norma: "LOPDGDD", titulo: "Artículo 23. Sistemas", fuente: "ignorada", enlace: "E", version: "BOE-A-2025-26698, vigente desde 2025-12-28",
+    ultimaActualizacion: "2025-12-27", fechaDescarga: "2026-11-19", adaptacion: "A", texto: "Texto.",
+  });
+  assert.equal(lopdgddMd.split("\n")[0], "# LOPDGDD · Artículo 23. Sistemas");
+  assert.deepEqual(camposCabecera(lopdgddMd), [
+    ["Fuente de los datos", FUENTE_LOPDGDD],
+    ["Enlace", "E"],
+    ["Versión", "BOE-A-2025-26698, vigente desde 2025-12-28"],
+    ["Última actualización", "2025-12-27"],
+    ["Fecha de descarga", "2026-11-19"],
+    ["Aviso", AVISO_LOPDGDD],
+    ["Adaptación", "A"],
+  ]);
+  assert.doesNotMatch(lopdgddMd, /Diario Oficial/);
+  assert.ok(lopdgddMd.endsWith("Texto.\n"));
 });
 
 // run de punta a punta contra fixtures
@@ -175,6 +201,16 @@ test("run escribe los artículos y sources.json con fetch inyectado y sin red", 
     assert.match(a23, /^# LOPDGDD · Artículo 23\. Sistemas de exclusión publicitaria/);
     assert.match(a23, /- \*\*Enlace:\*\* https:\/\/www\.boe\.es\/.*\/texto\/bloque\/a2-5/);
     assert.match(a23, /- \*\*Versión:\*\* BOE-A-2025-26698.*2025-12-28/);
+    assert.deepEqual(camposCabecera(a23).map(([nombre]) => nombre), [
+      "Fuente de los datos", "Enlace", "Versión", "Última actualización", "Fecha de descarga", "Aviso", "Adaptación",
+    ]);
+    assert.match(a23, /^- \*\*Fuente de los datos:\*\* Agencia Estatal Boletín Oficial del Estado$/m);
+    assert.match(a23, /^- \*\*Versión:\*\* BOE-A-2025-26698, vigente desde 2025-12-28$/m);
+    assert.match(a23, /^- \*\*Última actualización:\*\* 2025-12-27$/m);
+    assert.ok(a23.includes(`- **Aviso:** ${AVISO_LOPDGDD}\n`), "aviso de la LOPDGDD");
+    assert.doesNotMatch(a23, /Diario Oficial/);
+    assert.match(a8, new RegExp(`^- \\*\\*Fuente:\\*\\* `, "m"));
+    assert.ok(a8.includes(`- **Aviso:** ${AVISO_RGPD}\n`), "aviso del RGPD");
 
     const sources = JSON.parse(readFileSync(join(out, "sources.json"), "utf8"));
     const [r, l] = sources.normas;
@@ -182,10 +218,14 @@ test("run escribe los artículos y sources.json con fetch inyectado y sin red", 
     assert.equal(r.distribucion, "empaquetada");
     assert.equal(l.distribucion, "empaquetada");
     const l23 = l.articulos.find((a) => a.numero === 23);
-    assert.deepEqual(l23, { numero: 23, fichero: "lopdgdd/articulo-23.md", bloque: "a2-5", idNorma: "BOE-A-2025-26698", fechaVigencia: "2025-12-28" });
+    assert.deepEqual(l23, {
+      numero: 23, fichero: "lopdgdd/articulo-23.md", bloque: "a2-5", idNorma: "BOE-A-2025-26698", fechaVigencia: "2025-12-28", fechaActualizacion: "2025-12-27",
+    });
     const l7 = l.articulos.find((a) => a.numero === 7);
     assert.equal(l7.bloque, "a7");
     assert.equal(l7.idNorma, "BOE-A-2018-16673");
+    assert.equal(l7.fechaActualizacion, "2018-12-06");
+    assert.equal(l.fuente, FUENTE_LOPDGDD);
 
     // No quedan carpetas temporales junto a la salida.
     assert.deepEqual(readdirSync(root), ["assets"]);
@@ -245,6 +285,29 @@ test("run no toca una salida previa si un artículo no está en el índice", asy
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// CB-07
+for (const [caso, valor] of [["sin fecha_actualizacion", undefined], ["con fecha_actualizacion mal formada", "2025-12-27"]]) {
+  test(`run falla y nombra el número si el índice no trae fecha_actualizacion (${caso})`, async () => {
+    const { root, out } = outDir();
+    try {
+      const indiceMal = JSON.parse(fixture("boe-indice.json"));
+      const bloque = indiceMal.data[0].bloque.find((b) => b.id === "a2-5");
+      if (valor === undefined) delete bloque.fecha_actualizacion;
+      else bloque.fecha_actualizacion = valor;
+      const fetch = fakeFetch({ override: { [boeIndexUrl("BOE-A-2018-16673")]: () => ({ status: 200, text: async () => JSON.stringify(indiceMal) }) } });
+      await assert.rejects(
+        run(["--sources", join(fixtures, "sources.json"), "--out", out], { fetch, now: NOW }),
+        (e) => e instanceof RefreshError && /\b23\b/.test(e.message) && /fecha_actualizacion/.test(e.message),
+      );
+      assert.equal(existsSync(out), false);
+      assert.deepEqual(readdirSync(root), []);
+      assert.ok(!fetch.calls.some((c) => c.url.includes("/texto/bloque/")), "no descarga bloques");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
 
 test("run rechaza argumentos desconocidos con código 2", async () => {
   await assert.rejects(run(["--nope"], { fetch: fakeFetch(), now: NOW }), (e) => e instanceof RefreshError && e.code === 2);

@@ -41,7 +41,34 @@ test("sources.json trae los artículos de la primera versión", () => {
 
 const CHECKLIST = readFileSync(join(ASSETS, "checklist.md"), "utf8");
 const CAMPOS_ITEM = ["Cuándo aplica", "Quien construye", "Quien comprueba", "Artículos"];
-const CAMPOS_CABECERA = ["Fuente", "Enlace", "Versión", "Fecha de descarga", "Aviso", "Adaptación"];
+// Cabecera de cada norma (RF-04): campos en orden y aviso.
+const CABECERA = {
+  rgpd: {
+    campos: ["Fuente", "Enlace", "Versión", "Fecha de descarga", "Aviso", "Adaptación"],
+    aviso: "Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.",
+  },
+  lopdgdd: {
+    campos: ["Fuente de los datos", "Enlace", "Versión", "Última actualización", "Fecha de descarga", "Aviso", "Adaptación"],
+    aviso: "Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.",
+  },
+};
+const FUENTE_BOE = "Agencia Estatal Boletín Oficial del Estado";
+
+// Comprueba la cabecera del fichero contra la de su norma. Devuelve los campos como objeto.
+function comprobarCabecera(norma, contenido, donde) {
+  const cabecera = contenido.split(/\n\n/)[1] ?? "";
+  const campos = [...cabecera.matchAll(/^- \*\*([^*]+):\*\* (\S.*)$/gm)].map(([, nombre, valor]) => [nombre, valor]);
+  assert.deepEqual(campos.map(([nombre]) => nombre), CABECERA[norma].campos, `${donde}: campos de la cabecera`);
+  const valores = Object.fromEntries(campos);
+  assert.equal(valores["Aviso"], CABECERA[norma].aviso, `${donde}: aviso`);
+  if (norma === "lopdgdd") {
+    assert.equal(valores["Fuente de los datos"], FUENTE_BOE, `${donde}: fuente`);
+    assert.match(valores["Versión"], /^BOE-A-\d{4}-\d+, vigente desde \d{4}-\d{2}-\d{2}$/, `${donde}: versión`);
+    assert.match(valores["Última actualización"], /^\d{4}-\d{2}-\d{2}$/, `${donde}: última actualización`);
+    assert.doesNotMatch(contenido, /Diario Oficial/, `${donde}: menciona el Diario Oficial`);
+  }
+  return valores;
+}
 
 function items(texto) {
   return texto
@@ -85,18 +112,29 @@ test("cada referencia del checklist tiene fichero, cabecera y entrada en sources
       const fichero = `${norma}/articulo-${numero}.md`;
       const ruta = join(ASSETS, fichero);
       assert.ok(existsSync(ruta), `${id} ${texto}: no existe ${fichero}`);
-      const contenido = readFileSync(ruta, "utf8");
-      for (const campo of CAMPOS_CABECERA) {
-        assert.match(contenido, new RegExp(`^- \\*\\*${campo}:\\*\\* \\S`, "m"), `${id} ${texto}: falta ${campo}`);
-      }
-      assert.match(
-        contenido,
-        /^- \*\*Aviso:\*\* Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial\.$/m,
-        `${id} ${texto}: aviso`,
-      );
+      comprobarCabecera(norma, readFileSync(ruta, "utf8"), `${id} ${texto}`);
       assert.ok(enSources.has(`${norma} ${numero} ${fichero}`), `${id} ${texto}: no está en sources.json`);
     }
   }
+});
+
+// Escenario 12
+test("cada fichero de artículo lleva la cabecera de su norma", () => {
+  const normas = Object.fromEntries(sources.normas.map((n) => [n.id, n]));
+  assert.equal(normas.lopdgdd.fuente, FUENTE_BOE, "sources.json: fuente de la LOPDGDD");
+  const porNorma = { rgpd: 0, lopdgdd: 0 };
+  for (const [id, norma] of Object.entries(normas)) {
+    for (const articulo of norma.articulos) {
+      const valores = comprobarCabecera(id, readFileSync(join(ASSETS, articulo.fichero), "utf8"), articulo.fichero);
+      if (id === "lopdgdd") {
+        assert.match(articulo.fechaActualizacion ?? "", /^\d{4}-\d{2}-\d{2}$/, `${articulo.fichero}: fechaActualizacion en sources.json`);
+        assert.equal(valores["Última actualización"], articulo.fechaActualizacion, `${articulo.fichero}: Última actualización y sources.json`);
+        assert.equal(valores["Versión"], `${articulo.idNorma}, vigente desde ${articulo.fechaVigencia}`, `${articulo.fichero}: Versión y sources.json`);
+      }
+      porNorma[id] += 1;
+    }
+  }
+  assert.deepEqual(porNorma, { rgpd: 22, lopdgdd: 8 });
 });
 
 test("DP-04 cita RGPD 8, LOPDGDD 7 y LOPDGDD 92", () => {

@@ -102,7 +102,7 @@
     {
       "id": "lopdgdd",
       "nombre": "Ley Orgánica 3/2018",
-      "fuente": "BOE, API de datos abiertos, texto consolidado",
+      "fuente": "Agencia Estatal Boletín Oficial del Estado",
       "enlace": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/indice",
       "version": "BOE-A-2018-16673",
       "fechaDescarga": "2026-11-19",
@@ -113,56 +113,64 @@
           "fichero": "lopdgdd/articulo-5.md",
           "bloque": "a5",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 6,
           "fichero": "lopdgdd/articulo-6.md",
           "bloque": "a6",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 7,
           "fichero": "lopdgdd/articulo-7.md",
           "bloque": "a7",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 9,
           "fichero": "lopdgdd/articulo-9.md",
           "bloque": "a9",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 11,
           "fichero": "lopdgdd/articulo-11.md",
           "bloque": "a1-3",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 28,
           "fichero": "lopdgdd/articulo-28.md",
           "bloque": "a2-10",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 32,
           "fichero": "lopdgdd/articulo-32.md",
           "bloque": "a3-4",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         },
         {
           "numero": 92,
           "fichero": "lopdgdd/articulo-92.md",
           "bloque": "a9-4",
           "idNorma": "BOE-A-2018-16673",
-          "fechaVigencia": "2018-12-07"
+          "fechaVigencia": "2018-12-07",
+          "fechaActualizacion": "2018-12-06"
         }
       ]
     }

@@ -37,7 +37,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 - **`<carpeta de esta skill>/assets/checklist.md`:** Los ítems `DP-NN`, con versión, fecha y estado de la revisión jurídica en la cabecera.
 - **`<carpeta de esta skill>/assets/datos-personales.md`:** La sección que el proyecto copia a su `docs/CONSTITUTION.md`.
-- **`<carpeta de esta skill>/assets/rgpd/articulo-N.md` y `assets/lopdgdd/articulo-N.md`:** Copia informativa de cada artículo citado, con su fuente y su aviso. El texto auténtico es el publicado en el Diario Oficial.
+- **`<carpeta de esta skill>/assets/rgpd/articulo-N.md`:** Copia informativa de cada artículo citado del RGPD, con su fuente y su aviso. El texto auténtico es el publicado en el Diario Oficial.
+- **`<carpeta de esta skill>/assets/lopdgdd/articulo-N.md`:** Texto consolidado de carácter informativo de cada artículo citado de la LOPDGDD. La fuente de los datos es la Agencia Estatal Boletín Oficial del Estado, con la fecha de su última actualización. El texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **`<carpeta de esta skill>/assets/sources.json`:** Fuente, enlace, versión y fecha de descarga de cada norma.
 
 ## 5. Manejo de Errores y Excepciones

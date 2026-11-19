@@ -1,10 +1,11 @@
 # LOPDGDD · Artículo 28. Obligaciones generales del responsable y encargado del tratamiento
 
-- **Fuente:** BOE, API de datos abiertos, texto consolidado
+- **Fuente de los datos:** Agencia Estatal Boletín Oficial del Estado
 - **Enlace:** https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/bloque/a2-10
 - **Versión:** BOE-A-2018-16673, vigente desde 2018-12-07
+- **Última actualización:** 2018-12-06
 - **Fecha de descarga:** 2026-11-19
-- **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
+- **Aviso:** Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **Adaptación:** Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.
 
 1. Los responsables y encargados, teniendo en cuenta los elementos enumerados en los artículos 24 y 25 del Reglamento (UE) 2016/679, determinarán las medidas técnicas y organizativas apropiadas que deben aplicar a fin de garantizar y acreditar que el tratamiento es conforme con el citado reglamento, con la presente ley orgánica, sus normas de desarrollo y la legislación sectorial aplicable. En particular valorarán si procede la realización de la evaluación de impacto en la protección de datos y la consulta previa a que se refiere la Sección 3 del Capítulo IV del citado reglamento.

@@ -1,10 +1,11 @@
 # LOPDGDD · Artículo 6. Tratamiento basado en el consentimiento del afectado
 
-- **Fuente:** BOE, API de datos abiertos, texto consolidado
+- **Fuente de los datos:** Agencia Estatal Boletín Oficial del Estado
 - **Enlace:** https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/bloque/a6
 - **Versión:** BOE-A-2018-16673, vigente desde 2018-12-07
+- **Última actualización:** 2018-12-06
 - **Fecha de descarga:** 2026-11-19
-- **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
+- **Aviso:** Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **Adaptación:** Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.
 
 1. De conformidad con lo dispuesto en el artículo 4.11 del Reglamento (UE) 2016/679, se entiende por consentimiento del afectado toda manifestación de voluntad libre, específica, informada e inequívoca por la que este acepta, ya sea mediante una declaración o una clara acción afirmativa, el tratamiento de datos personales que le conciernen.

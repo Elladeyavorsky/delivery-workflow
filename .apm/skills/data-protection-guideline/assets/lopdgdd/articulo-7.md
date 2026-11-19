@@ -1,10 +1,11 @@
 # LOPDGDD · Artículo 7. Consentimiento de los menores de edad
 
-- **Fuente:** BOE, API de datos abiertos, texto consolidado
+- **Fuente de los datos:** Agencia Estatal Boletín Oficial del Estado
 - **Enlace:** https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/bloque/a7
 - **Versión:** BOE-A-2018-16673, vigente desde 2018-12-07
+- **Última actualización:** 2018-12-06
 - **Fecha de descarga:** 2026-11-19
-- **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
+- **Aviso:** Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **Adaptación:** Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.
 
 1. El tratamiento de los datos personales de un menor de edad únicamente podrá fundarse en su consentimiento cuando sea mayor de catorce años.

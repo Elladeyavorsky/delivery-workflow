@@ -1,10 +1,11 @@
 # LOPDGDD · Artículo 9. Categorías especiales de datos
 
-- **Fuente:** BOE, API de datos abiertos, texto consolidado
+- **Fuente de los datos:** Agencia Estatal Boletín Oficial del Estado
 - **Enlace:** https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/bloque/a9
 - **Versión:** BOE-A-2018-16673, vigente desde 2018-12-07
+- **Última actualización:** 2018-12-06
 - **Fecha de descarga:** 2026-11-19
-- **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
+- **Aviso:** Texto consolidado de carácter informativo, no auténtico: el texto auténtico es el publicado en el Boletín Oficial del Estado.
 - **Adaptación:** Extracto de la última versión del bloque del texto consolidado. Formato XML convertido a Markdown sin cambiar el texto.
 
 1. A los efectos del artículo 9.2.a) del Reglamento (UE) 2016/679, a fin de evitar situaciones discriminatorias, el solo consentimiento del afectado no bastará para levantar la prohibición del tratamiento de datos cuya finalidad principal sea identificar su ideología, afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico.
