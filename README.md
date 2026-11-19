@@ -35,7 +35,7 @@ El comentario es opcional. Si alguien no está en Discord o nadie confirma la re
 
 ## El token de GitHub
 
-El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, etiquetas, revisiones) usa el token del `.env`, nunca la sesión de `gh` ni las variables de tu terminal. El aviso de Discord usa el `github.token` del workflow y los secretos del entorno protegido. Por eso no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
+El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, etiquetas, revisiones) usa el token del `.env`; la sesión de `gh` y las variables de tu terminal no entran en el flujo. El aviso de Discord usa el `github.token` del workflow y los secretos del entorno protegido. Por eso no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
 
 1. Crea un token **clásico** con el permiso `repo` en <https://github.com/settings/tokens/new?scopes=repo>. Que sea de tu cuenta: todo lo que haga el flujo aparecerá a tu nombre. Los tokens *fine-grained* no sirven en repositorios personales de otra persona.
 2. En la raíz del proyecto, crea o abre el fichero `.env` con tu editor y añade esta línea, con tu token:
@@ -46,7 +46,7 @@ El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, e
 
 3. Comprueba que `.env` está en `.gitignore`. Si no, añádelo: `echo .env >> .gitignore`.
 
-Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nunca. El push sigue usando tus credenciales de git.
+Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ## Instalación en macOS y Linux
 
@@ -100,7 +100,7 @@ Compatible con **Cursor, Claude Code y Codex**. Qué tener en cuenta:
 - `apm install` y `apm update` eliminan la línea `model` de los agentes: vuelve a ejecutar `/configure-models`, que conserva tus elecciones anteriores. `check-status` lo señala con `Modelos: desincronizado`.
 - La línea `model` es personal: no la incluyas en los commits.
 
-Funcionamiento, cambio de modelo y verificación en cada herramienta: [docs/MODELOS.md](docs/MODELOS.md).
+Funcionamiento, cambio de modelo y verificación en cada herramienta: [docs/MODELS.md](docs/MODELS.md).
 
 ## Instalación en Windows
 
@@ -184,7 +184,7 @@ Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así ti
 ## Más información
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): cómo proponer un cambio: issues, ramas, commits y pull requests.
-- [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
-- [docs/MODELOS.md](docs/MODELOS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
-- [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
-- [docs/adr/](docs/adr/) y [GLOSSARY.md](GLOSSARY.md): decisiones de diseño y vocabulario.
+- [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
+- [docs/MODELS.md](docs/MODELS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
+- [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.

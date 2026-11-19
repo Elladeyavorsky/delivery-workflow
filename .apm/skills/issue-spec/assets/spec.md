@@ -1,7 +1,7 @@
 ## Spec
 
 <!--
-  Qué tiene que hacer el cambio y cómo se comprueba. No cómo se construye.
+  Qué tiene que hacer el cambio y cómo se comprueba, no cómo se construye.
   El contexto y lo que queda fuera ya están arriba, en la plantilla del tipo.
   Lo que el proyecto no responde se escribe como hueco y se para.
 -->

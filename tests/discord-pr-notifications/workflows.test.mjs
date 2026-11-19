@@ -7,10 +7,10 @@ const packageTrigger = readFileSync(new URL('../../.github/workflows/discord-pr-
 const confirmationTrigger = readFileSync(new URL('../../.github/workflows/discord-pr-confirmation-trigger.yml', import.meta.url), 'utf8');
 const packagePublisher = readFileSync(new URL('../../.github/workflows/discord-pr-publish.yml', import.meta.url), 'utf8');
 const docs = readFileSync(new URL('../../docs/DISCORD-PR-NOTIFICATIONS.md', import.meta.url), 'utf8');
-const createPrAgent = readFileSync(new URL('../../.apm/agents/create-pr.agent.md', import.meta.url), 'utf8');
+const managePrAgent = readFileSync(new URL('../../.apm/agents/manage-pr.agent.md', import.meta.url), 'utf8');
 
 test('los agentes no incluyen el aviso optativo de Discord en la revisión', () => {
-  assert.doesNotMatch(createPrAgent, /discord-reviewers|discord-map|Discord:/);
+  assert.doesNotMatch(managePrAgent, /discord-reviewers|discord-map|Discord:/);
 });
 
 test('la acción declara todos los inputs y solo ejecuta módulos del paquete', () => {
