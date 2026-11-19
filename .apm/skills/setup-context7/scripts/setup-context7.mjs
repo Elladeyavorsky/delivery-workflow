@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFile as execFileCb, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -27,13 +28,19 @@ export const SERVER_URL = "https://mcp.context7.com/mcp";
 export const ENV_VAR = "CONTEXT7_API_KEY";
 export const RULE_START = "<!-- delivery-workflow:context7 -->";
 export const RULE_END = "<!-- /delivery-workflow:context7 -->";
+// El otro canal de documentación. Solo hay uno registrado a la vez por ordenador.
+export const DOCS_RAG_SERVER = "docs-rag";
+export const CHANNELS = [SERVER_NAME, DOCS_RAG_SERVER];
 
+// El MCP se registra en la config de usuario de cada herramienta (configFile, relativo a la carpeta personal),
+// fuera del repositorio. projectConfigFile es donde lo escribían versiones anteriores: solo se lee para avisar.
 // Cada herramienta nombra la variable de entorno a su manera (verificado en su documentación).
 export const TOOLS = {
   cursor: {
     name: "Cursor",
     agentsDir: ".cursor/agents",
     configFile: ".cursor/mcp.json",
+    projectConfigFile: ".cursor/mcp.json",
     format: "json",
     ruleFile: "AGENTS.md",
     entry: (withKey) => ({
@@ -44,7 +51,9 @@ export const TOOLS = {
   claude: {
     name: "Claude Code",
     agentsDir: ".claude/agents",
-    configFile: ".mcp.json",
+    // mcpServers en la raíz de ~/.claude.json es el ámbito de usuario de Claude Code.
+    configFile: ".claude.json",
+    projectConfigFile: ".mcp.json",
     format: "json",
     ruleFile: "CLAUDE.md",
     entry: (withKey) => ({
@@ -57,6 +66,7 @@ export const TOOLS = {
     name: "Codex",
     agentsDir: ".codex/agents",
     configFile: ".codex/config.toml",
+    projectConfigFile: ".codex/config.toml",
     format: "toml",
     ruleFile: "AGENTS.md",
   },
@@ -316,23 +326,23 @@ function parseJsonFile(text, file) {
   return data;
 }
 
-// Devuelve {text, result}. Solo cambia la clave context7; los demás MCP quedan como estaban.
-export function setServerJson(text, entry, file = "mcp.json") {
+// Devuelve {text, result}. Solo cambia la clave del servidor; los demás MCP y claves quedan como estaban.
+export function setServerJson(text, entry, file = "mcp.json", name = SERVER_NAME) {
   const data = parseJsonFile(text, file);
   if (data.mcpServers !== undefined && (data.mcpServers === null || typeof data.mcpServers !== "object" || Array.isArray(data.mcpServers))) {
     throw new SetupContext7Error(`${file}: «mcpServers» no es un objeto: no se toca.`, 3);
   }
-  const current = data.mcpServers?.[SERVER_NAME];
+  const current = data.mcpServers?.[name];
   if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) return { text, result: "igual" };
-  data.mcpServers = { ...(data.mcpServers ?? {}), [SERVER_NAME]: entry };
+  data.mcpServers = { ...(data.mcpServers ?? {}), [name]: entry };
   return { text: `${JSON.stringify(data, null, 2)}\n`, result: "cambiado" };
 }
 
-export function removeServerJson(text, file = "mcp.json") {
+export function removeServerJson(text, file = "mcp.json", name = SERVER_NAME) {
   if (text === null) return { text: null, result: "ausente" };
   const data = parseJsonFile(text, file);
-  if (!data.mcpServers || !(SERVER_NAME in data.mcpServers)) return { text, result: "igual" };
-  delete data.mcpServers[SERVER_NAME];
+  if (!data.mcpServers || typeof data.mcpServers !== "object" || !(name in data.mcpServers)) return { text, result: "igual" };
+  delete data.mcpServers[name];
   if (Object.keys(data.mcpServers).length === 0) delete data.mcpServers;
   if (Object.keys(data).length === 0) return { text: "", result: "cambiado" };
   return { text: `${JSON.stringify(data, null, 2)}\n`, result: "cambiado" };
@@ -355,14 +365,19 @@ function tableHeaders(lines) {
   });
 }
 
-const isOurs = (name) => name === `mcp_servers.${SERVER_NAME}` || name.startsWith(`mcp_servers.${SERVER_NAME}.`);
+// En TOML el nombre va entre comillas si lleva guion: [mcp_servers."docs-rag"].
+const tomlKey = (name) => (/^[A-Za-z0-9_]+$/.test(name) ? name : `"${name}"`);
+const isOurs = (header, name) => {
+  const base = `mcp_servers.${tomlKey(name)}`;
+  return header === base || header.startsWith(`${base}.`);
+};
 
-function dropServerToml(lines) {
+function dropServerToml(lines, name = SERVER_NAME) {
   const headers = tableHeaders(lines);
   const out = [];
   let skipping = false;
   lines.forEach((line, i) => {
-    if (headers[i] !== null) skipping = isOurs(headers[i]);
+    if (headers[i] !== null) skipping = isOurs(headers[i], name);
     if (!skipping) out.push(line);
   });
   while (out.length && out[out.length - 1].trim() === "") out.pop();
@@ -375,20 +390,35 @@ export function tomlBlock(withKey) {
   return body;
 }
 
-export function setServerToml(text, withKey) {
+const tomlString = (value) => JSON.stringify(String(value));
+
+// Tabla TOML de un servidor stdio: command, args y, si hay, env.
+export function tomlStdioBlock(name, { command, args = [], env = {} }) {
+  const body = [`[mcp_servers.${tomlKey(name)}]`, `command = ${tomlString(command)}`, `args = [${args.map(tomlString).join(", ")}]`];
+  const vars = Object.entries(env);
+  if (vars.length) body.push(`env = { ${vars.map(([k, v]) => `${k} = ${tomlString(v)}`).join(", ")} }`);
+  return body;
+}
+
+// Sustituye (o añade) la tabla del servidor `name` por las líneas `block`. Las demás tablas quedan igual.
+export function setServerTomlBlock(text, name, block) {
   const eol = text?.includes("\r\n") ? "\r\n" : "\n";
   const lines = (text ?? "").replace(/\r\n/g, "\n").split("\n");
-  const kept = dropServerToml(lines);
-  const next = [...kept, ...(kept.length ? [""] : []), ...tomlBlock(withKey)].join("\n") + "\n";
+  const kept = dropServerToml(lines, name);
+  const next = [...kept, ...(kept.length ? [""] : []), ...block].join("\n") + "\n";
   const out = next.replace(/\n/g, eol);
   return { text: out, result: out === text ? "igual" : "cambiado" };
 }
 
-export function removeServerToml(text) {
+export function setServerToml(text, withKey) {
+  return setServerTomlBlock(text, SERVER_NAME, tomlBlock(withKey));
+}
+
+export function removeServerToml(text, name = SERVER_NAME) {
   if (text === null) return { text: null, result: "ausente" };
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const kept = dropServerToml(lines);
+  const kept = dropServerToml(lines, name);
   const out = kept.length ? kept.join("\n").replace(/\n/g, eol) + eol : "";
   return { text: out, result: out === text ? "igual" : "cambiado" };
 }
@@ -446,14 +476,16 @@ export function hasRule(text) {
 
 // --- Estado actual ---
 
-export function serverState(root, tool) {
-  const t = TOOLS[tool];
-  const text = readIfExists(join(root, t.configFile));
+// Ruta que se enseña a la persona: la config de usuario, relativa a su carpeta personal.
+export const displayPath = (tool) => `~/${TOOLS[tool].configFile}`;
+
+// ¿Está el servidor `name` en este texto de config? {configured, withKey, invalid?}
+export function serverStateIn(text, format, name = SERVER_NAME) {
   if (text === null) return { configured: false, withKey: false };
-  if (t.format === "toml") {
+  if (format === "toml") {
     const lines = text.replace(/\r\n/g, "\n").split("\n");
     const headers = tableHeaders(lines);
-    const start = headers.findIndex((h) => h === `mcp_servers.${SERVER_NAME}`);
+    const start = headers.findIndex((h) => h === `mcp_servers.${tomlKey(name)}`);
     if (start === -1) return { configured: false, withKey: false };
     const block = [];
     for (let i = start + 1; i < lines.length && headers[i] === null; i++) block.push(lines[i]);
@@ -465,8 +497,28 @@ export function serverState(root, tool) {
   } catch {
     return { configured: false, withKey: false, invalid: true };
   }
-  const entry = data?.mcpServers?.[SERVER_NAME];
+  const entry = data?.mcpServers?.[name];
   return { configured: entry !== undefined, withKey: Boolean(entry?.headers) };
+}
+
+// Estado del servidor en la config de usuario de la herramienta.
+export function serverState(home, tool, name = SERVER_NAME) {
+  const t = TOOLS[tool];
+  return serverStateIn(readIfExists(join(home, t.configFile)), t.format, name);
+}
+
+// Canal registrado en la config de usuario: context7, docs-rag, ninguno o los dos (no debería pasar).
+export function channelOf(home, tool) {
+  const on = CHANNELS.filter((name) => serverState(home, tool, name).configured);
+  if (on.length === 0) return "ninguno";
+  if (on.length > 1) return "los dos";
+  return on[0];
+}
+
+// ¿Queda un context7 de una versión anterior en la config del proyecto?
+export function legacyProjectConfig(root, tool) {
+  const t = TOOLS[tool];
+  return serverStateIn(readIfExists(join(root, t.projectConfigFile)), t.format, SERVER_NAME).configured;
 }
 
 // --- La clave: se mira si está, nunca se copia ---
@@ -504,11 +556,12 @@ export async function keyState(root, env = process.env) {
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv;
-  const opts = { command, target: null, root: null, libs: [], withKey: false };
+  const opts = { command, target: null, root: null, home: null, libs: [], withKey: false };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === "--target") opts.target = rest[++i];
     else if (a === "--root") opts.root = rest[++i];
+    else if (a === "--home") opts.home = rest[++i];
     else if (a === "--libs") opts.libs = [...new Set([...opts.libs, ...parseLibs(rest[++i])])];
     else if (a === "--with-key") opts.withKey = true;
     else throw new SetupContext7Error(`Argumento desconocido: ${a}\n${USAGE}`, 2);
@@ -518,10 +571,10 @@ export function parseArgs(argv) {
 
 export const USAGE = [
   "Uso: setup-context7.mjs <detect|apply|reset> [opciones]",
-  "  detect                 Dependencias del proyecto (sugeridas y descartadas) y estado de Context7 (JSON).",
-  "  apply                  Escribe el MCP de Context7 en cada herramienta y, con --libs, la regla del proyecto.",
-  "  reset                  Quita el MCP de Context7 y la regla.",
-  "Opciones: --target cursor|claude|codex  --libs a,b,c  --with-key (añade la cabecera con la variable CONTEXT7_API_KEY)  --root RUTA",
+  "  detect                 Dependencias del proyecto (sugeridas y descartadas) y canal de documentación de cada herramienta (JSON).",
+  "  apply                  Registra el MCP de Context7 en la config de usuario de cada herramienta (quita docs-rag) y, con --libs, la regla del proyecto.",
+  "  reset                  Quita el MCP de Context7 de la config de usuario y la regla del proyecto.",
+  "Opciones: --target cursor|claude|codex  --libs a,b,c  --with-key (añade la cabecera con la variable CONTEXT7_API_KEY)  --root RUTA  --home RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -544,7 +597,7 @@ function selectTools(opts, root) {
   return [opts.target];
 }
 
-export function detectReport({ root, tools, profiles = loadProfiles() }) {
+export function detectReport({ root, home = homedir(), tools, profiles = loadProfiles() }) {
   const { manifests, dependencies } = readDependencies({ root, profiles });
   return {
     manifests,
@@ -554,8 +607,10 @@ export function detectReport({ root, tools, profiles = loadProfiles() }) {
       return {
         tool,
         name: t.name,
-        configFile: t.configFile,
-        ...serverState(root, tool),
+        configFile: displayPath(tool),
+        ...serverState(home, tool),
+        channel: channelOf(home, tool),
+        legacyProjectConfig: legacyProjectConfig(root, tool) ? t.projectConfigFile : null,
         ruleFile: t.ruleFile,
         rule: hasRule(readIfExists(join(root, t.ruleFile))),
       };
@@ -563,13 +618,17 @@ export function detectReport({ root, tools, profiles = loadProfiles() }) {
   };
 }
 
-function applyConfig(root, tool, withKey) {
+// Registra context7 y quita docs-rag en la config de usuario: solo hay un canal por ordenador.
+function applyConfig(home, tool, withKey) {
   const t = TOOLS[tool];
-  const path = join(root, t.configFile);
+  const file = displayPath(tool);
+  const path = join(home, t.configFile);
   const before = readIfExists(path);
-  const { text, result } = t.format === "toml" ? setServerToml(before, withKey) : setServerJson(before, t.entry(withKey), t.configFile);
-  if (result === "cambiado") writeAtomic(path, text);
-  return { file: t.configFile, result };
+  const set = t.format === "toml" ? setServerToml(before, withKey) : setServerJson(before, t.entry(withKey), file);
+  const drop = t.format === "toml" ? removeServerToml(set.text, DOCS_RAG_SERVER) : removeServerJson(set.text, file, DOCS_RAG_SERVER);
+  const changed = set.result === "cambiado" || drop.result === "cambiado";
+  if (changed) writeAtomic(path, drop.text);
+  return { file, result: changed ? "cambiado" : "igual", removed: drop.result === "cambiado" ? [DOCS_RAG_SERVER] : [] };
 }
 
 function applyRule(root, tool, libs) {
@@ -581,12 +640,16 @@ function applyRule(root, tool, libs) {
   return { file: t.ruleFile, result, libs };
 }
 
-export function applyAll({ root, tools, libs, withKey, key = { inEnv: false, inShell: false, envIgnored: null } }) {
+export function applyAll({ root, home = homedir(), tools, libs, withKey, key = { inEnv: false, inShell: false, envIgnored: null } }) {
   return tools.map((tool, index) => {
     const t = TOOLS[tool];
-    const config = applyConfig(root, tool, withKey);
+    const config = applyConfig(home, tool, withKey);
     const rule = libs.length ? applyRule(root, tool, libs) : null;
     const notes = [];
+    if (config.removed.length) notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${config.file}: el canal de documentación de este ordenador pasa a ser Context7.`);
+    if (legacyProjectConfig(root, tool)) {
+      notes.push(`${t.projectConfigFile} del proyecto aún tiene context7 de una versión anterior. El MCP ya está en ${config.file}: quítalo del proyecto si nadie más del equipo lo usa.`);
+    }
     if (withKey) {
       notes.push(`La config usa la variable ${ENV_VAR}. El valor no se escribe en ningún archivo.`);
       if (key.inShell) {
@@ -610,20 +673,21 @@ export function applyAll({ root, tools, libs, withKey, key = { inEnv: false, inS
   });
 }
 
-export function resetAll({ root, tools }) {
+export function resetAll({ root, home = homedir(), tools }) {
   const results = tools.map((tool) => {
     const t = TOOLS[tool];
-    const path = join(root, t.configFile);
+    const file = displayPath(tool);
+    const path = join(home, t.configFile);
     const before = readIfExists(path);
-    const { text, result } = t.format === "toml" ? removeServerToml(before) : removeServerJson(before, t.configFile);
+    const { text, result } = t.format === "toml" ? removeServerToml(before) : removeServerJson(before, file);
     if (result === "cambiado") {
       if (text === "") rmSync(path, { force: true });
       else writeAtomic(path, text);
     }
-    return { tool, name: t.name, config: { file: t.configFile, result }, rule: null, notes: [] };
+    return { tool, name: t.name, config: { file, result }, rule: null, notes: [] };
   });
   // Cursor y Codex comparten AGENTS.md: el bloque solo se quita si ninguna herramienta que siga usando Context7 lo necesita.
-  const stillUsing = toolsPresent(root).filter((tool) => !tools.includes(tool) && serverState(root, tool).configured);
+  const stillUsing = toolsPresent(root).filter((tool) => !tools.includes(tool) && serverState(home, tool).configured);
   const needed = new Set(stillUsing.map((tool) => TOOLS[tool].ruleFile));
   for (const r of results) {
     const file = TOOLS[r.tool].ruleFile;
@@ -651,9 +715,10 @@ export async function run(argv) {
   if (tools.length === 0) {
     throw new SetupContext7Error("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
   }
-  if (opts.command === "detect") return JSON.stringify({ ...detectReport({ root, tools }), key: await keyState(root) }, null, 2);
-  if (opts.command === "reset") return JSON.stringify(resetAll({ root, tools }), null, 2);
-  return JSON.stringify(applyAll({ root, tools, libs: opts.libs, withKey: opts.withKey, key: await keyState(root) }), null, 2);
+  const home = resolve(opts.home ?? homedir());
+  if (opts.command === "detect") return JSON.stringify({ ...detectReport({ root, home, tools }), key: await keyState(root) }, null, 2);
+  if (opts.command === "reset") return JSON.stringify(resetAll({ root, home, tools }), null, 2);
+  return JSON.stringify(applyAll({ root, home, tools, libs: opts.libs, withKey: opts.withKey, key: await keyState(root) }), null, 2);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

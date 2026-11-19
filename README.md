@@ -70,13 +70,26 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 
 5. (Opcional) Elige el modelo de cada agente con `/configure-models`, según se describe en [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
 
-6. (Opcional) Configura Context7 con `/setup-context7`, según se describe en [Context7](#context7).
+6. (Opcional) Configura el canal de documentación: Context7 con `/setup-context7` o el RAG local con `/setup-docs-rag`, según se describe en [Documentación de las dependencias](#documentación-de-las-dependencias).
 
-## Context7
+## Documentación de las dependencias
+
+`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por un solo canal por ordenador, cada uno con su propio MCP:
+
+| Canal | MCP | Qué sale del ordenador | Requisitos |
+|---|---|---|---|
+| **Context7** (por defecto) | `context7`, remoto | El nombre de la librería y la pregunta, hacia Upstash | Ninguno |
+| **RAG local** | `docs-rag`, local | Solo la descarga de la documentación | Docker, Ollama y `uv` |
+
+Los dos se registran en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). Registrar uno quita el otro. `apm install` y `apm update` no tocan esta elección.
+
+Las dos skills leen las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git las buscan con `git ls-files`, así que respetan `.gitignore` (sin `node_modules` ni `dist`) y no tienen límite de profundidad; sin git recorren hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build y piden confirmación una sola vez.
+
+### Context7
 
 [Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código para versiones antiguas.
 
-`/setup-context7` lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git los busca con `git ls-files`, así que respeta `.gitignore` (sin `node_modules` ni `dist`) y no tiene límite de profundidad; sin git recorre hasta 3 niveles. Propone todas salvo los tipos y las utilidades de build, y pide confirmación una sola vez: quita las que no quieras. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+`/setup-context7` escribe el MCP `context7` en la config de usuario, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
 **La clave es opcional.** Context7 funciona sin ella, con un límite menor de peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
@@ -90,6 +103,15 @@ Los editores no leen el `.env` solos. Antes de abrir el editor, cárgalo en la t
 set -a; source .env; set +a
 cursor .      # o claude, o codex
 ```
+
+### RAG local
+
+`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después registra el MCP `docs-rag`, con dos herramientas: `resolver_paquete` y `consultar_docs`.
+
+- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
+- **Fuera de git:** el índice de cada proyecto va en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
+- **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [docs/research/rag-documentacion-python-3.15.pdf](docs/research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.
 
 ## Modelos de los agentes
 
