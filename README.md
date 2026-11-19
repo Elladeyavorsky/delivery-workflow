@@ -187,4 +187,4 @@ Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así ti
 - [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/MODELS.md](docs/MODELS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
-- [docs/adr/](docs/adr/) y [GLOSSARY.md](GLOSSARY.md): decisiones de diseño y vocabulario.
+- [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.

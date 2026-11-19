@@ -75,4 +75,4 @@ Los cambios entran en `staging` por pull request desde su rama de trabajo. Para 
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
 
-Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles ([ADR 0006](adr/0006-el-paquete-vive-en-su-propio-repositorio.md), [ADR 0008](adr/0008-la-version-de-apm-yml-crea-la-etiqueta.md)).
+Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
