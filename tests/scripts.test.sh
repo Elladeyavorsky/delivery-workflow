@@ -263,6 +263,9 @@ check "release-version no cuenta una etiqueta con sufijo" test "$(bash "$release
 echo 'version: "1.0"' >apm.yml
 check "release-version falla sin X.Y.Z" bash -c "! bash '$release' 2>/dev/null"
 check "el workflow usa release-version" grep -q "bash .github/scripts/release-version.sh" "${package}/.github/workflows/release.yml"
+check "comprobar la versión no se limita a la pull request" bash -c "! grep -qx \"    if: github.event_name == 'pull_request'\" '${package}/.github/workflows/release.yml'"
+check "la release espera a la comprobación de versión" grep -q "needs: version" "${package}/.github/workflows/release.yml"
+check "la release publica el commit que dejó la comprobación" grep -q "needs.version.outputs.sha" "${package}/.github/workflows/release.yml"
 
 # say-it-straight: skill de prosa sin scripts.
 check "say-it-straight existe" test -f "${skills}/say-it-straight/SKILL.md"

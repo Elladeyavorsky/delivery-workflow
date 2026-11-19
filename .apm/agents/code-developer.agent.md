@@ -16,7 +16,7 @@ skills:
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** En la ronda cuya task sea de código. Siempre se abre uno nuevo: lo que sabe de rondas anteriores está en la issue.
-- **Límites de conocimiento:** Lee la documentación de este proyecto, la issue y las skills definidas. Usa solo las APIs, módulos y opciones que puede confirmar en el proyecto o en sus dependencias instaladas. Deja `docs/`, el `README.md` y la issue a `concept-developer`. Los subagentes los lanza el orquestador, y no habla con los testers.
+- **Límites de conocimiento:** Lee la documentación de este proyecto, la issue y las skills definidas. Para una API, un módulo o una opción de una dependencia, consulta el MCP de documentación configurado: resuelve el paquete, haz una pregunta por decisión, en inglés y con el nombre exacto de la API, comprueba que el primer fragmento la nombra y pregunta por sus restricciones. Usa lo que devuelve. Deja `docs/`, el `README.md` y la issue a `concept-developer`. Los subagentes los lanza el orquestador, y no habla con los testers.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -34,7 +34,7 @@ skills:
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si no puedes confirmar un nombre:** Dilo en el cierre y espera a confirmarlo antes de usarlo.
+- **Si el MCP de documentación no está, no tiene índice o no encuentra la API:** Dilo en el cierre y espera a confirmarla antes de usarla.
 - **Si la task no es de código:** Dilo y cierra sin editar.
 - **Si un fichero de documentación ya no describe el código:** Nómbralo al cerrar, sin abrirlo para escribir.
 - **Si encuentras un secreto o la task necesita uno:** Para. Nombra el fichero, no el valor.

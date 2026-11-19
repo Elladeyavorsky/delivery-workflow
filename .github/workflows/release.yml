@@ -1,8 +1,10 @@
-# Cada pull request a main comprueba que la versión de apm.yml se puede publicar.
-# Si nadie la ha subido, la IA de Groq decide si el cambio es major, minor o patch
-# (si la IA falla, deciden las reglas de los commits),
-# sube la versión en apm.yml con un commit chore: release X.Y.Z y lo explica en la PR.
-# Cada push a main crea la etiqueta vX.Y.Z y su release con un resumen de los cambios y las notas de GitHub.
+# Cada pull request a main y cada push a main comprueban que la versión de apm.yml se puede publicar.
+# Si no se puede (la etiqueta ya existe o es menor que la última), la IA de Groq decide si el cambio
+# es major, minor o patch (si la IA falla, deciden las reglas de los commits)
+# y sube la versión en apm.yml con un commit chore: release X.Y.Z.
+# En una pull request lo deja en la rama y lo explica. En un push a main lo deja en main.
+# Ese push usa GITHUB_TOKEN, así que no dispara otro workflow: la release sale en la misma ejecución,
+# del commit cuya versión sí se puede publicar.
 # Necesita el secreto GROQ_API_KEY en el repositorio.
 name: Release
 
@@ -18,16 +20,18 @@ env:
 jobs:
   version:
     name: Comprobar la versión
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      publicar: ${{ steps.publicar.outputs.publicar }}
+      sha: ${{ steps.publicar.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
           fetch-depth: 0
 
       - name: Comprobar la versión de apm.yml
@@ -41,23 +45,23 @@ jobs:
 
       # La IA no puede subir commits a una PR que viene de un fork: ahí la versión se sube a mano.
       - name: Pedir la versión a mano en las PR de un fork
-        if: steps.comprobar.outputs.valida == 'no' && github.event.pull_request.head.repo.full_name != github.repository
+        if: github.event_name == 'pull_request' && steps.comprobar.outputs.valida == 'no' && github.event.pull_request.head.repo.full_name != github.repository
         run: |
           echo "Esta pull request viene de un fork. Sube version en apm.yml con un commit chore: release X.Y.Z." >&2
           exit 1
 
       - name: Decidir la versión con IA
-        if: steps.comprobar.outputs.valida == 'no' && github.event.pull_request.head.repo.full_name == github.repository
+        if: steps.comprobar.outputs.valida == 'no' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: bash .github/scripts/release-ia.sh
 
-      - name: Subir la versión en apm.yml y explicarlo en la PR
-        if: steps.comprobar.outputs.valida == 'no' && github.event.pull_request.head.repo.full_name == github.repository
+      - name: Subir la versión en apm.yml
+        if: steps.comprobar.outputs.valida == 'no' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENTO: ${{ github.event_name }}
           RAMA: ${{ github.head_ref }}
+          RAMA_MAIN: ${{ github.ref_name }}
         run: |
           version=$(cat ia-version.txt)
           sed -i -E "0,/^version:/s/^version:.*/version: \"${version}\"/" apm.yml
@@ -67,8 +71,19 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apm.yml
           git commit -m "chore: release ${version}"
-          git push origin "HEAD:${RAMA}"
+          if [ "$EVENTO" = "pull_request" ]; then
+            git push origin "HEAD:${RAMA}"
+          else
+            git push origin "HEAD:${RAMA_MAIN}"
+          fi
 
+      - name: Explicar la versión en la PR
+        if: github.event_name == 'pull_request' && steps.comprobar.outputs.valida == 'no' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          version=$(cat ia-version.txt)
           {
             echo "🤖 Versión **${version}** elegida por $(cat ia-quien.txt): cambio **$(cat ia-tipo.txt)**."
             echo
@@ -78,15 +93,27 @@ jobs:
           } > comentario.md
           gh pr comment "$PR_NUMBER" --body-file comentario.md
 
+      # En un push, HEAD es el commit que se va a publicar: el que llegó a main, o el chore: release
+      # que este job acaba de subir. En una pull request no se publica nada.
+      - name: Preparar la publicación
+        id: publicar
+        if: github.event_name == 'push'
+        run: |
+          bash .github/scripts/release-version.sh >/dev/null
+          echo "publicar=si" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   release:
     name: Etiqueta y release
-    if: github.event_name == 'push'
+    needs: version
+    if: github.event_name == 'push' && needs.version.outputs.publicar == 'si'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
 
       - name: Crear la etiqueta y la release
@@ -95,6 +122,9 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           version=$(bash .github/scripts/release-version.sh)
+          # GITHUB_SHA es el commit que disparó el workflow. Si este job acaba de subir
+          # la versión, la etiqueta tiene que apuntar al commit nuevo, que es HEAD.
+          destino=$(git rev-parse HEAD)
 
           # El resumen es un extra: si falla, la release se crea igual.
           bash .github/scripts/release-ia.sh || true
@@ -107,7 +137,7 @@ jobs:
           } > notas.md
 
           gh release create "v${version}" \
-            --target "$GITHUB_SHA" \
+            --target "$destino" \
             --title "v${version}" \
             --notes-file notas.md \
             --generate-notes \
