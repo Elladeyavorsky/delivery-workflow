@@ -265,6 +265,20 @@ for agent in concept-developer concept-tester create-issue create-pr; do
   check "${agent} precarga say-it-straight" grep -q -- "- say-it-straight" "${package}/.apm/agents/${agent}.agent.md"
 done
 
+# data-protection-guideline: guía orientativa sin scripts.
+dpg="${skills}/data-protection-guideline/SKILL.md"
+check "data-protection-guideline existe" test -f "$dpg"
+check "data-protection-guideline declara su name" grep -q "^name: data-protection-guideline" "$dpg"
+check "data-protection-guideline dice que no actúa sin la sección" grep -qF "«Protección de datos: el proyecto no declara datos personales; la guía no actúa.»" "$dpg"
+check "data-protection-guideline usa la salida sin hallazgos y no dice cumple" bash -c "grep -qF 'Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).' '$dpg' && ! grep -qi 'cumple' '$dpg'"
+frontmatter() {
+  awk 'NR == 1 && $0 == "---" { inside = 1; next } inside && $0 == "---" { exit } inside { print }' "$1"
+}
+for agent in concept-developer concept-tester code-tester; do
+  check "${agent} precarga data-protection-guideline" bash -c "$(declare -f frontmatter); frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -qx '  - data-protection-guideline'"
+done
+check "code-developer no precarga data-protection-guideline" bash -c "$(declare -f frontmatter); ! frontmatter '${package}/.apm/agents/code-developer.agent.md' | grep -q 'data-protection-guideline'"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."

@@ -42,8 +42,8 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    Para Codex, `--target codex`. Para probar una copia local del paquete, pasa su ruta en vez de `venturars/…#staging`.
 
 3. Comprueba que están las piezas:
-   - **Cursor:** `ls .agents/skills .cursor/agents` (21 skills y 8 subagentes).
-   - **Codex:** `ls .agents/skills .codex/agents` (21 skills y 8 subagentes `.toml`).
+   - **Cursor:** `ls .agents/skills .cursor/agents` (22 skills y 8 subagentes).
+   - **Codex:** `ls .agents/skills .codex/agents` (22 skills y 8 subagentes `.toml`).
 
 4. Abre la herramienta, mejor desde el escritorio que desde la terminal: así se comprueba que no depende de las variables de la terminal. En Codex, acepta la confianza en el proyecto.
 
@@ -64,6 +64,23 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 6. Anota lo que falle: la herramienta, el paso, lo que escribiste y el error. Ábrelo como issue en [este repositorio](https://github.com/venturars/delivery-workflow/issues) con el tipo `fix`.
 
 7. Borra el repositorio de prueba: `gh auth refresh -s delete_repo` y después `gh repo delete delivery-test --yes`.
+
+## Refrescar los textos legales
+
+La skill `data-protection-guideline` lleva en `assets/` una copia de cada artículo que cita su checklist. Para volver a descargarlos, desde la raíz del repositorio:
+
+```bash
+node .github/scripts/refresh-legal-sources.mjs
+```
+
+El script lee `assets/sources.json` de la skill y descarga cada artículo: el RGPD consolidado del Cellar de EUR-Lex y la LOPDGDD consolidada de la API de datos abiertos del BOE. En la LOPDGDD busca cada bloque por su título («Artículo N») y guarda su última versión. Reescribe `assets/rgpd/`, `assets/lopdgdd/` y `sources.json` con la fecha de descarga de hoy. Solo usa módulos incorporados de Node y no lo reciben los proyectos.
+
+- **Añadir un artículo:** añade su número a la norma en `sources.json` y vuelve a lanzar el comando. Cada artículo que cite el checklist tiene que estar en `sources.json`.
+- **Si algo falla** (red, respuesta distinta de 200, un artículo que no aparece), el script sale con error, nombra la URL o el número y no cambia ningún fichero: escribe en una carpeta temporal y la mueve al final.
+- **Opciones:** `--sources RUTA` lee otro `sources.json` y `--out CARPETA` escribe en otra carpeta.
+- **Tests:** `tests/refresh-legal-sources.test.mjs` corre con `node --test tests/*.mjs` contra los fixtures de `tests/fixtures/refresh-legal-sources/`, sin red.
+
+Revisa el diff antes de hacer commit: un cambio en el texto de un artículo puede pedir un cambio en el checklist. La versión del paquete con la guía espera a dos dudas de #56 ([ADR 0013](adr/0013-guia-de-proteccion-de-datos.md)).
 
 ## Publicar una versión
 

@@ -91,6 +91,20 @@ set -a; source .env; set +a
 cursor .      # o claude, o codex
 ```
 
+## Protección de datos
+
+La guía `data-protection-guideline` es un checklist del RGPD y la LOPDGDD que usan `concept-developer`, `concept-tester` y `code-tester`. Se activa con la sección `## Datos personales` de `docs/CONSTITUTION.md` del proyecto, señala posibles problemas de cada tarea con su artículo y no certifica cumplimiento.
+
+Para activarla, copia la plantilla `assets/datos-personales.md` de la skill (en Claude Code, `.claude/skills/data-protection-guideline/`; en Cursor y Codex, `.agents/skills/data-protection-guideline/`) a tu `docs/CONSTITUTION.md` y rellena sus cuatro campos: rol en el tratamiento, interesados, categorías especiales y estado de la DPIA. El rol lo decide la persona responsable del proyecto; la guía no lo deduce. Un campo vacío es un hueco y para el ciclo.
+
+Sin la sección, la guía dice en una línea que no actúa. Con ella:
+
+- Si la tarea toca datos personales, la spec recoge como requisitos los ítems que aplican, con su artículo. Si el código o la documentación no los cumplen, la ronda falla como con cualquier otro requisito.
+- Lo que encuentran los testers fuera de la spec va como nota al comentario de la ronda y no cambia el veredicto.
+- Sin hallazgos, el reporte dice «Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).».
+
+Los artículos citados viajan en la skill como copia informativa de los textos consolidados, con su fuente y su fecha. El checklist está pendiente de revisión jurídica. El motivo de este diseño está en el [ADR 0013](docs/adr/0013-guia-de-proteccion-de-datos.md).
+
 ## Modelos de los agentes
 
 Cada agente puede ejecutarse con un modelo acorde a su tarea (uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script), y cada persona dispone de una suscripción distinta. Por ello el modelo no se incluye en el paquete. Es un paso opcional: tras `apm install`, ejecuta `/configure-models` en el chat. La skill detecta los modelos disponibles en tu cuenta, propone uno por agente indicando el motivo y solicita confirmación una sola vez para aceptarlos o cambiar alguno.

@@ -4,6 +4,7 @@ description: "Escribe la spec, el plan y las tasks de la tarea en su issue, y la
 skills:
   - issue-spec
   - say-it-straight
+  - data-protection-guideline
 ---
 
 # Subagente: Concept developer
@@ -24,7 +25,7 @@ skills:
 1. **Recepción:** El encargo trae el número de la issue, la huella de la parte de arriba, la ronda y, si las hay, las comprobaciones fallidas, la documentación desfasada, las respuestas a un hueco o la palabra revisión. No trae el chat.
 2. **Validación:** Lee la issue con `issue-spec read` (con `--revision` si el encargo es de revisión). Lee los documentos del proyecto que existan: `docs/CONSTITUTION.md`, `docs/ARCHITECTURE.md`, `docs/STYLE.md`, `docs/COMMANDS.md`, `AGENTS.md` y `README.md`. La forma de las tres secciones está en las plantillas de `issue-spec`.
 3. **Procesamiento:**
-   - **Spec nueva:** Escribe las tres secciones en ficheros temporales y guárdalas con `issue-spec write`. El estado es Borrador, con la fecha de hoy. En «Documentos que mandan» van solo los que existen. Los tests del plan usan los frameworks del proyecto; si el cambio necesita UI o punta a punta y no hay framework, propón uno en el plan y añade su task.
+   - **Spec nueva:** Escribe las tres secciones en ficheros temporales y guárdalas con `issue-spec write`. El estado es Borrador, con la fecha de hoy. En «Documentos que mandan» van solo los que existen. Los tests del plan usan los frameworks del proyecto; si el cambio necesita UI o punta a punta y no hay framework, propón uno en el plan y añade su task. Aplica `data-protection-guideline`: escribe en la spec, como requisitos con su id y su artículo, los ítems del checklist que aplican a la tarea; sus huecos van a «Huecos».
    - **Revisión:** Rellena las mismas plantillas solo con lo que pide la revisión. Publícalas con `issue-spec revision N`. No llames a `write` sobre el cuerpo. Entre rondas de una revisión, `write` y `read` llevan `--revision`.
    - **Comprobación fallida:** Precisa la spec, actualiza el plan y añade la task siguiente. No añadas un objetivo nuevo ni escribas código.
    - **Documentación desfasada:** Actualiza esos ficheros de `docs/` o el `README.md` para que digan lo que el código hace. No crees documentos que el proyecto no tiene.
@@ -34,6 +35,7 @@ skills:
 
 - **Skill `issue-spec`:** Leer la issue y escribir sus tres secciones. Trae las plantillas.
 - **Skill `say-it-straight`:** Prosa en español al escribir spec, plan, tasks y docs.
+- **Skill `data-protection-guideline`:** Los requisitos de protección de datos de la spec, cada uno con su artículo. Se activa con la sección `## Datos personales` de `docs/CONSTITUTION.md`.
 - **`docs/` y `README.md`:** La referencia que hay que obedecer y, si toca, actualizar.
 
 ## 5. Manejo de Errores y Excepciones

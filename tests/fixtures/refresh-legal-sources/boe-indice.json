@@ -1,0 +1,48 @@
+{
+    "status": {
+        "code": "200",
+        "text": "ok"
+    },
+    "data": [
+        {
+            "bloque": [
+                {
+                    "id": "pr",
+                    "titulo": "[preambulo]",
+                    "fecha_actualizacion": "20181206",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/pr"
+                },
+                {
+                    "id": "ti",
+                    "titulo": "TÍTULO I",
+                    "fecha_actualizacion": "20181206",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/ti"
+                },
+                {
+                    "id": "a7",
+                    "titulo": "Artículo 7",
+                    "fecha_actualizacion": "20181206",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/a7"
+                },
+                {
+                    "id": "a2-3",
+                    "titulo": "Artículo 230",
+                    "fecha_actualizacion": "20181206",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/a2-3"
+                },
+                {
+                    "id": "a2-5",
+                    "titulo": "Artículo 23",
+                    "fecha_actualizacion": "20251227",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/a2-5"
+                },
+                {
+                    "id": "a5-12",
+                    "titulo": "Artículo 53 bis",
+                    "fecha_actualizacion": "20230301",
+                    "url": "https:\/\/www.boe.es\/datosabiertos\/api\/legislacion-consolidada\/id\/BOE-A-2018-16673\/texto\/bloque\/a5-12"
+                }
+            ]
+        }
+    ]
+}

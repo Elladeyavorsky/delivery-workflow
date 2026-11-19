@@ -60,7 +60,7 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
    2. Si al cerrar dice que la documentación ha quedado desfasada, `concept-developer` otra vez en la misma ronda, con esa lista. No gasta una ronda.
    3. Un `code-tester` nuevo.
    4. Un `concept-tester` nuevo.
-   5. Un comentario en la issue con `issue-spec comment`: la ronda, la task, los ficheros cambiados y los dos veredictos con sus comprobaciones fallidas.
+   5. Un comentario en la issue con `issue-spec comment`: la ronda, la task, los ficheros cambiados, los dos veredictos con sus comprobaciones fallidas y las notas de protección de datos de los testers, si las hay.
    6. Si los dos testers pasan, marca con `issue-spec tick` cada task que se cumplió en esa ronda.
    7. Si fallan y quedan rondas, `concept-developer` con las comprobaciones fallidas: precisa la spec, actualiza el plan y añade la task siguiente. No añadas un objetivo nuevo ni escribas código.
 3. **Pasa** cuando todas las tasks de preparación, implementación y verificación están marcadas y los dos testers de la última ronda pasan. Cambia el estado con `issue-spec state N Implementada` y sigue con el commit final.

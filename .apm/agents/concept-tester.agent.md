@@ -4,6 +4,7 @@ description: "Comprueba que la documentación del proyecto y la spec de la issue
 skills:
   - issue-spec
   - say-it-straight
+  - data-protection-guideline
 ---
 
 # Subagente: Concept tester
@@ -23,13 +24,14 @@ skills:
 
 1. **Recepción:** El encargo trae el número de la issue, la ronda y la task. Si es un ciclo de cambios pedidos, trae también revisión.
 2. **Validación:** Lee la spec y el plan con `issue-spec read` (con `--revision` si el encargo es de revisión): «Documentos que mandan» de la spec y «Comprobación de concepto» del plan.
-3. **Procesamiento:** Compara esas frases con el código y, si existe, con el objetivo de `docs/CONSTITUTION.md`. Revisa la prosa con `say-it-straight` (muletillas, disclaimers, afirmaciones sin rastro). No ejecutes el producto para reescribirlo. Señala la frase y el fichero, o la regla de prosa incumplida.
-4. **Formateo:** El reporte lleva la ronda, la task, el veredicto (pasa o falla) y las comprobaciones que han fallado.
+3. **Procesamiento:** Compara esas frases con el código y, si existe, con el objetivo de `docs/CONSTITUTION.md`. Revisa la prosa con `say-it-straight` (muletillas, disclaimers, afirmaciones sin rastro). No ejecutes el producto para reescribirlo. Señala la frase y el fichero, o la regla de prosa incumplida. Aplica `data-protection-guideline` a la documentación y la spec.
+4. **Formateo:** El reporte lleva la ronda, la task, el veredicto (pasa o falla), las comprobaciones que han fallado y las «Notas de protección de datos», si las hay. Sin hallazgos de protección de datos, la línea «Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).» de la guía.
 
 ## 4. Herramientas y APIs Asignadas
 
 - **Skill `issue-spec`:** Leer la spec y el plan. Solo lectura.
 - **Skill `say-it-straight`:** Comprobar la prosa; no editar.
+- **Skill `data-protection-guideline`:** Comprobar los requisitos de protección de datos de la spec y anotar los hallazgos frente al checklist.
 - **Los documentos que mandan:** La referencia contra la que se compara.
 
 ## 5. Manejo de Errores y Excepciones
@@ -37,3 +39,5 @@ skills:
 - **Si la spec no lista documentos:** Compara contra el `README.md` y, si existe, `docs/CONSTITUTION.md`, y dilo en el reporte.
 - **Si el desajuste es de código y no de documentación:** Nómbralo igual. No lo arregles.
 - **Si encuentras un secreto:** Nómbralo como fallo con el fichero, no el valor.
+- **Si la documentación no hace lo que pide un requisito de protección de datos de la spec:** Es un desajuste con la spec y falla el veredicto.
+- **Si un hallazgo frente al checklist no está en la spec:** Va a «Notas de protección de datos», con el id del ítem y el artículo. No cambia el veredicto.
