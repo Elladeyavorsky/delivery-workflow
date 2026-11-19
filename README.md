@@ -13,6 +13,8 @@ Paquete [APM](https://github.com/microsoft/apm) para **Claude Code, Cursor y Cod
 
 Se para cuando falta un dato necesario para la spec o para identificar a los revisores, si aparece un secreto o si falla la novena ronda.
 
+Cada proyecto puede añadir una [revisión automática de PR](#revisión-automática-de-pr) que comenta cada PR al salir de draft o al abrirse ya lista.
+
 ## Avisos opcionales de PR en Discord
 
 Un proyecto puede activar los [workflows de aviso](docs/DISCORD-PR-NOTIFICATIONS.md) para sus PR hacia `staging`. APM no los instala y los agentes no intervienen. Cuando la PR tiene al menos dos revisores solicitados, el bot la publica en Discord aunque no conozca sus cuentas: muestra los logins de GitHub y menciona solo a quienes pueda verificar.
@@ -26,6 +28,20 @@ Si falta una mención, el autor de la PR o un miembro autorizado del repositorio
 Sustituye `LOGIN_GITHUB` por el login de un revisor solicitado y `ID_DISCORD` por su ID numérico. Para copiarlo, activa el modo desarrollador de Discord, abre el menú de esa persona y elige «Copiar ID de usuario». El workflow comprueba que el login sea revisor y que el ID pertenezca al servidor; después guarda la relación cifrada durante 48 horas y envía una mención adicional solo a esa persona. El comentario es visible en la PR: escribe únicamente el login y el ID, nunca el token del bot.
 
 El comentario es opcional. Si alguien no está en Discord o nadie confirma la relación, la revisión en GitHub y el aviso de la PR continúan sin esa mención.
+
+## Revisión automática de PR
+
+Un proyecto puede activar una primera revisión de cada pull request. Cuando la PR sale de draft o se abre ya lista, el workflow `review.yml` lanza `anthropics/claude-code-action` con la skill `review-pr`. El bot `claude[bot]` publica un comentario en español que empieza por `## Revisión automática`: comprueba que la PR hace lo que pide la issue enlazada con `Closes #N`, busca fallos en el código y lo compara con lo que ya hay en el proyecto. Solo comenta: no aprueba ni pide cambios. Cada salida de draft deja un comentario nuevo.
+
+Puesta en marcha, una vez por proyecto:
+
+1. Copia la plantilla `review.yml` de la skill en `.github/workflows/` y haz commit. Después de `apm install` está en `.claude/skills/review-pr/assets/review.yml` (Claude Code) o en `.agents/skills/review-pr/assets/review.yml` (Cursor y Codex).
+2. Añade el secreto `ANTHROPIC_API_KEY` al repositorio, en *Settings › Secrets and variables › Actions*, con tu clave de Anthropic.
+3. Instala la [Claude GitHub App](https://github.com/apps/claude) en el repositorio.
+
+Las PR que llegan desde un fork no se revisan: el job aparece como saltado y la ejecución no falla. El workflow usa `pull_request` y no `pull_request_target`, así que una ejecución con código ajeno nunca recibe los secretos.
+
+El workflow descarga la skill de la rama `main` de este repositorio, que solo cambia en cada versión. Para usar la misma versión que tienes instalada, cambia ese `ref: main` por la etiqueta, por ejemplo `ref: v0.5.0`. `anthropics/claude-code-action` va fijada a `@v1`; si prefieres un SHA, sustitúyela por el de la versión que quieras.
 
 ## Requisitos
 

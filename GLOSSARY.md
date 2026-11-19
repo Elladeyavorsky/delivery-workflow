@@ -26,6 +26,10 @@ Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. Spec, plan y t
 **Revisión** (comentario):
 El comentario de la issue que empieza por `<!-- Revisión N -->` y lleva las plantillas de spec, plan y tasks de lo que pidió la persona revisora.
 
+**Revisión automática**:
+El comentario que `claude[bot]` publica en la pull request cuando sale de draft o se abre ya lista, y que empieza por `## Revisión automática`. Lo escribe la skill `review-pr` desde el workflow `review.yml` del proyecto. No aprueba ni pide cambios, y no alimenta «cambios pedidos».
+_Evitar_: revisión (a secas, es el comentario de la issue), code review
+
 **Otra pasada**:
 Momento en que la persona confirma que el ciclo vuelve a empezar después de que la novena ronda falle.
 

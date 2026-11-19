@@ -1,0 +1,47 @@
+# Plantilla del paquete delivery-workflow. Cópiala en .github/workflows/review.yml
+# del proyecto. Necesita el secreto ANTHROPIC_API_KEY y la Claude GitHub App.
+name: Revisión automática de PR
+
+on:
+  pull_request:
+    types: [ready_for_review, opened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
+
+concurrency:
+  group: review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Sin drafts y sin PR de forks: un fork no tiene acceso a los secretos y el job se salta.
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # Skill review-pr de la última versión publicada. Para fijar la versión
+      # instalada en el proyecto, cambia ref por su etiqueta vX.Y.Z.
+      - uses: actions/checkout@v4
+        with:
+          repository: venturars/delivery-workflow
+          ref: main
+          path: .delivery-workflow
+          sparse-checkout: .apm/skills/review-pr
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Lee .delivery-workflow/.apm/skills/review-pr/SKILL.md y aplícala a la
+            pull request ${{ github.event.pull_request.number }} del repositorio
+            ${{ github.repository }}.
+          claude_args: >-
+            --allowedTools "Read,Write,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(gh pr comment:*)"

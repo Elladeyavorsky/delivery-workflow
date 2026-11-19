@@ -42,8 +42,8 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    Para Codex, `--target codex`. Para probar una copia local del paquete, pasa su ruta en vez de `venturars/…#staging`.
 
 3. Comprueba que están las piezas:
-   - **Cursor:** `ls .agents/skills .cursor/agents` (21 skills y 8 subagentes).
-   - **Codex:** `ls .agents/skills .codex/agents` (21 skills y 8 subagentes `.toml`).
+   - **Cursor:** `ls .agents/skills .cursor/agents` (25 skills y 8 subagentes).
+   - **Codex:** `ls .agents/skills .codex/agents` (25 skills y 8 subagentes `.toml`).
 
 4. Abre la herramienta, mejor desde el escritorio que desde la terminal: así se comprueba que no depende de las variables de la terminal. En Codex, acepta la confianza en el proyecto.
 
@@ -58,6 +58,12 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    | Edita la parte de arriba de la issue en GitHub mientras corren las rondas | La escritura siguiente en la issue para y el agente te pregunta. |
    | «Que la revise TU_NOMBRE» | Te contesta que el autor no puede revisar su propia pull request y no pide nada. |
    | Con la PR en `CHANGES_REQUESTED`, «la PR pide cambios» | Un comentario `<!-- Revisión 1 -->` con spec, plan y tasks en la misma issue y se repite el ciclo. |
+   | Activa la [revisión automática](../README.md#revisión-automática-de-pr) y abre una PR en draft con `Closes #1` | Ningún comentario de `claude[bot]`. |
+   | Saca esa PR de draft | Un comentario de `claude[bot]` que empieza por `## Revisión automática`, con `✅ Sin puntos que bloqueen` o `❌ N puntos que bloquean`. Cada punto lleva `fichero:línea`, qué falla y por qué; N coincide con los puntos listados y hay 3 sugerencias opcionales como máximo. |
+   | Vuelve a pasarla a draft y sácala otra vez | Un segundo comentario `## Revisión automática`; el primero sigue igual. |
+   | Abre una PR ya lista, sin draft, con `Closes #1` | Un comentario `## Revisión automática`. |
+   | Saca de draft una PR sin issue enlazada | `❌ N puntos que bloquean`, y uno de los puntos dice que la PR no enlaza ninguna issue. |
+   | Abre una PR desde un fork del repositorio de prueba | El job `review` aparece como saltado, la ejecución no falla y no hay comentario de `claude[bot]`. |
 
    Compruébalo también fuera del chat: `git log --oneline`, `gh issue view 1 --comments` y `gh pr view --web`.
 

@@ -28,6 +28,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas. |
 | — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP y la regla del proyecto. |
+| — | `.apm/skills/review-pr/` | Nueva: revisión automática de PR, con la plantilla de workflow `assets/review.yml` que cada proyecto copia. |
 | — | `apm.yml`, `README.md`, `CHANGES.md`, `GLOSSARY.md`, `docs/MAINTENANCE.md`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
