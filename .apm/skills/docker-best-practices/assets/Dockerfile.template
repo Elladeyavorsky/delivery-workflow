@@ -4,10 +4,8 @@
 FROM <imagen>:<versión exacta> AS base
 
 ARG <HERRAMIENTA>_VERSION=<versión>
-# Huellas de <herramienta>-linux-*.tar.gz en su release. Cambian con <HERRAMIENTA>_VERSION.
 ARG <HERRAMIENTA>_SHA256_ARM64=<sha256>
 ARG <HERRAMIENTA>_SHA256_X86_64=<sha256>
-# Lo pone Docker al construir: arm64 o amd64.
 ARG TARGETARCH
 
 RUN case "$TARGETARCH" in \
@@ -22,10 +20,8 @@ RUN case "$TARGETARCH" in \
   && rm /tmp/tool.tar.gz \
   && ln -s /opt/<herramienta>/<herramienta> /usr/local/bin/<herramienta>
 
-# El repositorio llega montado: git no tiene que quejarse del dueño.
 RUN git config --system --add safe.directory '*'
 
-# Las dependencias de Linux viven en volúmenes, nunca en la carpeta del proyecto.
 RUN mkdir -p /work/<app>/node_modules \
   && chown -R <usuario>:<usuario> /work
 
@@ -33,7 +29,6 @@ USER <usuario>
 ENV CI=true
 WORKDIR /work
 
-# Opcional: paquetes del sistema para un servicio aparte. Solo si hacen falta.
 FROM base AS <etapa opcional>
 ARG DEBIAN_SNAPSHOT=<AAAAMMDD>T000000Z
 USER root

@@ -21,7 +21,6 @@ services:
   <servidor>:
     <<: *base
     working_dir: /work/<app>
-    # Escucha en 0.0.0.0 para que el navegador del ordenador llegue.
     command: <comando> --host 0.0.0.0
     ports:
       - "<puerto>:<puerto>"
@@ -30,7 +29,6 @@ services:
       - <app>-node-modules:/work/<app>/node_modules
       - <gestor>-cache:/<gestor>-cache
 
-  # Opcional: con un perfil, docker compose up sin nombre no lo arranca.
   <opcional>:
     profiles: [<perfil>]
     build:
@@ -42,8 +40,6 @@ services:
       - .:/work
       - <app>-node-modules:/work/<app>/node_modules
 
-# Un volumen de dependencias por proyecto o lockfile. Solo se comparte la caché.
-# Docker les pone delante el nombre de la carpeta: cada copia del repositorio tiene los suyos.
 volumes:
   <app>-node-modules:
   <gestor>-cache:
