@@ -108,7 +108,7 @@ cursor .      # o claude, o codex
 
 `/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después registra el MCP `docs-rag`, con dos herramientas: `resolver_paquete` y `consultar_docs`.
 
-- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (prepara el entorno Python en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
+- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
 - **Fuera de git:** el índice de cada proyecto va en `.docs-rag/`, que trae su propio `.gitignore`.
 - **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
 - **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [docs/research/rag-documentacion-python-3.15.pdf](docs/research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.

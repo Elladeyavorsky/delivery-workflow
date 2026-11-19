@@ -422,14 +422,9 @@ def runtime_go(http, version: str) -> Documentacion:
 
 
 def _descomprimir_zstd(datos: bytes) -> bytes:
-    try:
-        from compression import zstd  # Python 3.14+
+    from compression import zstd
 
-        return zstd.decompress(datos)
-    except ImportError:
-        import zstandard
-
-        return zstandard.ZstdDecompressor().decompressobj().decompress(datos)
+    return zstd.decompress(datos)
 
 
 _RUST_TIPO = {"struct": "struct", "enum": "enum", "trait": "trait", "function": "fn", "macro": "macro", "proc_macro": "macro", "type_alias": "type",
