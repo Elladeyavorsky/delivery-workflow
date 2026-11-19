@@ -58,8 +58,8 @@ echo "GITHUB_TOKEN=token-del-env" >.env
 git push -q origin HEAD:main HEAD:staging
 git fetch -q origin
 
-# gh.sh: gh con el token del .env, nunca con el del entorno ni la sesión de gh.
-ghsh="${skills}/create-issue/scripts/gh.sh"
+# gh.sh: gh con el token del .env, no con el del entorno ni con la sesión de gh.
+ghsh="${skills}/manage-issue/scripts/gh.sh"
 check "gh.sh lanza gh" env GH_TOKEN=token-de-la-sesion GITHUB_TOKEN=token-de-la-sesion bash "$ghsh" repo view
 check "gh.sh pasa el token del .env" test "$(cat "$FAKE_GH_TOKEN")" = token-del-env
 printf '# comentario\nexport GITHUB_TOKEN = "token con comillas"\r\n' >.env
@@ -71,7 +71,7 @@ mv .env env.bak
 : >"$FAKE_GH_LOG"
 check "sin .env, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
 check "sin .env, no se llama a gh" test ! -s "$FAKE_GH_LOG"
-check "sin .env, ensure-label sale con 3" bash -c "bash '${skills}/create-issue/scripts/ensure-label.sh' feat 2>/dev/null; test \$? -eq 3"
+check "sin .env, ensure-label sale con 3" bash -c "bash '${skills}/manage-issue/scripts/ensure-label.sh' feat 2>/dev/null; test \$? -eq 3"
 mv env.bak .env
 git rm -q --cached .gitignore && mv .gitignore gitignore.bak
 check "con el .env fuera de .gitignore, gh.sh falla" bash -c "! bash '$ghsh' repo view 2>/dev/null"
@@ -93,20 +93,20 @@ for copy in "${skills}"/*/scripts/gh.sh; do
   check "gh.sh es igual en $(basename "$(dirname "$(dirname "$copy")")")" cmp -s "$ghsh" "$copy"
 done
 
-# create-branch: siete tipos, knowledge incluido; los demás se rechazan.
-check "create-branch acepta knowledge" "${skills}/create-branch/scripts/create-branch.sh" 5 knowledge add-notes
+# manage-branch: siete tipos, knowledge incluido; los demás se rechazan.
+check "manage-branch acepta knowledge" "${skills}/manage-branch/scripts/manage-branch.sh" 5 knowledge add-notes
 check "la rama sale de staging sin seguirla" test -z "$(git config branch.5-knowledge-add-notes.merge)"
-check "create-branch rechaza un tipo mal escrito" bash -c "! '${skills}/create-branch/scripts/create-branch.sh' 6 feta x 2>/dev/null"
+check "manage-branch rechaza un tipo mal escrito" bash -c "! '${skills}/manage-branch/scripts/manage-branch.sh' 6 feta x 2>/dev/null"
 
-# create-empty-commit: abre la rama y se niega en la rama base.
-check "create-empty-commit en la rama de trabajo" "${skills}/create-empty-commit/scripts/create-empty-commit.sh" 5
+# manage-empty-commit: abre la rama y se niega en la rama base.
+check "manage-empty-commit en la rama de trabajo" "${skills}/manage-empty-commit/scripts/manage-empty-commit.sh" 5
 check "el commit vacío es chore: open #5" test "$(git log -1 --format=%s)" = "chore: open #5"
 git switch -q -c staging origin/staging 2>/dev/null
-check "create-empty-commit se niega en staging" bash -c "! '${skills}/create-empty-commit/scripts/create-empty-commit.sh' 5 2>/dev/null"
+check "manage-empty-commit se niega en staging" bash -c "! '${skills}/manage-empty-commit/scripts/manage-empty-commit.sh' 5 2>/dev/null"
 git switch -q 5-knowledge-add-notes
 
 # ensure-label: existe, se crea, o no hay permiso (2), o el tipo no vale (1).
-label="${skills}/create-issue/scripts/ensure-label.sh"
+label="${skills}/manage-issue/scripts/ensure-label.sh"
 FAKE_GH_LABELS=feat check "ensure-label con la etiqueta ya creada" "$label" feat
 check "ensure-label crea la que falta" "$label" knowledge
 check "ensure-label creó knowledge" grep -q "label create knowledge" "$FAKE_GH_LOG"
@@ -115,10 +115,10 @@ FAKE_GH_LABEL_DENIED=1 "$label" fix >/dev/null 2>&1
 check "ensure-label sin permiso sale con 2" test $? -eq 2
 "$label" feta >/dev/null 2>&1
 check "ensure-label rechaza un tipo mal escrito" test $? -eq 1
-check "ensure-label es igual en create-issue y create-pr-base" cmp -s "$label" "${skills}/create-pr-base/scripts/ensure-label.sh"
+check "ensure-label es igual en manage-issue y manage-pr-base" cmp -s "$label" "${skills}/manage-pr-base/scripts/ensure-label.sh"
 
 # check-title: inglés con verbo delante, sin tipo, sin número y con menos de 72 caracteres.
-title="${skills}/create-issue/scripts/check-title.sh"
+title="${skills}/manage-issue/scripts/check-title.sh"
 check "check-title acepta un título bien formado" bash "$title" "Add a delivery-workflow test note"
 check "check-title rechaza el tipo delante" bash -c "! bash '$title' 'docs: add a test note' 2>/dev/null"
 check "check-title rechaza el tipo con ámbito delante" bash -c "! bash '$title' 'feat(login): add the form' 2>/dev/null"
@@ -134,44 +134,44 @@ check "check-title rechaza el tipo en mayúsculas" bash -c "bash '$title' 'Docs(
 check "check-title acepta dos puntos que no son un tipo" bash "$title" "Note: update the readme"
 check "check-title acepta una palabra que empieza como un tipo" bash "$title" "Fixtures: add the login cases"
 check "check-title cuenta igual en cualquier locale" bash -c "LC_ALL=en_US.UTF-8 bash '$title' 'Add $(printf 'x%.0s' {1..67})' && ! LC_ALL=en_US.UTF-8 bash '$title' 'Add $(printf 'x%.0s' {1..68})' 2>/dev/null"
-check "check-title es igual en create-issue y create-pr-base" cmp -s "$title" "${skills}/create-pr-base/scripts/check-title.sh"
+check "check-title es igual en manage-issue y manage-pr-base" cmp -s "$title" "${skills}/manage-pr-base/scripts/check-title.sh"
 
-# create-pr-base: base detectada, draft, asignada y con etiqueta.
+# manage-pr-base: base detectada, draft, asignada y con etiqueta.
 echo "cuerpo" >"${work}/body.md"
 : >"$FAKE_GH_LOG"
-check "create-pr-base abre la PR" "${skills}/create-pr-base/scripts/create-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" knowledge
+check "manage-pr-base abre la PR" "${skills}/manage-pr-base/scripts/manage-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" knowledge
 check "la PR va contra staging, en draft, asignada y con etiqueta" grep -q -- "pr create --base staging --head 5-knowledge-add-notes --title Add notes --body-file ${work}/body.md --draft --assignee @me --label knowledge" "$FAKE_GH_LOG"
 : >"$FAKE_GH_LOG"
-FAKE_GH_LABEL_DENIED=1 "${skills}/create-pr-base/scripts/create-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" fix >/dev/null 2>&1
+FAKE_GH_LABEL_DENIED=1 "${skills}/manage-pr-base/scripts/manage-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" fix >/dev/null 2>&1
 check "sin permiso de etiquetas, la PR sale sin etiqueta" bash -c "grep -q 'pr create' '$FAKE_GH_LOG' && ! grep -q -- '--label' <(grep 'pr create' '$FAKE_GH_LOG')"
 : >"$FAKE_GH_LOG"
-check "create-pr-base no abre la PR con el tipo en el título" bash -c "
-  out=\$('${skills}/create-pr-base/scripts/create-pr-base.sh' 5-knowledge-add-notes 'docs: add notes' '${work}/body.md' knowledge 2>&1)
+check "manage-pr-base no abre la PR con el tipo en el título" bash -c "
+  out=\$('${skills}/manage-pr-base/scripts/manage-pr-base.sh' 5-knowledge-add-notes 'docs: add notes' '${work}/body.md' knowledge 2>&1)
   [[ \$? -ne 0 && \$out == *'no lleva el tipo'* ]] && ! grep -q 'pr create' '$FAKE_GH_LOG'"
 : >"$FAKE_GH_LOG"
-existing=$(FAKE_GH_PR_URL=https://github.com/owner/repo/pull/3 "${skills}/create-pr-base/scripts/create-pr-base.sh" 5-knowledge-add-notes "docs: añadir notas" "${work}/body.md" knowledge 2>&1)
-check "con la PR ya abierta, create-pr-base devuelve su URL sin mirar el título" grep -q "ya existía: https://github.com/owner/repo/pull/3" <<<"$existing"
+existing=$(FAKE_GH_PR_URL=https://github.com/owner/repo/pull/3 "${skills}/manage-pr-base/scripts/manage-pr-base.sh" 5-knowledge-add-notes "docs: añadir notas" "${work}/body.md" knowledge 2>&1)
+check "con la PR ya abierta, manage-pr-base devuelve su URL sin mirar el título" grep -q "ya existía: https://github.com/owner/repo/pull/3" <<<"$existing"
 printf 'Closes #\n\nComo pide la issue #12.\n' >"${work}/body-con-numero.md"
-check "con la PR ya abierta, create-pr-base tampoco mira el cuerpo" bash -c "FAKE_GH_PR_URL=https://github.com/owner/repo/pull/3 '${skills}/create-pr-base/scripts/create-pr-base.sh' 5-knowledge-add-notes 'Add notes' '${work}/body-con-numero.md' knowledge | grep -q 'ya existía'"
+check "con la PR ya abierta, manage-pr-base tampoco mira el cuerpo" bash -c "FAKE_GH_PR_URL=https://github.com/owner/repo/pull/3 '${skills}/manage-pr-base/scripts/manage-pr-base.sh' 5-knowledge-add-notes 'Add notes' '${work}/body-con-numero.md' knowledge | grep -q 'ya existía'"
 check "con la PR ya abierta, no se crea otra" bash -c "! grep -q 'pr create' '$FAKE_GH_LOG'"
 
 : >"$FAKE_GH_LOG"
-check "create-pr-base rechaza un cuerpo que nombra la issue" bash -c "
-  out=\$('${skills}/create-pr-base/scripts/create-pr-base.sh' 5-knowledge-add-notes 'Add notes' '${work}/body-con-numero.md' knowledge 2>&1)
+check "manage-pr-base rechaza un cuerpo que nombra la issue" bash -c "
+  out=\$('${skills}/manage-pr-base/scripts/manage-pr-base.sh' 5-knowledge-add-notes 'Add notes' '${work}/body-con-numero.md' knowledge 2>&1)
   [[ \$? -ne 0 && \$out == *'no nombra la issue'* ]] && ! grep -q 'pr create' '$FAKE_GH_LOG'"
-GIT_WORKFLOW_BASE=main "${skills}/create-pr-base/scripts/create-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" feat >/dev/null 2>&1
+GIT_WORKFLOW_BASE=main "${skills}/manage-pr-base/scripts/manage-pr-base.sh" 5-knowledge-add-notes "Add notes" "${work}/body.md" feat >/dev/null 2>&1
 check "GIT_WORKFLOW_BASE cambia la base" grep -q -- "pr create --base main" "$FAKE_GH_LOG"
 
-# create-issue: comprueba el título antes de llamar a gh, con etiqueta y asignada.
+# manage-issue: comprueba el título antes de llamar a gh, con etiqueta y asignada.
 : >"$FAKE_GH_LOG"
-check "create-issue crea la issue" "${skills}/create-issue/scripts/create-issue.sh" "Add notes" "${work}/body.md" knowledge
+check "manage-issue crea la issue" "${skills}/manage-issue/scripts/manage-issue.sh" "Add notes" "${work}/body.md" knowledge
 check "la issue va asignada y con etiqueta" grep -q -- "issue create --title Add notes --body-file ${work}/body.md --assignee @me --label knowledge" "$FAKE_GH_LOG"
 : >"$FAKE_GH_LOG"
-check "create-issue no crea la issue con el tipo en el título" bash -c "
-  out=\$('${skills}/create-issue/scripts/create-issue.sh' 'docs: add notes' '${work}/body.md' knowledge 2>&1)
+check "manage-issue no crea la issue con el tipo en el título" bash -c "
+  out=\$('${skills}/manage-issue/scripts/manage-issue.sh' 'docs: add notes' '${work}/body.md' knowledge 2>&1)
   [[ \$? -ne 0 && \$out == *'no lleva el tipo'* ]] && test ! -s '$FAKE_GH_LOG'"
 : >"$FAKE_GH_LOG"
-FAKE_GH_LABEL_DENIED=1 "${skills}/create-issue/scripts/create-issue.sh" "Add notes" "${work}/body.md" fix >/dev/null 2>&1
+FAKE_GH_LABEL_DENIED=1 "${skills}/manage-issue/scripts/manage-issue.sh" "Add notes" "${work}/body.md" fix >/dev/null 2>&1
 check "sin permiso de etiquetas, la issue sale sin etiqueta" bash -c "grep -q 'issue create' '$FAKE_GH_LOG' && ! grep -q -- '--label' <(grep 'issue create' '$FAKE_GH_LOG')"
 
 # github-cache: el fichero vive en .git/ y no aparece como cambio.
@@ -207,10 +207,10 @@ cat >"${work}/bin/cursor-agent" <<CA
 cat "${package}/tests/fixtures/configure-models/cursor-agent-models.txt"
 CA
 chmod +x "${work}/bin/cursor-agent"
-check "apply funciona con un cursor-agent falso" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set create-branch=composer-2.5
+check "apply funciona con un cursor-agent falso" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set manage-branch=composer-2.5
 status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status dice configurado" grep -q "^Modelos: configurado (cursor 8/8)" <<<"$status"
-cp "${package}/.apm/agents/create-pr.agent.md" .cursor/agents/create-pr.md
+cp "${package}/.apm/agents/manage-pr.agent.md" .cursor/agents/manage-pr.md
 status=$("${skills}/check-status/scripts/check-status.sh")
 check "check-status dice desincronizado" grep -q "^Modelos: desincronizado (cursor 7/8)" <<<"$status"
 check "check-status sigue entero tras la línea de modelos" grep -q "^Último commit:" <<<"$status"
@@ -225,6 +225,13 @@ rm -rf .cursor
 commands=$(grep -rhoE '`[^`]*<carpeta de esta skill>/scripts/[^`]*`' "${skills}")
 check "las skills nombran sus scripts" test -n "$commands"
 check "las skills lanzan sus scripts con bash o node" bash -c '! grep -vE "^\`(bash|node) " <<<"$1"' _ "$commands"
+
+# Skills de gestión: existen, y no quedan nombres create-* ni skills en español.
+for skill in edit-pull-request ready-pull-request close-issue; do
+  check "la skill ${skill} existe" test -f "${skills}/${skill}/SKILL.md"
+done
+check "no quedan nombres create-* en .apm" bash -c "! grep -rqE 'create-(issue|branch|commit|pr|draft|empty-commit)' '${package}/.apm'"
+check "no quedan skills con nombre en español" bash -c "! ls '${skills}' | grep -qE '^entrevista-'"
 
 # release-version: la versión de apm.yml, sin etiqueta y mayor que la última.
 release="${package}/.github/scripts/release-version.sh"
@@ -261,7 +268,7 @@ check "el workflow usa release-version" grep -q "bash .github/scripts/release-ve
 check "say-it-straight existe" test -f "${skills}/say-it-straight/SKILL.md"
 check "say-it-straight declara su name" grep -q "^name: say-it-straight" "${skills}/say-it-straight/SKILL.md"
 check "say-it-straight deja los commits en inglés fuera de alcance" grep -q "commit-changes" "${skills}/say-it-straight/SKILL.md"
-for agent in concept-developer concept-tester create-issue create-pr; do
+for agent in concept-developer concept-tester manage-issue manage-pr; do
   check "${agent} precarga say-it-straight" grep -q -- "- say-it-straight" "${package}/.apm/agents/${agent}.agent.md"
 done
 

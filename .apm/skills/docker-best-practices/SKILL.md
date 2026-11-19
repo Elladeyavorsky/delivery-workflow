@@ -15,7 +15,7 @@ description: "Buenas prácticas para Dockerfile, docker-compose.yml y devcontain
 
 - **Cuándo actuar:** Al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml`, un `.dockerignore` o un `.devcontainer/devcontainer.json`, y al decidir qué parte del trabajo va en Docker.
 - **Fuera de alcance:** Kubernetes.
-- **Límites de conocimiento:** Comprueba cada versión, nombre de paquete y checksum en su fuente (la imagen, el índice de paquetes, la release). No escribas uno de memoria.
+- **Límites de conocimiento:** Cada versión, nombre de paquete y checksum sale de su fuente (la imagen, el índice de paquetes, la release), comprobado en el momento.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/docker-best-practices`.
 
@@ -72,7 +72,7 @@ Una app gráfica (Electron, un navegador) no tiene pantalla dentro de un contene
 - Ordena de lo que menos cambia a lo que más: base, paquetes del sistema, herramientas, dependencias y, al final, el código.
 - Cada `ARG`, justo antes del `RUN` que lo usa: todos los `RUN` posteriores lo reciben, y cambiar su valor invalida la caché desde el primero.
 - Si la imagen copia el proyecto: primero el manifiesto y el lockfile, después la instalación y al final el resto del código.
-- `apt-get update` nunca en un `RUN` sin el `install`: su capa quedaría en caché con una lista vieja.
+- `apt-get update` va en el mismo `RUN` que su `install`: solo, su capa quedaría en caché con una lista vieja.
 - Lo que se descarga y se borra, en el mismo `RUN`: borrarlo en otra capa no reduce la imagen.
 - `RUN --mount=type=cache` para las descargas del gestor de paquetes, y `cache-from` y `cache-to` en CI.
 - Detalle: `<carpeta de esta skill>/references/cache-de-capas.md`.
@@ -95,7 +95,7 @@ Una app gráfica (Electron, un navegador) no tiene pantalla dentro de un contene
 
 ### Automatización con hooks de git
 
-- Un hook nunca hace fallar a git: sale con 0 y avisa si Docker no está en marcha.
+- Un hook siempre deja terminar a git: sale con 0 y avisa si Docker no está en marcha.
 - Solo trabaja si cambiaron los ficheros que importan (lockfiles, manifiestos, `Dockerfile`) entre el commit de antes y el de después.
 - Carpeta versionada con `core.hooksPath`, y el comando de una sola vez en el README.
 

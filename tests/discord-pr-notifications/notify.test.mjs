@@ -80,6 +80,33 @@ test('rechaza coincidencias parciales, ambiguas y dos logins con el mismo ID', a
   assert.ok(same.problems.some((item) => item.includes('same Discord user')));
 });
 
+test('la búsqueda automática admite mayúsculas pero mantiene la coincidencia exacta y única', async () => {
+  const searched = [];
+  const result = await resolveReviewers([{ login: 'Elladeyavorsky', id: 101 }], [], async (query) => {
+    searched.push(query);
+    return [{ user: { username: 'elladeyavorsky', id: aliceId } }];
+  });
+  assert.deepEqual(searched, ['elladeyavorsky']);
+  assert.deepEqual(result.ids, [aliceId]);
+});
+
+test('el mapa fijo prevalece sobre caché y comentario y exige pertenencia al servidor', async () => {
+  const now = Date.now();
+  const cached = [{ login: 'alice', discordId: bobId, savedAt: now }];
+  const confirmations = new Map([['alice', {
+    identity: { type: 'id', value: carolId }, confirmedAt: now,
+  }]]);
+  const userMap = new Map([['alice', aliceId]]);
+  const result = await resolveReviewers([reviewers[0]], cached, async () => {
+    throw new Error('The fixed user must not be searched by name.');
+  }, now, confirmations, async (id) => ({ user: { id } }), userMap);
+  assert.deepEqual(result.ids, [aliceId]);
+  assert.deepEqual(result.relations, cached);
+
+  await assert.rejects(resolveReviewers([reviewers[0]], cached, async () => [], now,
+    confirmations, async () => null, userMap), /not a member/);
+});
+
 test('comprueba que el ID confirmado pertenece al servidor y no acepta apodos ambiguos', async () => {
   const now = Date.now();
   const confirmations = new Map([
@@ -121,15 +148,16 @@ test('no elige entre un usuario y el apodo exacto de otra persona', async () => 
   assert.match(result.problems[0], /not a unique/);
 });
 
-test('el mensaje contiene resumen y enlace sin menciones suministradas por la PR', () => {
+test('el mensaje separa avisos y omite el cuerpo de la PR', () => {
   const message = buildMessage('owner/repo', {
     number: 40, title: '@everyone **New**', body: 'Please <@999999999999999999> review',
   }, [{ login: 'alice', discordId: aliceId }, { login: 'bob', discordId: bobId }]);
-  assert.match(message, /^\*\*Repositorio: owner\/repo\*\*\n/);
+  assert.match(message, /^-----\n📦 \*\*Repositorio:\*\* owner\/repo\n📝 \*\*PR para revisar:\*\*/);
   assert.match(message, /New/);
   assert.match(message, /https:\/\/github\.com\/owner\/repo\/pull\/40/);
   assert.match(message, new RegExp(`<@${aliceId}>.*<@${bobId}>`));
   assert.doesNotMatch(message, /@everyone|<@999999999999999999>/);
+  assert.doesNotMatch(message, /Please|review/);
 });
 
 test('la cabecera muestra el repositorio verificado y todos los revisores', () => {
@@ -138,8 +166,54 @@ test('la cabecera muestra el repositorio verificado y todos los revisores', () =
     { login: 'alice', discordId: aliceId }, { login: 'bob', discordId: bobId },
     { login: 'carol', discordId: carolId },
   ]);
-  assert.match(message, /^\*\*Repositorio: venturars\/delivery-workflow\*\*/);
+  assert.match(message, /^-----\n📦 \*\*Repositorio:\*\* venturars\/delivery-workflow/);
   assert.match(message, new RegExp(`<@${aliceId}>.*<@${bobId}>.*<@${carolId}>`));
+});
+
+test('el cuerpo de la PR no aparece y el enlace final queda etiquetado', () => {
+  const message = buildMessage('owner/repo', {
+    number: 40, title: 'Attendance update',
+    body: 'Closes #83\n\n## Qué cambia\n- Primer detalle\nUna descripción clara de la PR.\n\nFixes #42',
+  }, [{ login: 'alice' }, { login: 'bob' }]);
+  assert.doesNotMatch(message, /Closes|Fixes|Qué cambia|Primer detalle|Una descripción clara/);
+  assert.match(message, /🔗 \*\*Enlace a la PR:\*\* https:\/\/github\.com\/owner\/repo\/pull\/40$/);
+});
+
+test('el aviso usa el mapa fijo para mencionar usuarios con nombres distintos', async (t) => {
+  const { config, pr } = setup(t);
+  config.userMap = JSON.stringify({ ALICE: aliceId, Bob: bobId });
+  const comments = [];
+  const posts = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/guilds/111111111111111111/members/') && !url.includes('/search?')) {
+      return response({ user: { id: url.split('/').at(-1), username: 'unrelated-name' } });
+    }
+    if (url.includes('/members/search?')) throw new Error('A mapped user must not be searched by name.');
+    if (url.endsWith('/channels/222222222222222222/messages')) {
+      posts.push(JSON.parse(options.body));
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body });
+      return response(comments[0], 201);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  assert.equal(await notifyReviewers(config), 'notified');
+  assert.deepEqual(posts[0].allowed_mentions.users, [aliceId, bobId]);
+  assert.equal(await notifyReviewers(config), 'already-notified');
+  assert.equal(posts.length, 1);
+});
+
+test('un mapa mal formado falla antes de consultar GitHub o Discord', async (t) => {
+  const { config } = setup(t);
+  config.userMap = '{';
+  let requests = 0;
+  t.mock.method(globalThis, 'fetch', async () => { requests += 1; throw new Error('unexpected'); });
+  await assert.rejects(notifyReviewers(config), /user-map/);
+  assert.equal(requests, 0);
 });
 
 test('publica para tres revisores y no duplica el mismo conjunto reordenado', async (t) => {
@@ -428,7 +502,11 @@ test('avisa del estado incierto si Discord acepta pero falla el registro', async
     }
     throw new Error(`Unexpected request: ${url}`);
   });
-  await assert.rejects(notifyReviewers(config), /notification record is uncertain/);
+  await assert.rejects(notifyReviewers(config), (error) => {
+    assert.match(error.message, /notification record is uncertain \(GitHub HTTP 503\)/);
+    assert.doesNotMatch(error.message, /github-token|bot-token|unavailable/);
+    return true;
+  });
   assert.equal(messages, 1);
 });
 

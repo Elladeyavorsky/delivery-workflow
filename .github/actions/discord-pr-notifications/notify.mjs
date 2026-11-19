@@ -1,6 +1,7 @@
 import { readRelations, saveRelation, writeRelations, notificationStatus, markNotified, messageNonce } from './state.mjs';
 import { hasDistinctReviewers } from './reviewers.mjs';
 import { readConfirmedMappings } from './confirmed-relations.mjs';
+import { parseUserMap } from './user-map.mjs';
 import { fileURLToPath } from 'node:url';
 
 const DISCORD_API = 'https://discord.com/api/v10';
@@ -42,10 +43,20 @@ async function confirmedMember(identity, search, getMember) {
 
 // Las confirmaciones recientes corrigen la caché; las identidades dudosas quedan pendientes.
 export async function resolveReviewers(reviewers, relations, search, now = Date.now(),
-  confirmations = new Map(), getMember = async () => null) {
+  confirmations = new Map(), getMember = async () => null, userMap = new Map()) {
   let updated = relations;
   const problems = [];
+  const fixedIds = new Map();
   for (const { login } of reviewers) {
+    const fixedId = userMap.get(login.toLowerCase());
+    if (fixedId) {
+      const member = await getMember(fixedId);
+      if (member?.user?.id !== fixedId) {
+        throw new Error(`user-map Discord ID for ${login} is not a member of the configured server.`);
+      }
+      fixedIds.set(login, fixedId);
+      continue;
+    }
     const cached = updated.find((item) => item.login === login);
     const confirmed = confirmations.get(login.toLowerCase());
     if (confirmed && (!cached || confirmed.confirmedAt >= Math.floor(cached.savedAt / 1000) * 1000)) {
@@ -55,13 +66,16 @@ export async function resolveReviewers(reviewers, relations, search, now = Date.
         updated = saveRelation(updated, login, member.user.id, confirmed.confirmedAt);
       } else problems.push(`${login}: confirmation is not a unique guild member`);
     } else if (!cached) {
-      const matches = (await search(login)).filter((member) => member.user?.username === login);
+      const matches = (await search(login.toLowerCase())).filter((member) =>
+        typeof member.user?.username === 'string' &&
+        member.user.username.toLowerCase() === login.toLowerCase());
       if (matches.length === 1 && /^[0-9]{17,20}$/.test(matches[0].user?.id ?? '')) {
         updated = saveRelation(updated, login, matches[0].user.id, now);
       } else problems.push(`${login}: no unique exact match`);
     }
   }
-  const ids = reviewers.map(({ login }) => updated.find((item) => item.login === login)?.discordId);
+  const ids = reviewers.map(({ login }) =>
+    fixedIds.get(login) ?? updated.find((item) => item.login === login)?.discordId);
   const counts = new Map();
   for (const id of ids.filter(Boolean)) counts.set(id, (counts.get(id) ?? 0) + 1);
   const resolvedReviewers = reviewers.flatMap((reviewer, index) => {
@@ -86,16 +100,14 @@ function plainText(value, limit) {
 
 export function buildMessage(repository, pr, reviewers, update = false) {
   const title = plainText(pr.title, 120);
-  const description = plainText(pr.body, 180);
   const link = `https://github.com/${repository}/pull/${pr.number}`;
   const names = reviewers.map(({ login, discordId }) =>
     `${discordId ? `<@${discordId}>` : plainText(login, 39)} ` +
     `(${discordId ? `GitHub: ${plainText(login, 39)}` : 'sin mención de Discord'})`).join(', ');
   const label = update ? 'Nuevos revisores o menciones' : 'Revisores';
-  // El repositorio validado identifica el origen de los avisos del mismo canal.
-  return `**Repositorio: ${repository}**\n**PR para revisar:** ${title || `#${pr.number}`}\n` +
-    (description ? `${description}\n` : '') +
-    `**${label}:** ${names}\n${link}`;
+  // La línea inicial separa los avisos consecutivos en el mismo canal.
+  return `-----\n📦 **Repositorio:** ${repository}\n📝 **PR para revisar:** ${title || `#${pr.number}`}\n` +
+    `👥 **${label}:** ${names}\n🔗 **Enlace a la PR:** ${link}`;
 }
 
 async function currentPullRequest(repository, baseBranch, number, token) {
@@ -112,7 +124,7 @@ async function currentPullRequest(repository, baseBranch, number, token) {
 }
 
 export async function notifyReviewers(config) {
-  const { repository, baseBranch, number, githubToken, botToken, cacheKey, guildId, channelId, relationsFile } = config;
+  const { repository, baseBranch, number, githubToken, botToken, cacheKey, guildId, channelId, relationsFile, userMap: userMapInput } = config;
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
       !/^[A-Za-z0-9_.-]+$/.test(baseBranch ?? '') ||
       (process.env.GITHUB_REPOSITORY && process.env.GITHUB_REPOSITORY !== repository) ||
@@ -121,13 +133,14 @@ export async function notifyReviewers(config) {
       !/^[0-9]{17,20}$/.test(guildId ?? '') || !/^[0-9]{17,20}$/.test(channelId ?? '')) {
     throw new Error('Notification configuration is incomplete.');
   }
+  const userMap = parseUserMap(userMapInput);
   const pr = await currentPullRequest(repository, baseBranch, number, githubToken);
   const reviewers = pr.requested_reviewers;
   const relations = readRelations(relationsFile, cacheKey);
   const confirmations = await readConfirmedMappings(repository, pr, githubToken);
   const result = await resolveReviewers(reviewers, relations,
     (query) => searchDiscordMembers(guildId, query, botToken), Date.now(), confirmations,
-    (id) => getDiscordMember(guildId, id, botToken));
+    (id) => getDiscordMember(guildId, id, botToken), userMap);
   writeRelations(relationsFile, result.relations, cacheKey);
   const requestedIds = reviewers.map((reviewer) => reviewer.id);
   const resolvedIds = result.resolvedReviewers.map((reviewer) => reviewer.id);
@@ -166,8 +179,11 @@ export async function notifyReviewers(config) {
   });
   try {
     await markNotified(repository, number, requestedIds, githubToken, cacheKey, mentionedIds);
-  } catch {
-    throw new Error(`Discord accepted PR #${number}, but its notification record is uncertain. Check #git before retrying.`);
+  } catch (error) {
+    // Muestra solo el código HTTP; nunca devuelve el token ni el registro cifrado.
+    const status = /^GitHub state request failed \(HTTP (\d{3})\)\.$/.exec(error?.message ?? '');
+    const detail = status ? `GitHub HTTP ${status[1]}` : 'local state error';
+    throw new Error(`Discord accepted PR #${number}, but its notification record is uncertain (${detail}). Check #git before retrying.`);
   }
   console.log(`PR #${number} notified in Discord.`);
   return 'notified';
@@ -184,6 +200,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     guildId: process.env.DISCORD_GUILD_ID,
     channelId: process.env.DISCORD_GIT_CHANNEL_ID,
     relationsFile: process.env.RELATIONS_FILE,
+    userMap: process.env.DISCORD_USER_MAP,
   }).catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
