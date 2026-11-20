@@ -64,7 +64,7 @@ test("cada nivel elige el primer patrón que coincide", () => {
 
 test("sin modelos detectados no se propone ninguno y todos heredan", () => {
   const proposal = proposeAll(profiles, "cursor", []);
-  assert.equal(proposal.length, 8);
+  assert.equal(proposal.length, 9);
   assert.ok(proposal.every((p) => p.model === null));
 });
 
@@ -169,7 +169,7 @@ test("solo se detectan las herramientas con carpeta de agentes", () => {
 test("detect junta modelos y propuesta por herramienta", async () => {
   const [r] = await detect({ tools: ["cursor"], run: fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } }) });
   assert.equal(r.tool, "cursor");
-  assert.equal(r.proposal.length, 8);
+  assert.equal(r.proposal.length, 9);
   assert.equal(r.proposal.find((p) => p.agent === "manage-branch").model, "composer-2.5");
 });
 
@@ -265,7 +265,7 @@ test("--set pisa lo guardado, avisa si no está en la lista y rechaza agentes de
   assert.throws(() => planChoices({ profiles, tool: "cursor", detection, saved: null, overrides: { fantasma: "x" } }), /desconocido/);
 });
 
-// Un proyecto desechable con git y los 8 agentes copiados como los despliega apm.
+// Un proyecto desechable con git y los 9 agentes copiados como los despliega apm.
 function project({ commit = false } = {}) {
   const root = mkdtempSync(join(tmpdir(), "cm-proj-"));
   const sh = (...a) => execFileSync("git", a, { cwd: root, stdio: "ignore" });
@@ -288,10 +288,10 @@ const snapshot = (root) =>
 const withModels = fake({ "cursor-agent --list-models": { status: "ok", stdout: cursorOutput } });
 const exec = async (root, args, runner = withModels) => JSON.parse(await run([...args, "--root", root], { run: runner }));
 
-test("apply escribe el modelo en los 8 agentes y dos veces da los mismos archivos", async () => {
+test("apply escribe el modelo en los 9 agentes y dos veces da los mismos archivos", async () => {
   const root = project();
   const [r1] = await exec(root, ["apply"]);
-  assert.equal(r1.agents.length, 8);
+  assert.equal(r1.agents.length, 9);
   const first = snapshot(root);
   assert.equal(getModelMd(first["concept-developer.md"]), "composer-2.5");
   assert.equal(getModelMd(first["manage-branch.md"]), "composer-2.5");
@@ -358,11 +358,11 @@ test("status: sin configurar, configurado y desincronizado", async () => {
   const root = project();
   assert.match(statusLine({ profiles, root }), /^sin configurar/);
   await exec(root, ["apply"]);
-  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 9/9)");
   copyFileSync(join(AGENTS, "manage-pr.agent.md"), join(root, ".cursor", "agents", "manage-pr.md"));
-  assert.match(statusLine({ profiles, root }), /^desincronizado \(cursor 7\/8\)/);
+  assert.match(statusLine({ profiles, root }), /^desincronizado \(cursor 8\/9\)/);
   await exec(root, ["apply"]);
-  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 9/9)");
 });
 
 test("status no falla sin repo, sin carpeta de agentes ni fichero de elecciones", () => {
@@ -376,7 +376,7 @@ test("detect por la CLI devuelve la propuesta en JSON", async () => {
   const [r] = await exec(project(), ["detect"]);
   assert.equal(r.tool, "cursor");
   assert.equal(r.status, "ok");
-  assert.equal(r.proposal.length, 8);
+  assert.equal(r.proposal.length, 9);
 });
 
 test("detect parte de lo guardado: tras guardar, la propuesta es lo guardado", async () => {
@@ -575,7 +575,7 @@ test("con las tres herramientas, apply y status las cubren a todas", async () =>
   assert.deepEqual(toolsPresent(profiles, root), ["cursor", "claude", "codex"]);
   const results = await exec(root, ["apply"], allRuns);
   assert.deepEqual(results.map((r) => r.tool), ["cursor", "claude", "codex"]);
-  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8, claude 8/8, codex 8/8)");
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 9/9, claude 9/9, codex 9/9)");
   const only = await exec(root, ["apply", "--target", "claude"], allRuns);
   assert.equal(only.length, 1);
   await assert.rejects(exec(project(), ["apply", "--target", "codex"], allRuns), /codex/);
@@ -603,7 +603,7 @@ test("mini no coincide con gemini: un Gemini Pro no cae en el nivel ligero", () 
 test("status: si ningún agente lleva modelo no dice «configurado» a secas", async () => {
   const root = project();
   await exec(root, ["apply", "--set", "code-developer=inherit"], fake({}));
-  assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(cursor 8\/8\)/);
+  assert.match(statusLine({ profiles, root }), /^configurado, pero ningún agente lleva modelo \(cursor 9\/9\)/);
 });
 
 test("Claude: la nota enseña el plan y cómo cambiar un alias", async () => {
@@ -740,13 +740,13 @@ test("sin cursor-agent, detect con --models propone por nivel y no dice que fall
   assert.ok(!d.notes.some((n) => n.includes("No se pudo leer")));
 });
 
-test("sin cursor-agent, apply con --models escribe los 8 agentes y lo guarda", async () => {
+test("sin cursor-agent, apply con --models escribe los 9 agentes y lo guarda", async () => {
   const root = project();
   const [r] = await exec(root, ["apply", "--models", SESSION_MODELS], noCursor);
-  assert.equal(r.agents.length, 8);
+  assert.equal(r.agents.length, 9);
   assert.ok(r.agents.every((a) => a.model !== null && a.result === "cambiado"));
   assert.equal(getModelMd(snapshot(root)["code-developer.md"]), "claude-sonnet-5-5-high");
-  assert.equal(statusLine({ profiles, root }), "configurado (cursor 8/8)");
+  assert.equal(statusLine({ profiles, root }), "configurado (cursor 9/9)");
 });
 
 test("--models con --set fuera de la lista avisa; sin --models nada cambia", async () => {

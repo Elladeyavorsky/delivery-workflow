@@ -30,7 +30,7 @@ El comentario es opcional. Si alguien no está en Discord o nadie confirma la re
 ## Requisitos
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
-- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión.
+- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión. El MCP de EUR-Lex necesita Node 24 o superior ([Protección de datos](#protección-de-datos)).
 - **Un `.env` en la raíz del proyecto con tu token de GitHub**, y `.env` en `.gitignore`. Sin eso, el flujo no arranca.
 
 ## El token de GitHub
@@ -74,14 +74,14 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 
 ## Documentación de las dependencias
 
-`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por un solo canal por ordenador, cada uno con su propio MCP:
+`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por uno de estos canales, cada uno con su propio MCP:
 
 | Canal | MCP | Qué sale del ordenador | Requisitos |
 |---|---|---|---|
 | **Context7** (por defecto) | `context7`, remoto | El nombre de la librería y la pregunta, hacia Upstash | Ninguno |
 | **RAG local** | `docs-rag`, local | Solo la descarga de la documentación | Docker, Ollama y `uv` |
 
-Los dos se registran en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). Registrar uno quita el otro. `apm install` y `apm update` no tocan esta elección.
+Context7 se registra en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). `docs-rag` se registra en la config de cada proyecto: `.mcp.json`, `.cursor/mcp.json` y `.codex/config.toml`. Solo hay un canal activo: `/setup-docs-rag` quita Context7 de la config de usuario y su regla del proyecto, y `/setup-context7` quita `docs-rag` de la config del proyecto. Como la config de Context7 es de usuario, pasar un proyecto al RAG local deja sin Context7 a los demás proyectos de ese ordenador hasta que vuelvas a lanzar `/setup-context7`. `apm install` y `apm update` no tocan esta elección.
 
 Las dos skills leen las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git las buscan con `git ls-files`, así que respetan `.gitignore` (sin `node_modules` ni `dist`) y no tienen límite de profundidad; sin git recorren hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build y piden confirmación una sola vez.
 
@@ -106,10 +106,12 @@ cursor .      # o claude, o codex
 
 ### RAG local
 
-`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después registra el MCP `docs-rag`, con dos herramientas: `resolver_paquete` y `consultar_docs`.
+`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después instala y registra en el proyecto el MCP `docs-rag`, con dos herramientas: `resolve_package` y `query_docs`. Sus datos y sus respuestas tienen las claves en inglés.
 
-- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
-- **Fuera de git:** el índice de cada proyecto va en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `.docs-rag/venv`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
+- **En el proyecto, fuera de git:** el código del MCP, su entorno y el índice van en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Registro:** `docs-rag` va en `.mcp.json`, `.cursor/mcp.json` y `.codex/config.toml` del proyecto, con rutas relativas. Si subes esos ficheros a git, quien no haya lanzado `/setup-docs-rag` verá un MCP que no arranca.
+- **Desde una versión anterior:** `/setup-docs-rag` quita el `docs-rag` de la config de usuario y vuelve a indexar todo, porque el índice anterior tenía los metadatos en español. `~/.docs-rag/` ya no se usa: puedes borrarlo.
 - **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
 - **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [docs/research/rag-documentacion-python-3.15.pdf](docs/research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.
 
@@ -124,6 +126,31 @@ bash .agents/skills/docker-best-practices/scripts/check-docker.sh Dockerfile
 ```
 
 En Claude Code, la carpeta es `.claude/skills/docker-best-practices/`.
+
+## Protección de datos
+
+La guía `data-protection-guideline` es un checklist del RGPD y la LOPDGDD que usan `concept-developer`, `concept-tester` y `legal-advisor`. Se activa con la sección `## Datos personales` de `docs/CONSTITUTION.md` del proyecto, señala posibles problemas de cada tarea con su artículo y no certifica cumplimiento.
+
+Para activarla, copia la plantilla `assets/datos-personales.md` de la skill (en Claude Code, `.claude/skills/data-protection-guideline/`; en Cursor y Codex, `.agents/skills/data-protection-guideline/`) a tu `docs/CONSTITUTION.md` y rellena sus cuatro campos: rol en el tratamiento, interesados, categorías especiales y estado de la DPIA. El rol lo decide la persona responsable del proyecto; la guía no lo deduce. Un campo vacío es un hueco y para el ciclo.
+
+Sin la sección, la guía dice en una línea que no actúa. Con ella:
+
+- Si la tarea toca datos personales, la spec recoge como requisitos los ítems que aplican, con su artículo. Si el código o la documentación no los cumplen, la ronda falla como con cualquier otro requisito. `code-tester` y `code-developer` no precargan la guía: siguen la spec.
+- Lo que `concept-tester` encuentra fuera de la spec va como nota al comentario de la ronda y no cambia el veredicto.
+- Sin hallazgos, el reporte dice «Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).».
+- Una duda que el checklist no resuelve va a `legal-advisor` como consulta legal ([Consultas legales con EUR-Lex](#consultas-legales-con-eur-lex)).
+
+Los artículos citados viajan en la skill como copia informativa de los textos consolidados, con su fuente y su fecha. El checklist está pendiente de revisión jurídica.
+
+### Consultas legales con EUR-Lex
+
+`concept-developer` y `concept-tester` devuelven las dudas que la guía no resuelve como consultas legales, cada una con su id `CL-NN`. El orquestador las pasa todas a la vez al agente `legal-advisor`, que las resuelve primero con la guía y después con el MCP de EUR-Lex, y publica en la issue un comentario con la respuesta, los artículos y la fuente de cada una: la guía con la versión del checklist, o EUR-Lex con el CELEX y la fecha. Después, `concept-developer` escribe en la spec los requisitos que salen de las respuestas, con el id y el artículo: `(CL-01; RGPD 46)`. La consulta no gasta ronda. El comentario no certifica cumplimiento.
+
+Lo que `legal-advisor` no resuelve es un hueco y el orquestador te lo pregunta. EUR-Lex solo tiene derecho de la UE: para la LOPDGDD, `legal-advisor` usa los artículos empaquetados, y un artículo que no está empaquetado es un hueco.
+
+El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
+
+**Necesita Node 24 o superior.** Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20.
 
 ## Modelos de los agentes
 

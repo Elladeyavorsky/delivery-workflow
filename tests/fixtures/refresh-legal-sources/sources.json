@@ -1,0 +1,30 @@
+{
+  "normas": [
+    {
+      "id": "rgpd",
+      "nombre": "Reglamento (UE) 2016/679",
+      "fuente": "EUR-Lex (Cellar), texto consolidado",
+      "enlace": "http://publications.europa.eu/resource/celex/02016R0679-20160504",
+      "version": "02016R0679-20160504",
+      "fechaDescarga": "2026-01-01",
+      "distribucion": "empaquetada",
+      "articulos": [
+        { "numero": 8, "fichero": "rgpd/articulo-8.md" },
+        { "numero": 12, "fichero": "rgpd/articulo-12.md" }
+      ]
+    },
+    {
+      "id": "lopdgdd",
+      "nombre": "Ley Orgánica 3/2018",
+      "fuente": "BOE, API de datos abiertos, texto consolidado",
+      "enlace": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2018-16673/texto/indice",
+      "version": "BOE-A-2018-16673",
+      "fechaDescarga": "2026-01-01",
+      "distribucion": "empaquetada",
+      "articulos": [
+        { "numero": 7, "fichero": "lopdgdd/articulo-7.md" },
+        { "numero": 23, "fichero": "lopdgdd/articulo-23.md" }
+      ]
+    }
+  ]
+}

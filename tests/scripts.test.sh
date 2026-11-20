@@ -209,10 +209,10 @@ CA
 chmod +x "${work}/bin/cursor-agent"
 check "apply funciona con un cursor-agent falso" node "${skills}/configure-models/scripts/configure-models.mjs" apply --set manage-branch=composer-2.5
 status=$("${skills}/check-status/scripts/check-status.sh")
-check "check-status dice configurado" grep -q "^Modelos: configurado (cursor 8/8)" <<<"$status"
+check "check-status dice configurado" grep -q "^Modelos: configurado (cursor 9/9)" <<<"$status"
 cp "${package}/.apm/agents/manage-pr.agent.md" .cursor/agents/manage-pr.md
 status=$("${skills}/check-status/scripts/check-status.sh")
-check "check-status dice desincronizado" grep -q "^Modelos: desincronizado (cursor 7/8)" <<<"$status"
+check "check-status dice desincronizado" grep -q "^Modelos: desincronizado (cursor 8/9)" <<<"$status"
 check "check-status sigue entero tras la línea de modelos" grep -q "^Último commit:" <<<"$status"
 mkdir -p "${work}/solo/check-status/scripts"
 cp "${skills}/check-status/scripts/"*.sh "${work}/solo/check-status/scripts/"
@@ -331,6 +331,59 @@ for reference in versiones-fijas cache-de-capas compose-y-volumenes devcontainer
   check "docker-best-practices enlaza references/${reference}.md" grep -q "references/${reference}.md" "${skills}/docker-best-practices/SKILL.md"
   check "docker-best-practices trae references/${reference}.md" test -f "${skills}/docker-best-practices/references/${reference}.md"
 done
+
+
+# data-protection-guideline: guía orientativa sin scripts.
+dpg="${skills}/data-protection-guideline/SKILL.md"
+check "data-protection-guideline existe" test -f "$dpg"
+check "data-protection-guideline declara su name" grep -q "^name: data-protection-guideline" "$dpg"
+check "data-protection-guideline dice que no actúa sin la sección" grep -qF "«Protección de datos: el proyecto no declara datos personales; la guía no actúa.»" "$dpg"
+check "data-protection-guideline usa la salida sin hallazgos y no dice cumple" bash -c "grep -qF 'Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).' '$dpg' && ! grep -qi 'cumple' '$dpg'"
+frontmatter() {
+  awk 'NR == 1 && $0 == "---" { inside = 1; next } inside && $0 == "---" { exit } inside { print }' "$1"
+}
+for agent in concept-developer concept-tester legal-advisor; do
+  check "${agent} precarga data-protection-guideline" bash -c "$(declare -f frontmatter); frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -qx '  - data-protection-guideline'"
+done
+for agent in code-developer code-tester; do
+  check "${agent} no precarga data-protection-guideline" bash -c "$(declare -f frontmatter); ! frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -q 'data-protection-guideline'"
+done
+
+# legal-advisor: agente del paquete, sin mcpServers (el MCP va en apm.yml).
+la="${package}/.apm/agents/legal-advisor.agent.md"
+check "legal-advisor declara su name" bash -c "$(declare -f frontmatter); frontmatter '$la' | grep -qx 'name: legal-advisor'"
+for skill in issue-spec say-it-straight; do
+  check "legal-advisor precarga ${skill}" bash -c "$(declare -f frontmatter); frontmatter '$la' | grep -qx '  - ${skill}'"
+done
+check "legal-advisor no declara mcpServers" bash -c "$(declare -f frontmatter); ! frontmatter '$la' | grep -q 'mcpServers'"
+check "legal-advisor nombra el MCP eur-lex" grep -q 'eur-lex' "$la"
+check "legal-advisor dice que no certifica cumplimiento" grep -qF "Orientativo: no certifica cumplimiento." "$la"
+check "legal-advisor avisa sin Node 24" grep -qF "No se usó EUR-Lex: el MCP necesita Node 24 o superior." "$la"
+check "legal-advisor está en agent-profiles con nivel pesado" node -e '
+  const p = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+  process.exit(p.agents?.["legal-advisor"]?.tier === "heavy" ? 0 : 1);
+' "${skills}/configure-models/assets/agent-profiles.json"
+check "el paquete tiene 9 agentes" test "$(ls "${package}"/.apm/agents/*.agent.md | wc -l | tr -d ' ')" = 9
+for agent in concept-developer concept-tester; do
+  check "${agent} no usa el MCP eur-lex" grep -qF 'No usa el MCP `eur-lex`' "${package}/.apm/agents/${agent}.agent.md"
+  check "${agent} devuelve «Consultas legales»" grep -qF "Consultas legales" "${package}/.apm/agents/${agent}.agent.md"
+done
+
+# apm.yml: el MCP eur-lex viaja con el paquete, fijado a una versión.
+check "apm.yml declara el MCP eur-lex en dependencies.mcp" bash -c "grep -q '^  mcp:' '${package}/apm.yml' && grep -qF -- '- name: eur-lex' '${package}/apm.yml'"
+check "apm.yml fija el MCP a 0.21.0" grep -qF '@cyanheads/eur-lex-mcp-server@0.21.0' "${package}/apm.yml"
+check "apm.yml no usa latest" bash -c "! grep -q 'eur-lex-mcp-server@latest' '${package}/apm.yml'"
+
+# delivery-workflow: consultas legales sin gastar ronda.
+dw="${skills}/delivery-workflow/SKILL.md"
+check "delivery-workflow llama a legal-advisor sin gastar ronda" bash -c "grep -qF '**Consultas legales:**' '$dw' && grep -qF 'No gasta ronda' '$dw' && grep -qF 'Un \`legal-advisor\` nuevo' '$dw'"
+check "delivery-workflow pasa las respuestas a concept-developer" grep -qF '`concept-developer` con la ronda actual (0 si viene de la spec), las respuestas de `legal-advisor`' "$dw"
+check "delivery-workflow nombra las consultas en el comentario de la ronda" grep -qF "los ids de las consultas legales" "$dw"
+check "delivery-workflow pasa el primer id CL-NN libre a los dos agentes" grep -qF 'el encargo de `concept-developer` y de `concept-tester` lleva el primer id libre, que empieza en `CL-01`' "$dw"
+for agent in concept-developer concept-tester; do
+  check "${agent} recibe el primer id CL-NN libre sin valor por defecto" bash -c "grep -qF 'primer id \`CL-NN\` libre' '${package}/.apm/agents/${agent}.agent.md' && grep -qF 'desde el primer id libre del encargo' '${package}/.apm/agents/${agent}.agent.md' && ! grep -qiE 'por defecto|CL-01 si|empieza en .?CL-01' '${package}/.apm/agents/${agent}.agent.md'"
+done
+check "delivery-workflow nombra legal-advisor en herramientas" grep -qF '**Subagente `legal-advisor`:**' "$dw"
 
 echo
 if [[ $failures -eq 0 ]]; then

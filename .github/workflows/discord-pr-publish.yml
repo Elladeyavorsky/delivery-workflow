@@ -21,8 +21,9 @@ jobs:
     permissions:
       actions: read
       contents: read
-      issues: write
-      pull-requests: read
+      issues: read
+      # El ledger comenta la PR; GITHUB_TOKEN necesita permiso de escritura sobre PR.
+      pull-requests: write
     steps:
       # workflow_run apunta al commit confiable de la rama predeterminada.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

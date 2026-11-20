@@ -9,7 +9,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import {
   DOCS_RAG_SERVER,
-  SERVER_NAME as CONTEXT7_SERVER,
   TOOLS,
   channelOf,
   displayPath,
@@ -17,8 +16,8 @@ import {
   loadProfiles,
   classify,
   parseLibs,
-  removeServerJson,
-  removeServerToml,
+  removeServerFromFile,
+  resetAll as removeContext7,
   setServerJson,
   setServerTomlBlock,
   tomlStdioBlock,
@@ -36,6 +35,13 @@ export class SetupDocsRagError extends Error {
 }
 
 export const RAG_DIR = ".docs-rag";
+export const INVENTORY_FILE = "inventory.json";
+export const REQUEST_FILE = "request.json";
+// El formato anterior (claves en español). El indexador lo migra; aquí solo se detecta.
+export const LEGACY_INVENTORY_FILE = "inventario.json";
+// Las funciones de config compartidas con setup-context7 devuelven el resultado en español.
+const RESULT = { cambiado: "changed", igual: "unchanged", ausente: "missing" };
+const resultInEnglish = (result) => RESULT[result] ?? result;
 export const QDRANT_CONTAINER = "docs-rag-qdrant";
 export const QDRANT_IMAGE = "qdrant/qdrant:v1.20.2";
 export const QDRANT_URL = "http://localhost:6333";
@@ -208,7 +214,7 @@ const readText = (path) => {
 };
 
 // Lockfile del ecosistema en la carpeta del manifiesto o en una superior (monorepos), hasta la raíz.
-function findLock(root, dir, ecosystem, avisos) {
+function findLock(root, dir, ecosystem, warnings) {
   const parts = dir ? dir.split("/") : [];
   for (let i = parts.length; i >= 0; i--) {
     const rel = parts.slice(0, i).join("/");
@@ -219,7 +225,7 @@ function findLock(root, dir, ecosystem, avisos) {
       try {
         return { file: relFile, versions: parse(text) };
       } catch {
-        avisos.push(`${relFile} no se ha podido leer: se usan los rangos del manifiesto.`);
+        warnings.push(`${relFile} no se ha podido leer: se usan los rangos del manifiesto.`);
         return null;
       }
     }
@@ -233,22 +239,22 @@ const ALIAS = /^(lts|latest|stable|nightly|beta|node|system)/i;
 
 export function detectRuntimes(root) {
   const out = [];
-  const avisos = [];
-  const add = (paquete, value, fuente, rango) => {
+  const warnings = [];
+  const add = (runtime, value, file, fromRange) => {
     const raw = String(value ?? "").trim();
     if (!raw) return;
     if (ALIAS.test(raw.replace(/^v/, ""))) {
-      avisos.push(`${fuente} fija ${paquete} con el alias «${raw}»: no se indexa. Pon una versión (por ejemplo 20 o 1.80).`);
+      warnings.push(`${file} fija ${runtime} con el alias «${raw}»: no se indexa. Pon una versión (por ejemplo 20 o 1.80).`);
       return;
     }
     const v = versionFromRange(raw);
     if (!v) {
-      avisos.push(`${fuente}: no se entiende la versión de ${paquete} «${raw}».`);
+      warnings.push(`${file}: no se entiende la versión de ${runtime} «${raw}».`);
       return;
     }
-    const aviso = rango ? `${paquete} sale de un rango (${raw}) en ${fuente}: se usa la mínima, ${v.version}.` : null;
-    if (aviso) avisos.push(aviso);
-    out.push({ paquete, ecosistema: "runtime", version: v.version, origen: rango ? "rango" : "fijado", fuente, runtime: true });
+    const rangeWarning = fromRange ? `${runtime} sale de un rango (${raw}) en ${file}: se usa la mínima, ${v.version}.` : null;
+    if (rangeWarning) warnings.push(rangeWarning);
+    out.push({ package: runtime, ecosystem: "runtime", version: v.version, origin: fromRange ? "range" : "pinned", source: file, runtime: true });
   };
 
   const pyVersion = readText(join(root, ".python-version"));
@@ -289,17 +295,17 @@ export function detectRuntimes(root) {
     const m = /^rust-version\s*=\s*"([^"]+)"/m.exec(cargo);
     if (m) add("rust", m[1], "Cargo.toml (rust-version)", true);
   }
-  return { runtimes: out, avisos };
+  return { runtimes: out, warnings };
 }
 
 // --- Inventario ---
 
 // Dependencias directas con versión, descartes y runtimes. Reutiliza la búsqueda de manifiestos de setup-context7.
 export function buildInventory({ root, profiles = loadProfiles() }) {
-  const avisos = [];
+  const warnings = [];
   const manifests = [];
   const byKey = new Map();
-  const descartadas = [];
+  const discarded = [];
   for (const { rel, ecosystem, parse } of findManifests(root)) {
     const text = readText(join(root, rel));
     const file = rel.split("/").pop();
@@ -313,7 +319,7 @@ export function buildInventory({ root, profiles = loadProfiles() }) {
       manifests.push({ file: rel, ecosystem, count: 0, error: e.message });
       continue;
     }
-    const lock = findLock(root, dir, ecosystem, avisos);
+    const lock = findLock(root, dir, ecosystem, warnings);
     manifests.push({ file: rel, ecosystem, count: names.length, lockfile: lock?.file ?? null });
     for (const name of names) {
       const key = `${ecosystem}:${name}`;
@@ -324,31 +330,31 @@ export function buildInventory({ root, profiles = loadProfiles() }) {
       }
       const c = classify(profiles, name);
       if (c.status === "descartada") {
-        descartadas.push({ paquete: name, ecosistema: ecosystem, motivo: c.why });
+        discarded.push({ package: name, ecosystem, reason: c.why });
         byKey.set(key, { skip: true, sources: [rel] });
         continue;
       }
       const locked = lock?.versions.get(name);
       const range = ranges.get(name);
       let entry;
-      if (locked) entry = { version: locked.replace(/^v/, ""), origen: "lockfile", fuente: lock.file };
+      if (locked) entry = { version: locked.replace(/^v/, ""), origin: "lockfile", source: lock.file };
       else {
         const v = versionFromRange(range);
-        if (v?.exact) entry = { version: v.version, origen: "fijado", fuente: rel };
+        if (v?.exact) entry = { version: v.version, origin: "pinned", source: rel };
         else if (v) {
-          entry = { version: v.version, origen: "rango", fuente: rel };
-          avisos.push(`${name} (${ecosystem}) no está en ningún lockfile: se usa la mínima del rango «${range}», ${v.version}.`);
+          entry = { version: v.version, origin: "range", source: rel };
+          warnings.push(`${name} (${ecosystem}) no está en ningún lockfile: se usa la mínima del rango «${range}», ${v.version}.`);
         } else {
-          entry = { version: null, origen: "desconocido", fuente: rel };
-          avisos.push(`${name} (${ecosystem}) no tiene versión en el lockfile ni en ${rel}: no se indexa.`);
+          entry = { version: null, origin: "unknown", source: rel };
+          warnings.push(`${name} (${ecosystem}) no tiene versión en el lockfile ni en ${rel}: no se indexa.`);
         }
       }
-      byKey.set(key, { paquete: name, ecosistema: ecosystem, ...entry, runtime: false, sources: [rel] });
+      byKey.set(key, { package: name, ecosystem, ...entry, runtime: false, sources: [rel] });
     }
   }
-  const { runtimes, avisos: avisosRuntime } = detectRuntimes(root);
-  const dependencias = [...byKey.values()].filter((d) => !d.skip);
-  return { manifests, dependencias, runtimes, descartadas, avisos: [...avisos, ...avisosRuntime] };
+  const { runtimes, warnings: runtimeWarnings } = detectRuntimes(root);
+  const dependencies = [...byKey.values()].filter((d) => !d.skip);
+  return { manifests, dependencies, runtimes, discarded, warnings: [...warnings, ...runtimeWarnings] };
 }
 
 // --- Requisitos y estado ---
@@ -368,74 +374,82 @@ export async function checkRequirements(run = tryRun) {
   const uv = await run("uv", ["--version"]);
   const container = docker.ok ? await run("docker", ["ps", "-a", "--filter", `name=^${QDRANT_CONTAINER}$`, "--format", "{{.Status}}"]) : { ok: false, out: "" };
   return {
-    docker: { ok: docker.ok, detalle: docker.ok ? `Docker ${docker.out}` : docker.missing ? "Docker no está instalado." : "Docker no responde: arranca Docker Desktop o el servicio." },
-    ollama: { ok: ollama.ok, detalle: ollama.ok ? "Ollama responde." : ollama.missing ? "Ollama no está instalado (ollama.com)." : "Ollama no responde: arráncalo." },
-    uv: { ok: uv.ok, detalle: uv.ok ? uv.out : "uv no está instalado (docs.astral.sh/uv)." },
-    modelo: { ok: ollama.ok && ollama.out.split("\n").some((l) => l.startsWith(`${EMBED_MODEL}:`)), detalle: EMBED_MODEL },
-    qdrant: { ok: /^Up/.test(container.out ?? ""), detalle: container.out ? `${QDRANT_CONTAINER}: ${container.out}` : `${QDRANT_CONTAINER} no existe todavía.` },
+    docker: { ok: docker.ok, detail: docker.ok ? `Docker ${docker.out}` : docker.missing ? "Docker no está instalado." : "Docker no responde: arranca Docker Desktop o el servicio." },
+    ollama: { ok: ollama.ok, detail: ollama.ok ? "Ollama responde." : ollama.missing ? "Ollama no está instalado (ollama.com)." : "Ollama no responde: arráncalo." },
+    uv: { ok: uv.ok, detail: uv.ok ? uv.out : "uv no está instalado (docs.astral.sh/uv)." },
+    model: { ok: ollama.ok && ollama.out.split("\n").some((l) => l.startsWith(`${EMBED_MODEL}:`)), detail: EMBED_MODEL },
+    qdrant: { ok: /^Up/.test(container.out ?? ""), detail: container.out ? `${QDRANT_CONTAINER}: ${container.out}` : `${QDRANT_CONTAINER} no existe todavía.` },
   };
 }
 
 export function indexState(root) {
-  const text = readText(join(root, RAG_DIR, "inventario.json"));
-  if (text === null) return { existe: false };
+  const text = readText(join(root, RAG_DIR, INVENTORY_FILE));
+  if (text === null) {
+    if (readText(join(root, RAG_DIR, LEGACY_INVENTORY_FILE)) !== null) return { exists: false, legacy: true };
+    return { exists: false };
+  }
   try {
     const inv = JSON.parse(text);
-    const paquetes = Object.values(inv.paquetes ?? {});
+    const packages = Object.values(inv.packages ?? {});
     return {
-      existe: true,
-      coleccion: inv.coleccion,
-      actualizado: inv.actualizado,
-      indexados: paquetes.filter((p) => p.estado === "indexado").length,
-      sin_doc: paquetes.filter((p) => p.estado === "sin_doc").map((p) => ({ paquete: p.paquete, motivo: p.motivo })),
-      fragmentos: paquetes.reduce((n, p) => n + (p.fragmentos ?? 0), 0),
+      exists: true,
+      collection: inv.collection,
+      updated: inv.updated,
+      indexed: packages.filter((p) => p.status === "indexed").length,
+      no_docs: packages.filter((p) => p.status === "no_docs").map((p) => ({ package: p.package, reason: p.reason })),
+      chunks: packages.reduce((n, p) => n + (p.chunks ?? 0), 0),
     };
   } catch {
-    return { existe: true, error: `${RAG_DIR}/inventario.json no es un JSON válido.` };
+    return { exists: true, error: `${RAG_DIR}/${INVENTORY_FILE} no es un JSON válido.` };
   }
 }
 
-// --- Registro del MCP docs-rag en la config de usuario ---
+// --- Registro del MCP docs-rag en la config del proyecto ---
 
-export function appDirs(home) {
-  return { app: join(home, ".docs-rag", "app"), venv: join(home, ".docs-rag", "venv") };
+// El código y el entorno del MCP viven en el proyecto, dentro de .docs-rag/ (fuera de git por su .gitignore).
+export function appDirs(root) {
+  return { app: join(root, RAG_DIR, "app"), venv: join(root, RAG_DIR, "venv") };
 }
 
-// Cómo arranca cada herramienta el servidor. Cursor le pasa la carpeta del proyecto; Claude Code y Codex lo arrancan en ella.
-export function serverEntry(tool, { uvPath = "uv", home }) {
-  const { app, venv } = appDirs(home);
-  const args = ["run", "--quiet", "--project", app, "python", "-m", "docs_rag.servidor"];
-  if (tool === "cursor") args.push("--root", "${workspaceFolder}");
-  const env = { UV_PROJECT_ENVIRONMENT: venv };
-  if (tool === "claude") return { type: "stdio", command: uvPath, args, env };
-  return { command: uvPath, args, env };
+// Rutas relativas a la raíz del proyecto: la entrada no lleva rutas de este ordenador.
+// Claude Code y Codex arrancan el servidor en la raíz del proyecto. Cursor no lo garantiza: usa ${workspaceFolder}.
+// uv resuelve un UV_PROJECT_ENVIRONMENT relativo desde la carpeta de --project (.docs-rag/app), no desde el directorio
+// de trabajo: por eso el entorno es ../venv.
+export function serverEntry(tool) {
+  const cursor = tool === "cursor";
+  const args = ["run", "--quiet", "--project", `${cursor ? "${workspaceFolder}/" : ""}${RAG_DIR}/app`, "python", "-m", "docs_rag.server"];
+  if (cursor) args.push("--root", "${workspaceFolder}");
+  const env = { UV_PROJECT_ENVIRONMENT: cursor ? `\${workspaceFolder}/${RAG_DIR}/venv` : "../venv" };
+  if (tool === "claude") return { type: "stdio", command: "uv", args, env };
+  return { command: "uv", args, env };
 }
 
-// Registra docs-rag y quita context7: un solo canal por ordenador.
-export function registerServer({ home, tool, uvPath }) {
+const projectFile = (tool) => TOOLS[tool].projectConfigFile;
+
+function removeDocsRag(path, tool, file) {
+  const { result } = removeServerFromFile(path, tool, file, DOCS_RAG_SERVER);
+  return { file, result: resultInEnglish(result) };
+}
+
+// Registra docs-rag en la config del proyecto. No toca los demás servidores: context7 lo quita registerTools.
+export function registerServer({ root, tool }) {
   const t = TOOLS[tool];
-  const file = displayPath(tool);
-  const path = join(home, t.configFile);
+  const file = projectFile(tool);
+  const path = join(root, file);
   const before = readText(path);
-  const entry = serverEntry(tool, { uvPath, home });
+  const entry = serverEntry(tool);
   const set = t.format === "toml" ? setServerTomlBlock(before, DOCS_RAG_SERVER, tomlStdioBlock(DOCS_RAG_SERVER, entry)) : setServerJson(before, entry, file, DOCS_RAG_SERVER);
-  const drop = t.format === "toml" ? removeServerToml(set.text, CONTEXT7_SERVER) : removeServerJson(set.text, file, CONTEXT7_SERVER);
-  const changed = set.result === "cambiado" || drop.result === "cambiado";
-  if (changed) writeAtomic(path, drop.text);
-  return { file, result: changed ? "cambiado" : "igual", removed: drop.result === "cambiado" ? [CONTEXT7_SERVER] : [] };
+  if (set.result === "cambiado") writeAtomic(path, set.text);
+  return { file, result: resultInEnglish(set.result) };
 }
 
-export function unregisterServer({ home, tool }) {
-  const t = TOOLS[tool];
-  const file = displayPath(tool);
-  const path = join(home, t.configFile);
-  const before = readText(path);
-  const { text, result } = t.format === "toml" ? removeServerToml(before, DOCS_RAG_SERVER) : removeServerJson(before, file, DOCS_RAG_SERVER);
-  if (result === "cambiado") {
-    if (text === "") rmSync(path, { force: true });
-    else writeAtomic(path, text);
-  }
-  return { file, result };
+export function unregisterServer({ root, tool }) {
+  return removeDocsRag(join(root, projectFile(tool)), tool, projectFile(tool));
+}
+
+// Quita el registro de usuario que dejaban las versiones anteriores (la #64 lo escribía en ~/).
+export function unregisterUserServer({ home, tool }) {
+  return removeDocsRag(join(home, TOOLS[tool].configFile), tool, displayPath(tool));
 }
 
 function writeAtomic(path, text) {
@@ -458,10 +472,10 @@ export function ensureRagDir(root) {
 // Petición para el indexador: lo que hay que tener indexado. libs limita las dependencias a las confirmadas.
 export function buildRequest(inventory, { libs = [], withRuntimes = true } = {}) {
   const wanted = libs.length ? new Set(libs) : null;
-  const deps = inventory.dependencias.filter((d) => d.version && (!wanted || wanted.has(d.paquete)));
+  const deps = inventory.dependencies.filter((d) => d.version && (!wanted || wanted.has(d.package)));
   const runtimes = withRuntimes ? inventory.runtimes : [];
   return {
-    paquetes: [...runtimes, ...deps].map(({ paquete, ecosistema, version, origen, fuente, runtime }) => ({ paquete, ecosistema, version, origen, fuente, runtime })),
+    packages: [...runtimes, ...deps].map(({ package: name, ecosystem, version, origin, source, runtime }) => ({ package: name, ecosystem, version, origin, source, runtime })),
   };
 }
 
@@ -470,9 +484,9 @@ export function buildRequest(inventory, { libs = [], withRuntimes = true } = {})
 export const USAGE = [
   "Uso: setup-docs-rag.mjs <detect|apply|reset> [opciones]",
   "  detect        Inventario (dependencias con versión, runtimes, descartes), requisitos, índice y canal de cada herramienta (JSON).",
-  "  apply         Arranca Qdrant, descarga el modelo, indexa lo que haya cambiado y registra el MCP docs-rag (quita context7).",
-  "  reset         Quita el MCP docs-rag de la config de usuario. Con --drop-index borra también la colección y .docs-rag/.",
-  "Opciones: --libs a,b,c  --sin-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
+  "  apply         Arranca Qdrant, descarga el modelo, instala el MCP en .docs-rag/, indexa lo que haya cambiado, registra docs-rag en la config del proyecto y quita Context7 (canal único).",
+  "  reset         Quita el MCP docs-rag de la config del proyecto. Con --drop-index borra también la colección y .docs-rag/.",
+  "Opciones: --libs a,b,c  --no-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
 ].join("\n");
 
 export function parseArgs(argv) {
@@ -484,7 +498,7 @@ export function parseArgs(argv) {
     else if (a === "--home") opts.home = rest[++i];
     else if (a === "--target") opts.target = rest[++i];
     else if (a === "--libs") opts.libs = [...new Set([...opts.libs, ...parseLibs(rest[++i])])];
-    else if (a === "--sin-runtimes") opts.withRuntimes = false;
+    else if (a === "--no-runtimes") opts.withRuntimes = false;
     else if (a === "--drop-index") opts.dropIndex = true;
     else throw new SetupDocsRagError(`Argumento desconocido: ${a}\n${USAGE}`, 2);
   }
@@ -507,10 +521,10 @@ function selectTools(opts, root) {
 
 export async function detect({ root, home, tools, run = tryRun }) {
   return {
-    inventario: buildInventory({ root }),
-    requisitos: await checkRequirements(run),
-    indice: indexState(root),
-    herramientas: tools.map((tool) => ({ tool, name: TOOLS[tool].name, configFile: displayPath(tool), channel: channelOf(home, tool) })),
+    inventory: buildInventory({ root }),
+    requirements: await checkRequirements(run),
+    index: indexState(root),
+    tools: tools.map((tool) => ({ tool, name: TOOLS[tool].name, configFile: projectFile(tool), channel: channelOf(home, tool, root) })),
   };
 }
 
@@ -528,9 +542,9 @@ async function waitForQdrant(timeoutMs = 60000) {
   return false;
 }
 
-// Si ya responde un Qdrant en el puerto, se reutiliza: cada proyecto usa su propia colección (docs_<hash>).
+// Si ya responde un Qdrant en el puerto, se reutiliza: cada proyecto usa su propia colección (docs_v2_<hash>).
 async function ensureQdrant() {
-  if (await waitForQdrant(1500)) return "existente";
+  if (await waitForQdrant(1500)) return "existing";
   const ps = await tryRun("docker", ["ps", "-a", "--filter", `name=^${QDRANT_CONTAINER}$`, "--format", "{{.Status}}"]);
   if (!ps.out) {
     const r = await tryRun("docker", ["run", "-d", "--name", QDRANT_CONTAINER, "-p", "6333:6333", "-v", `${QDRANT_CONTAINER}:/qdrant/storage`, "--restart", "unless-stopped", QDRANT_IMAGE], { timeout: 600000 });
@@ -548,15 +562,15 @@ async function ensureQdrant() {
 
 async function ensureModel() {
   const list = await tryRun("ollama", ["list"]);
-  if (list.ok && list.out.split("\n").some((l) => l.startsWith(`${EMBED_MODEL}:`))) return "igual";
+  if (list.ok && list.out.split("\n").some((l) => l.startsWith(`${EMBED_MODEL}:`))) return "unchanged";
   const r = await tryRun("ollama", ["pull", EMBED_MODEL], { timeout: 1800000 });
   if (!r.ok) throw new SetupDocsRagError(`No se pudo descargar ${EMBED_MODEL}: ${r.out}`, 4);
-  return "descargado";
+  return "downloaded";
 }
 
-// Copia el paquete Python a ~/.docs-rag/app y prepara su entorno en ~/.docs-rag/venv. Es del ordenador, no del proyecto.
-async function installApp(home) {
-  const { app, venv } = appDirs(home);
+// Copia el paquete Python a .docs-rag/app del proyecto y prepara su entorno en .docs-rag/venv.
+async function installApp(root) {
+  const { app, venv } = appDirs(root);
   rmSync(app, { recursive: true, force: true });
   mkdirSync(dirname(app), { recursive: true });
   cpSync(APP_SOURCE, app, { recursive: true, filter: (src) => !/(__pycache__|\.pytest_cache|\.venv)/.test(src) });
@@ -566,10 +580,10 @@ async function installApp(home) {
 }
 
 // Lanza el indexador. El progreso va a stderr (se ve en la terminal) y el resumen JSON a stdout.
-function runIndexer(home, root, extra = []) {
-  const { app, venv } = appDirs(home);
+function runIndexer(root, extra = []) {
+  const { app, venv } = appDirs(root);
   return new Promise((resolvePromise, reject) => {
-    const child = spawn("uv", ["run", "--quiet", "--project", app, "python", "-m", "docs_rag.indexar", "--root", root, ...extra], {
+    const child = spawn("uv", ["run", "--quiet", "--project", app, "python", "-m", "docs_rag.indexer", "--root", root, ...extra], {
       env: { ...process.env, UV_PROJECT_ENVIRONMENT: venv, PYTHONIOENCODING: "utf-8" },
       stdio: ["ignore", "pipe", "inherit"],
       windowsHide: true,
@@ -588,50 +602,66 @@ function runIndexer(home, root, extra = []) {
   });
 }
 
-async function uvPath() {
-  const r = await tryRun(process.platform === "win32" ? "where" : "which", ["uv"]);
-  return r.ok ? r.out.split(/\r?\n/)[0].trim() : "uv";
+// Solo hay un canal de documentación: registra docs-rag en el proyecto y quita Context7 (su MCP de la config de
+// usuario y su regla del proyecto) y el docs-rag de usuario de versiones anteriores. Notas para la persona.
+export function registerTools({ root, home, tools }) {
+  const legacyApp = existsSync(join(home, RAG_DIR));
+  const context7 = removeContext7({ root, home, tools });
+  return tools.map((tool, index) => {
+    const t = TOOLS[tool];
+    const config = registerServer({ root, tool });
+    const legacy = unregisterUserServer({ home, tool });
+    const removed = context7[index];
+    const context7Removed = { config: { file: removed.config.file, result: resultInEnglish(removed.config.result) }, rule: { file: removed.rule.file, result: resultInEnglish(removed.rule.result) } };
+    const notes = [];
+    if (context7Removed.config.result === "changed") {
+      notes.push(`Se ha quitado context7 de ${removed.config.file}: el canal de documentación pasa a ser docs-rag. Esa config es de usuario, así que ${t.name} deja de usar Context7 también en tus otros proyectos. Para volver, lanza /setup-context7.`);
+    }
+    if (context7Removed.rule.result === "changed") notes.push(`Se ha quitado la regla de Context7 de ${removed.rule.file}.`);
+    notes.push(...removed.notes);
+    if (legacy.result === "changed") notes.push(`Se ha quitado docs-rag de ${legacy.file}: ahora se registra en ${config.file} del proyecto.`);
+    if (legacyApp && index === 0) notes.push(`~/${RAG_DIR}/ es de una versión anterior y ya no se usa. Bórralo si ningún otro proyecto lo necesita.`);
+    notes.push(`${config.file} usa rutas relativas al proyecto. Si lo subes a git, quien no haya lanzado /setup-docs-rag verá un MCP docs-rag que no arranca.`);
+    notes.push(`Recarga ${t.name} para que cargue el MCP docs-rag.`);
+    return { tool, name: t.name, config, context7Removed, notes };
+  });
 }
 
 export async function apply({ root, home, tools, libs, withRuntimes }) {
   const req = await checkRequirements();
   const faltan = ["docker", "ollama", "uv"].filter((k) => !req[k].ok);
-  if (faltan.length) throw new SetupDocsRagError(`Faltan requisitos: ${faltan.map((k) => req[k].detalle).join(" ")} No se ha tocado nada.`, 3);
+  if (faltan.length) throw new SetupDocsRagError(`Faltan requisitos: ${faltan.map((k) => req[k].detail).join(" ")} No se ha tocado nada.`, 3);
   const inventory = buildInventory({ root });
   const request = buildRequest(inventory, { libs, withRuntimes });
   ensureRagDir(root);
-  writeFileSync(join(root, RAG_DIR, "peticion.json"), `${JSON.stringify(request, null, 2)}\n`);
+  writeFileSync(join(root, RAG_DIR, REQUEST_FILE), `${JSON.stringify(request, null, 2)}\n`);
   const qdrant = await ensureQdrant();
-  const modelo = await ensureModel();
-  await installApp(home);
-  const indice = await runIndexer(home, root);
-  const uv = await uvPath();
-  const herramientas = tools.map((tool) => {
-    const config = registerServer({ home, tool, uvPath: uv });
-    const notes = [];
-    if (config.removed.length) notes.push(`Se ha quitado context7 de ${config.file}: el canal de documentación de este ordenador pasa a ser docs-rag.`);
-    notes.push(`Recarga ${TOOLS[tool].name} para que cargue el MCP docs-rag.`);
-    return { tool, name: TOOLS[tool].name, config, notes };
-  });
-  return { qdrant, modelo, indice, avisos: inventory.avisos, herramientas };
+  const model = await ensureModel();
+  await installApp(root);
+  const index = await runIndexer(root);
+  return { qdrant, model, index, warnings: inventory.warnings, tools: registerTools({ root, home, tools }) };
 }
 
 export async function reset({ root, home, tools, dropIndex }) {
-  const herramientas = tools.map((tool) => ({ tool, name: TOOLS[tool].name, config: unregisterServer({ home, tool }) }));
-  let indice = null;
+  const results = tools.map((tool) => {
+    const config = unregisterServer({ root, tool });
+    const legacy = unregisterUserServer({ home, tool });
+    return { tool, name: TOOLS[tool].name, config, removedFromUserConfig: legacy.result === "changed" };
+  });
+  let index = null;
   if (dropIndex) {
-    const { app } = appDirs(home);
-    if (existsSync(app) && existsSync(join(root, RAG_DIR, "inventario.json"))) {
+    const { app } = appDirs(root);
+    if (existsSync(app) && existsSync(join(root, RAG_DIR, INVENTORY_FILE))) {
       try {
-        indice = await runIndexer(home, root, ["--borrar"]);
+        index = await runIndexer(root, ["--drop"]);
       } catch (e) {
-        indice = { error: e.message };
+        index = { error: e.message };
       }
     }
     rmSync(join(root, RAG_DIR), { recursive: true, force: true });
-    indice = { ...(indice ?? {}), carpeta: `${RAG_DIR}/ borrada` };
+    index = { ...(index ?? {}), folder: `${RAG_DIR}/ deleted` };
   }
-  return { herramientas, indice };
+  return { tools: results, index };
 }
 
 export async function run(argv) {

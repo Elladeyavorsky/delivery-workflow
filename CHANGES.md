@@ -28,9 +28,12 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas. |
 | — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP en la config de usuario y la regla del proyecto. |
-| — | `.apm/skills/setup-docs-rag/` | Nueva: RAG local de la documentación de las dependencias y runtimes, en su versión exacta, con su propio MCP (`docs-rag`). Alternativa a Context7: un solo canal por ordenador. |
+| — | `.apm/skills/setup-docs-rag/` | Nueva: RAG local de la documentación de las dependencias y runtimes, en su versión exacta, con su propio MCP (`docs-rag`), instalado y registrado en cada proyecto. Alternativa a Context7. Sus datos y su MCP (`resolve_package`, `query_docs`) van en inglés. |
 | — | `docs/research/` | Nueva: el informe con la receta del RAG local. |
 | — | `.apm/skills/docker-best-practices/` | Nueva: reglas para el Docker de un proyecto (versiones fijas, caché de capas, volúmenes, Dev Container, hooks, apps gráficas) y un script que revisa el `Dockerfile`. |
+| — | `.apm/skills/data-protection-guideline/` | Nueva: checklist orientativo del RGPD y la LOPDGDD con los artículos citados empaquetados. |
+| — | `.apm/agents/legal-advisor.agent.md` | Nuevo: responde las consultas legales que la guía no resuelve, con la guía y el MCP de EUR-Lex, en un comentario de la issue. |
+| — | `apm.yml` | Nueva dependencia MCP `eur-lex` (`@cyanheads/eur-lex-mcp-server@0.21.0`): `apm install` la escribe en la config de cada herramienta, sin tocar otros MCP. |
 | — | `apm.yml`, `README.md`, `CHANGES.md`, `GLOSSARY.md`, `docs/MAINTENANCE.md`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
@@ -67,6 +70,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **Al terminar.** «Para lo que hayas arrancado» deja de ser el servidor de Chroma: cualquier servidor, navegador o proceso que el ciclo arrancó se para antes del informe.
 - **Cambios pedidos en un comentario.** Si la pull request tiene `CHANGES_REQUESTED`, spec, plan y tasks van en un comentario `<!-- Revisión N -->` con las plantillas de siempre.
 - **Huecos.** Como en ChromaDB, `concept-developer` marca como hueco lo que el proyecto no responde y para. Aquí el orquestador pregunta a la persona y lo vuelve a llamar con las respuestas antes de la ronda 1.
+- **Consultas legales.** Nuevo. Si `concept-developer` o `concept-tester` devuelven dudas de protección de datos que la guía no resuelve, el orquestador llama a `legal-advisor` con todas y después a `concept-developer` con las respuestas, sin gastar ronda. Lo que `legal-advisor` no resuelve es un hueco.
 - **Sin aprobación humana.** Como en ChromaDB, el ciclo no espera a que nadie apruebe la spec.
 - **Commit final.** Como en ChromaDB, un solo commit con los ficheros del ciclo al terminar, con el desglose y el pie de `commit-changes` (`Refs #N`).
 

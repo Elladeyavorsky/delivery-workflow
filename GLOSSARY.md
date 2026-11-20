@@ -62,6 +62,10 @@ _Evitar_: tareas (se confunde con la tarea), checklist
 Un dato que la spec necesita y que el proyecto no responde. Para el ciclo hasta que la persona lo contesta.
 _Evitar_: duda, TODO
 
+**Consulta legal**:
+Una duda de protección de datos que la guía `data-protection-guideline` no resuelve. La devuelven `concept-developer` o `concept-tester` con un id `CL-NN`, la responde `legal-advisor` en un comentario de la issue con su fuente, y lo que decide entra en la spec como requisito. Si no tiene respuesta, pasa a ser un hueco. No gasta ronda.
+_Evitar_: consulta jurídica, dictamen
+
 ## Ciclo
 
 **Ciclo**:
