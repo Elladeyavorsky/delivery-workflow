@@ -47,13 +47,13 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
      Repetirlo sin cambios no descarga ni embebe nada.
    - `reset`: quita el MCP `docs-rag` de la config del proyecto (y de la de usuario, si queda de una versión anterior). Con `--drop-index` borra también la colección de Qdrant y la carpeta `.docs-rag/` entera.
 2. **`--libs a,b,c`** _(Opcional)_: solo esas dependencias. Sin la opción, todas las del inventario con versión. Lo que ya estaba indexado y no se pide se borra del índice.
-3. **`--sin-runtimes`** _(Opcional)_: no indexa la documentación de los runtimes.
+3. **`--no-runtimes`** _(Opcional)_: no indexa la documentación de los runtimes.
 4. **`--target cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
 5. **`--drop-index`** _(Opcional, solo con `reset`)_.
 
 #### Reglas de Invocación Críticas
 
-- **Tú hablas, el script no**: El script nunca pregunta. Las preguntas las haces tú y le pasas las respuestas con `--libs` y `--sin-runtimes`.
+- **Tú hablas, el script no**: El script nunca pregunta. Las preguntas las haces tú y le pasas las respuestas con `--libs` y `--no-runtimes`.
 - **Flujo**:
   1. Lanza `detect`.
      - Si falla porque no hay carpeta de agentes, dile a la persona que ejecute `apm install`.

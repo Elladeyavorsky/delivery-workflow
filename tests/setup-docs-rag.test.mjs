@@ -152,7 +152,7 @@ test("registerServer pone docs-rag en la config del proyecto con rutas relativas
   assert.deepEqual(claude.mcpServers["docs-rag"], {
     type: "stdio",
     command: "uv",
-    args: ["run", "--quiet", "--project", ".docs-rag/app", "python", "-m", "docs_rag.servidor"],
+    args: ["run", "--quiet", "--project", ".docs-rag/app", "python", "-m", "docs_rag.server"],
     env: { UV_PROJECT_ENVIRONMENT: "../venv" },
   });
   const cursor = JSON.parse(readFileSync(join(root, ".cursor/mcp.json"), "utf8")).mcpServers["docs-rag"];
@@ -244,7 +244,7 @@ test("detect da el canal mirando docs-rag en el proyecto y context7 en el usuari
 });
 
 test("parseArgs y run validan las órdenes y las herramientas", async () => {
-  assert.equal(parseArgs(["apply", "--sin-runtimes"]).withRuntimes, false);
+  assert.equal(parseArgs(["apply", "--no-runtimes"]).withRuntimes, false);
   assert.deepEqual(parseArgs(["apply", "--libs", "react,vue"]).libs, ["react", "vue"]);
   assert.throws(() => parseArgs(["apply", "--nope"]), SetupDocsRagError);
   await assert.rejects(run(["otra"]), (e) => e.code === 2);

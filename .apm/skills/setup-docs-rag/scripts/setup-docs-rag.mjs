@@ -214,7 +214,7 @@ const readText = (path) => {
 };
 
 // Lockfile del ecosistema en la carpeta del manifiesto o en una superior (monorepos), hasta la raíz.
-function findLock(root, dir, ecosystem, avisos) {
+function findLock(root, dir, ecosystem, warnings) {
   const parts = dir ? dir.split("/") : [];
   for (let i = parts.length; i >= 0; i--) {
     const rel = parts.slice(0, i).join("/");
@@ -225,7 +225,7 @@ function findLock(root, dir, ecosystem, avisos) {
       try {
         return { file: relFile, versions: parse(text) };
       } catch {
-        avisos.push(`${relFile} no se ha podido leer: se usan los rangos del manifiesto.`);
+        warnings.push(`${relFile} no se ha podido leer: se usan los rangos del manifiesto.`);
         return null;
       }
     }
@@ -239,22 +239,22 @@ const ALIAS = /^(lts|latest|stable|nightly|beta|node|system)/i;
 
 export function detectRuntimes(root) {
   const out = [];
-  const avisos = [];
-  const add = (paquete, value, fuente, rango) => {
+  const warnings = [];
+  const add = (runtime, value, file, fromRange) => {
     const raw = String(value ?? "").trim();
     if (!raw) return;
     if (ALIAS.test(raw.replace(/^v/, ""))) {
-      avisos.push(`${fuente} fija ${paquete} con el alias «${raw}»: no se indexa. Pon una versión (por ejemplo 20 o 1.80).`);
+      warnings.push(`${file} fija ${runtime} con el alias «${raw}»: no se indexa. Pon una versión (por ejemplo 20 o 1.80).`);
       return;
     }
     const v = versionFromRange(raw);
     if (!v) {
-      avisos.push(`${fuente}: no se entiende la versión de ${paquete} «${raw}».`);
+      warnings.push(`${file}: no se entiende la versión de ${runtime} «${raw}».`);
       return;
     }
-    const aviso = rango ? `${paquete} sale de un rango (${raw}) en ${fuente}: se usa la mínima, ${v.version}.` : null;
-    if (aviso) avisos.push(aviso);
-    out.push({ package: paquete, ecosystem: "runtime", version: v.version, origin: rango ? "range" : "pinned", source: fuente, runtime: true });
+    const rangeWarning = fromRange ? `${runtime} sale de un rango (${raw}) en ${file}: se usa la mínima, ${v.version}.` : null;
+    if (rangeWarning) warnings.push(rangeWarning);
+    out.push({ package: runtime, ecosystem: "runtime", version: v.version, origin: fromRange ? "range" : "pinned", source: file, runtime: true });
   };
 
   const pyVersion = readText(join(root, ".python-version"));
@@ -295,17 +295,17 @@ export function detectRuntimes(root) {
     const m = /^rust-version\s*=\s*"([^"]+)"/m.exec(cargo);
     if (m) add("rust", m[1], "Cargo.toml (rust-version)", true);
   }
-  return { runtimes: out, warnings: avisos };
+  return { runtimes: out, warnings };
 }
 
 // --- Inventario ---
 
 // Dependencias directas con versión, descartes y runtimes. Reutiliza la búsqueda de manifiestos de setup-context7.
 export function buildInventory({ root, profiles = loadProfiles() }) {
-  const avisos = [];
+  const warnings = [];
   const manifests = [];
   const byKey = new Map();
-  const descartadas = [];
+  const discarded = [];
   for (const { rel, ecosystem, parse } of findManifests(root)) {
     const text = readText(join(root, rel));
     const file = rel.split("/").pop();
@@ -319,7 +319,7 @@ export function buildInventory({ root, profiles = loadProfiles() }) {
       manifests.push({ file: rel, ecosystem, count: 0, error: e.message });
       continue;
     }
-    const lock = findLock(root, dir, ecosystem, avisos);
+    const lock = findLock(root, dir, ecosystem, warnings);
     manifests.push({ file: rel, ecosystem, count: names.length, lockfile: lock?.file ?? null });
     for (const name of names) {
       const key = `${ecosystem}:${name}`;
@@ -330,7 +330,7 @@ export function buildInventory({ root, profiles = loadProfiles() }) {
       }
       const c = classify(profiles, name);
       if (c.status === "descartada") {
-        descartadas.push({ package: name, ecosystem, reason: c.why });
+        discarded.push({ package: name, ecosystem, reason: c.why });
         byKey.set(key, { skip: true, sources: [rel] });
         continue;
       }
@@ -343,18 +343,18 @@ export function buildInventory({ root, profiles = loadProfiles() }) {
         if (v?.exact) entry = { version: v.version, origin: "pinned", source: rel };
         else if (v) {
           entry = { version: v.version, origin: "range", source: rel };
-          avisos.push(`${name} (${ecosystem}) no está en ningún lockfile: se usa la mínima del rango «${range}», ${v.version}.`);
+          warnings.push(`${name} (${ecosystem}) no está en ningún lockfile: se usa la mínima del rango «${range}», ${v.version}.`);
         } else {
           entry = { version: null, origin: "unknown", source: rel };
-          avisos.push(`${name} (${ecosystem}) no tiene versión en el lockfile ni en ${rel}: no se indexa.`);
+          warnings.push(`${name} (${ecosystem}) no tiene versión en el lockfile ni en ${rel}: no se indexa.`);
         }
       }
       byKey.set(key, { package: name, ecosystem, ...entry, runtime: false, sources: [rel] });
     }
   }
-  const { runtimes, warnings: avisosRuntime } = detectRuntimes(root);
+  const { runtimes, warnings: runtimeWarnings } = detectRuntimes(root);
   const dependencies = [...byKey.values()].filter((d) => !d.skip);
-  return { manifests, dependencies, runtimes, discarded: descartadas, warnings: [...avisos, ...avisosRuntime] };
+  return { manifests, dependencies, runtimes, discarded, warnings: [...warnings, ...runtimeWarnings] };
 }
 
 // --- Requisitos y estado ---
@@ -417,7 +417,7 @@ export function appDirs(root) {
 // de trabajo: por eso el entorno es ../venv.
 export function serverEntry(tool) {
   const cursor = tool === "cursor";
-  const args = ["run", "--quiet", "--project", `${cursor ? "${workspaceFolder}/" : ""}${RAG_DIR}/app`, "python", "-m", "docs_rag.servidor"];
+  const args = ["run", "--quiet", "--project", `${cursor ? "${workspaceFolder}/" : ""}${RAG_DIR}/app`, "python", "-m", "docs_rag.server"];
   if (cursor) args.push("--root", "${workspaceFolder}");
   const env = { UV_PROJECT_ENVIRONMENT: cursor ? `\${workspaceFolder}/${RAG_DIR}/venv` : "../venv" };
   if (tool === "claude") return { type: "stdio", command: "uv", args, env };
@@ -491,7 +491,7 @@ export const USAGE = [
   "  detect        Inventario (dependencias con versión, runtimes, descartes), requisitos, índice y canal de cada herramienta (JSON).",
   "  apply         Arranca Qdrant, descarga el modelo, instala el MCP en .docs-rag/, indexa lo que haya cambiado y registra docs-rag en la config del proyecto.",
   "  reset         Quita el MCP docs-rag de la config del proyecto. Con --drop-index borra también la colección y .docs-rag/.",
-  "Opciones: --libs a,b,c  --sin-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
+  "Opciones: --libs a,b,c  --no-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
 ].join("\n");
 
 export function parseArgs(argv) {
@@ -503,7 +503,7 @@ export function parseArgs(argv) {
     else if (a === "--home") opts.home = rest[++i];
     else if (a === "--target") opts.target = rest[++i];
     else if (a === "--libs") opts.libs = [...new Set([...opts.libs, ...parseLibs(rest[++i])])];
-    else if (a === "--sin-runtimes") opts.withRuntimes = false;
+    else if (a === "--no-runtimes") opts.withRuntimes = false;
     else if (a === "--drop-index") opts.dropIndex = true;
     else throw new SetupDocsRagError(`Argumento desconocido: ${a}\n${USAGE}`, 2);
   }
@@ -588,7 +588,7 @@ async function installApp(root) {
 function runIndexer(root, extra = []) {
   const { app, venv } = appDirs(root);
   return new Promise((resolvePromise, reject) => {
-    const child = spawn("uv", ["run", "--quiet", "--project", app, "python", "-m", "docs_rag.indexar", "--root", root, ...extra], {
+    const child = spawn("uv", ["run", "--quiet", "--project", app, "python", "-m", "docs_rag.indexer", "--root", root, ...extra], {
       env: { ...process.env, UV_PROJECT_ENVIRONMENT: venv, PYTHONIOENCODING: "utf-8" },
       stdio: ["ignore", "pipe", "inherit"],
       windowsHide: true,
@@ -649,7 +649,7 @@ export async function reset({ root, home, tools, dropIndex }) {
     const { app } = appDirs(root);
     if (existsSync(app) && existsSync(join(root, RAG_DIR, INVENTORY_FILE))) {
       try {
-        index = await runIndexer(root, ["--borrar"]);
+        index = await runIndexer(root, ["--drop"]);
       } catch (e) {
         index = { error: e.message };
       }

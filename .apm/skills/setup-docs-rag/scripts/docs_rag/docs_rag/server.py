@@ -14,16 +14,16 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-from .consulta import Consultor
+from .lookup import DocsLookup
 
 mcp = FastMCP("docs-rag")
-_consultor: Consultor | None = None
+_lookup: DocsLookup | None = None
 
 
-def _raiz_inicial(argumento: str | None) -> Path:
+def _initial_root(argument: str | None) -> Path:
     # Cursor pasa --root ${workspaceFolder}; si la variable no se sustituye, se usa el directorio de trabajo.
-    if argumento and "${" not in argumento:
-        return Path(argumento)
+    if argument and "${" not in argument:
+        return Path(argument)
     return Path(os.environ.get("DOCS_RAG_ROOT") or os.getcwd())
 
 
@@ -35,7 +35,7 @@ def resolve_package(name: str) -> dict:
     and the filters that query_docs accepts. If it has no documentation, says why.
     Call it before query_docs.
     """
-    return _consultor.resolver_paquete(name)
+    return _lookup.resolve_package(name)
 
 
 @mcp.tool()
@@ -47,29 +47,29 @@ def query_docs(package: str, question: str, filters: dict | None = None, k: int 
     returned (for example {"symbols": "asyncio.timeout"} or {"deprecated": false}).
     Check that the first chunk names the API you asked about; if not, ask again with the exact name.
     """
-    return _consultor.consultar_docs(package, question, filters, k)
+    return _lookup.query_docs(package, question, filters, k)
 
 
-def _separar_stdin() -> None:
+def _detach_stdin() -> None:
     """En Windows, mientras el transporte MCP tiene una lectura pendiente en la tubería de stdin, cargar
     una DLL (numpy, torch) en otro hilo se bloquea hasta que llega el siguiente mensaje. El transporte
     lee de una copia de stdin y el descriptor 0 pasa a NUL, así la carga diferida de los modelos no se cuelga."""
     if sys.platform != "win32":
         return
-    copia = os.dup(0)
+    duplicate = os.dup(0)
     nul = os.open(os.devnull, os.O_RDONLY)
     os.dup2(nul, 0)
     os.close(nul)
-    sys.stdin = io.TextIOWrapper(io.BufferedReader(io.FileIO(copia, "rb")), encoding="utf-8")
+    sys.stdin = io.TextIOWrapper(io.BufferedReader(io.FileIO(duplicate, "rb")), encoding="utf-8")
 
 
 def main() -> None:
-    global _consultor
+    global _lookup
     parser = argparse.ArgumentParser(description="Servidor MCP de documentación local (docs-rag).")
     parser.add_argument("--root", help="Carpeta del proyecto. Por defecto, el directorio de trabajo.")
     args = parser.parse_args()
-    _consultor = Consultor(_raiz_inicial(args.root))
-    _separar_stdin()
+    _lookup = DocsLookup(_initial_root(args.root))
+    _detach_stdin()
     mcp.run()
 
 
