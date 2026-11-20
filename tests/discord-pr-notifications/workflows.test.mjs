@@ -68,9 +68,11 @@ test('delivery-workflow publica desde su staging con la acción local confiable'
   assert.match(packagePublisher, /group: discord-pr-relations/);
   assert.match(packagePublisher, /queue: max/);
   assert.match(packagePublisher, /cancel-in-progress: false/);
-  for (const permission of ['actions: read', 'contents: read', 'issues: write', 'pull-requests: read']) {
+  for (const permission of ['actions: read', 'contents: read', 'issues: read', 'pull-requests: write']) {
     assert.ok(packagePublisher.includes(permission));
   }
+  assert.doesNotMatch(packagePublisher, /^\s+issues: write$/m);
+  assert.doesNotMatch(packagePublisher, /^\s+pull-requests: read$/m);
   assert.match(packagePublisher, /uses: actions\/checkout@[a-f0-9]{40}/);
   assert.match(packagePublisher, /ref: \$\{\{ github\.sha \}\}/);
   assert.match(packagePublisher, /persist-credentials: false/);
