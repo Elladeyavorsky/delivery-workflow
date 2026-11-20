@@ -15,7 +15,9 @@ import {
   buildRequest,
   serverEntry,
   registerServer,
+  registerTools,
   unregisterServer,
+  unregisterUserServer,
   ensureRagDir,
   indexState,
   checkRequirements,
@@ -88,26 +90,30 @@ test("rangesFromManifest lee los rangos de cada manifiesto", () => {
   assert.equal(rangesFromManifest("Cargo.toml", `[dependencies]\nserde = { version = "1.0", features = ["derive"] }\ntokio = "1.40"\n`).get("serde"), "1.0");
 });
 
-test("detect da versiones del lockfile y runtimes", () => {
+const SPANISH_KEYS = ["paquete", "paquetes", "ecosistema", "origen", "fuente", "dependencias", "descartadas", "avisos", "detalle", "motivo", "inventario", "requisitos", "indice", "herramientas", "existe", "coleccion", "indexados", "sin_doc", "fragmentos", "modelo"];
+const keysOf = (value) => (Array.isArray(value) ? value.flatMap(keysOf) : value && typeof value === "object" ? Object.entries(value).flatMap(([k, v]) => [k, ...keysOf(v)]) : []);
+
+test("detect da versiones del lockfile y runtimes, con las claves en inglés", () => {
   const root = project();
   write(root, "package.json", { dependencies: { react: "^19.0.0" }, devDependencies: { typescript: "^5" } });
   write(root, "package-lock.json", { lockfileVersion: 3, packages: { "node_modules/react": { version: "19.1.0" }, "node_modules/typescript": { version: "5.6.0" } } });
   write(root, ".nvmrc", "20\n");
   write(root, "pyproject.toml", `[project]\nname = "x"\nrequires-python = ">=3.12"\ndependencies = ["fastapi>=0.110"]\n`);
   const inv = buildInventory({ root });
-  const react = inv.dependencias.find((d) => d.paquete === "react");
-  assert.deepEqual([react.version, react.origen, react.fuente], ["19.1.0", "lockfile", "package-lock.json"]);
-  assert.deepEqual(inv.descartadas.map((d) => d.paquete), ["typescript"]);
-  const fastapi = inv.dependencias.find((d) => d.paquete === "fastapi");
-  assert.deepEqual([fastapi.version, fastapi.origen], ["0.110", "rango"]);
-  assert.ok(inv.avisos.some((a) => a.includes("fastapi") && a.includes("mínima")));
-  const rt = Object.fromEntries(inv.runtimes.map((r) => [r.paquete, r]));
+  const react = inv.dependencies.find((d) => d.package === "react");
+  assert.deepEqual([react.ecosystem, react.version, react.origin, react.source, react.runtime], ["npm", "19.1.0", "lockfile", "package-lock.json", false]);
+  assert.deepEqual(inv.discarded.map((d) => d.package), ["typescript"]);
+  const fastapi = inv.dependencies.find((d) => d.package === "fastapi");
+  assert.deepEqual([fastapi.version, fastapi.origin], ["0.110", "range"]);
+  assert.ok(inv.warnings.some((a) => a.includes("fastapi") && a.includes("mínima")));
+  const rt = Object.fromEntries(inv.runtimes.map((r) => [r.package, r]));
   assert.equal(rt.node.version, "20");
-  assert.equal(rt.node.origen, "fijado");
+  assert.equal(rt.node.origin, "pinned");
   assert.equal(rt.python.version, "3.12");
-  assert.equal(rt.python.origen, "rango");
-  assert.ok(inv.avisos.some((a) => a.includes("python") && a.includes("rango")));
-  assert.ok(inv.runtimes.every((r) => r.ecosistema === "runtime"));
+  assert.equal(rt.python.origin, "range");
+  assert.ok(inv.warnings.some((a) => a.includes("python") && a.includes("rango")));
+  assert.ok(inv.runtimes.every((r) => r.ecosystem === "runtime"));
+  assert.deepEqual(keysOf(inv).filter((k) => SPANISH_KEYS.includes(k)), []);
 });
 
 test("detectRuntimes: alias no se indexa, toolchain de Go y rust-toolchain", () => {
@@ -115,9 +121,9 @@ test("detectRuntimes: alias no se indexa, toolchain de Go y rust-toolchain", () 
   write(root, ".nvmrc", "lts/iron\n");
   write(root, "go.mod", "module x\n\ngo 1.22\n\ntoolchain go1.22.3\n");
   write(root, "rust-toolchain.toml", `[toolchain]\nchannel = "1.80.0"\n`);
-  const { runtimes, avisos } = detectRuntimes(root);
-  assert.deepEqual(runtimes.map((r) => [r.paquete, r.version]).sort(), [["go", "1.22.3"], ["rust", "1.80.0"]]);
-  assert.ok(avisos.some((a) => a.includes("alias") && a.includes("lts/iron")));
+  const { runtimes, warnings } = detectRuntimes(root);
+  assert.deepEqual(runtimes.map((r) => [r.package, r.version]).sort(), [["go", "1.22.3"], ["rust", "1.80.0"]]);
+  assert.ok(warnings.some((a) => a.includes("alias") && a.includes("lts/iron")));
 });
 
 test("un lockfile roto avisa y usa el rango", () => {
@@ -125,43 +131,70 @@ test("un lockfile roto avisa y usa el rango", () => {
   write(root, "package.json", { dependencies: { react: "^19.0.0" } });
   write(root, "package-lock.json", "{roto");
   const inv = buildInventory({ root });
-  assert.equal(inv.dependencias[0].origen, "rango");
-  assert.ok(inv.avisos.some((a) => a.includes("package-lock.json no se ha podido leer")));
+  assert.equal(inv.dependencies[0].origin, "range");
+  assert.ok(inv.warnings.some((a) => a.includes("package-lock.json no se ha podido leer")));
 });
 
 test("buildRequest limita a las librerías confirmadas y quita runtimes si se pide", () => {
-  const inv = { dependencias: [{ paquete: "react", ecosistema: "npm", version: "19.1.0" }, { paquete: "vue", ecosistema: "npm", version: "3.0.0" }, { paquete: "x", ecosistema: "npm", version: null }], runtimes: [{ paquete: "node", ecosistema: "runtime", version: "20", runtime: true }] };
-  assert.deepEqual(buildRequest(inv).paquetes.map((p) => p.paquete), ["node", "react", "vue"]);
-  assert.deepEqual(buildRequest(inv, { libs: ["react"], withRuntimes: false }).paquetes.map((p) => p.paquete), ["react"]);
+  const inv = { dependencies: [{ package: "react", ecosystem: "npm", version: "19.1.0" }, { package: "vue", ecosystem: "npm", version: "3.0.0" }, { package: "x", ecosystem: "npm", version: null }], runtimes: [{ package: "node", ecosystem: "runtime", version: "20", runtime: true }] };
+  assert.deepEqual(buildRequest(inv).packages.map((p) => p.package), ["node", "react", "vue"]);
+  assert.deepEqual(buildRequest(inv, { libs: ["react"], withRuntimes: false }).packages.map((p) => p.package), ["react"]);
+  assert.deepEqual(Object.keys(buildRequest(inv).packages[1]), ["package", "ecosystem", "version", "origin", "source", "runtime"]);
 });
 
-test("registerServer pone docs-rag, quita context7 y no toca lo demás; unregister lo quita", () => {
+test("registerServer pone docs-rag en la config del proyecto con rutas relativas y no toca lo demás", () => {
   const root = project(["claude", "cursor", "codex"]);
-  const home = homeOf(root);
-  write(home, ".claude.json", { numStartups: 2, mcpServers: { context7: { type: "http", url: "u" }, otro: { command: "echo" } } });
-  write(home, ".codex/config.toml", `[mcp_servers.context7]\nurl = "u"\n`);
-  for (const tool of ["claude", "cursor", "codex"]) registerServer({ home, tool, uvPath: "/bin/uv" });
-  const claude = JSON.parse(readHome(root, ".claude.json"));
-  assert.equal(claude.numStartups, 2);
-  assert.deepEqual(Object.keys(claude.mcpServers).sort(), ["docs-rag", "otro"]);
-  assert.equal(claude.mcpServers["docs-rag"].type, "stdio");
-  assert.ok(claude.mcpServers["docs-rag"].args.includes("docs_rag.servidor"));
-  const cursor = JSON.parse(readHome(root, ".cursor/mcp.json")).mcpServers["docs-rag"];
+  write(root, ".mcp.json", { mcpServers: { context7: { type: "http", url: "u" }, otro: { command: "echo" } } });
+  write(root, ".codex/config.toml", `[mcp_servers.otro]\ncommand = "echo"\n`);
+  for (const tool of ["claude", "cursor", "codex"]) assert.equal(registerServer({ root, tool }).result, "changed");
+  const claude = JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8"));
+  assert.deepEqual(Object.keys(claude.mcpServers).sort(), ["context7", "docs-rag", "otro"], "context7 y otro se quedan");
+  assert.deepEqual(claude.mcpServers["docs-rag"], {
+    type: "stdio",
+    command: "uv",
+    args: ["run", "--quiet", "--project", ".docs-rag/app", "python", "-m", "docs_rag.servidor"],
+    env: { UV_PROJECT_ENVIRONMENT: "../venv" },
+  });
+  const cursor = JSON.parse(readFileSync(join(root, ".cursor/mcp.json"), "utf8")).mcpServers["docs-rag"];
+  assert.ok(cursor.args.includes("${workspaceFolder}/.docs-rag/app"));
+  assert.equal(cursor.env.UV_PROJECT_ENVIRONMENT, "${workspaceFolder}/.docs-rag/venv");
   assert.deepEqual(cursor.args.slice(-2), ["--root", "${workspaceFolder}"]);
-  const codex = readHome(root, ".codex/config.toml");
-  assert.match(codex, /\[mcp_servers\."docs-rag"\]\ncommand = "\/bin\/uv"/);
-  assert.doesNotMatch(codex, /context7/);
-  assert.equal(registerServer({ home, tool: "claude", uvPath: "/bin/uv" }).result, "igual");
-  unregisterServer({ home, tool: "claude" });
-  assert.deepEqual(Object.keys(JSON.parse(readHome(root, ".claude.json")).mcpServers), ["otro"]);
-  assert.equal(unregisterServer({ home, tool: "codex" }).result, "cambiado");
-  assert.ok(!existsSync(join(home, ".codex/config.toml")), "solo tenía docs-rag");
+  const codex = readFileSync(join(root, ".codex/config.toml"), "utf8");
+  assert.match(codex, /\[mcp_servers\."docs-rag"\]\ncommand = "uv"/);
+  assert.match(codex, /\[mcp_servers\.otro\]/);
+  assert.equal(registerServer({ root, tool: "claude" }).result, "unchanged");
+  assert.equal(unregisterServer({ root, tool: "claude" }).result, "changed");
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8")).mcpServers).sort(), ["context7", "otro"]);
+  assert.equal(unregisterServer({ root, tool: "cursor" }).result, "changed");
+  assert.ok(!existsSync(join(root, ".cursor/mcp.json")), "solo tenía docs-rag");
+  assert.equal(unregisterServer({ root, tool: "cursor" }).result, "missing");
 });
 
-test("serverEntry: el entorno de uv vive en la carpeta personal, no en el proyecto", () => {
-  const e = serverEntry("codex", { uvPath: "uv", home: "/h" });
-  assert.equal(e.env.UV_PROJECT_ENVIRONMENT.replace(/\\/g, "/"), "/h/.docs-rag/venv");
-  assert.ok(e.args.join(" ").replace(/\\/g, "/").includes("/h/.docs-rag/app"));
+test("serverEntry no lleva rutas absolutas de este ordenador", () => {
+  for (const tool of ["claude", "codex", "cursor"]) {
+    const e = serverEntry(tool);
+    assert.equal(e.command, "uv");
+    assert.ok([...e.args, e.env.UV_PROJECT_ENVIRONMENT].every((a) => !/^([A-Za-z]:|\/)/.test(a)), tool);
+  }
+});
+
+test("registerTools migra el registro de usuario de la #64 al proyecto", () => {
+  const root = project(["claude", "codex"]);
+  const home = homeOf(root);
+  write(home, ".claude.json", { numStartups: 2, mcpServers: { "docs-rag": { command: "C:/u/uv.exe" }, otro: { command: "echo" } } });
+  write(home, ".codex/config.toml", `[mcp_servers."docs-rag"]\ncommand = "uv"\n`);
+  mkdirSync(join(home, ".docs-rag", "app"), { recursive: true });
+  const out = registerTools({ root, home, tools: ["claude", "codex"] });
+  const claudeUser = JSON.parse(readHome(root, ".claude.json"));
+  assert.equal(claudeUser.numStartups, 2);
+  assert.deepEqual(Object.keys(claudeUser.mcpServers), ["otro"]);
+  assert.ok(!existsSync(join(home, ".codex/config.toml")), "solo tenía docs-rag");
+  assert.ok(existsSync(join(root, ".mcp.json")) && existsSync(join(root, ".codex/config.toml")));
+  assert.deepEqual(out.map((t) => t.config.file), [".mcp.json", ".codex/config.toml"]);
+  assert.ok(out[0].notes.some((n) => n.includes("~/.claude.json") && n.includes(".mcp.json")));
+  assert.ok(out[0].notes.some((n) => n.includes("~/.docs-rag/")));
+  assert.ok(!out[1].notes.some((n) => n.includes("~/.docs-rag/")), "el aviso de ~/.docs-rag/ sale una vez");
+  assert.equal(unregisterUserServer({ home, tool: "claude" }).result, "unchanged");
 });
 
 test("ensureRagDir crea .docs-rag/.gitignore con * y es idempotente", () => {
@@ -171,14 +204,18 @@ test("ensureRagDir crea .docs-rag/.gitignore con * y es idempotente", () => {
   assert.equal(readFileSync(join(root, ".docs-rag/.gitignore"), "utf8"), "*\n");
 });
 
-test("indexState resume el inventario del proyecto", () => {
+test("indexState resume inventory.json y detecta el formato anterior", () => {
   const root = project();
-  assert.deepEqual(indexState(root), { existe: false });
-  write(root, ".docs-rag/inventario.json", { coleccion: "docs_x", actualizado: "hoy", paquetes: { "npm:react": { paquete: "react", estado: "indexado", fragmentos: 10 }, "runtime:rust": { paquete: "rust", estado: "sin_doc", motivo: "no hay" } } });
+  assert.deepEqual(indexState(root), { exists: false });
+  write(root, ".docs-rag/inventario.json", { coleccion: "docs_x", paquetes: {} });
+  assert.deepEqual(indexState(root), { exists: false, legacy: true });
+  write(root, ".docs-rag/inventory.json", { collection: "docs_v2_x", updated: "hoy", packages: { "npm:react": { package: "react", status: "indexed", chunks: 10 }, "runtime:rust": { package: "rust", status: "no_docs", reason: "no hay" } } });
   const s = indexState(root);
-  assert.equal(s.indexados, 1);
-  assert.equal(s.fragmentos, 10);
-  assert.deepEqual(s.sin_doc, [{ paquete: "rust", motivo: "no hay" }]);
+  assert.equal(s.exists, true);
+  assert.equal(s.collection, "docs_v2_x");
+  assert.equal(s.indexed, 1);
+  assert.equal(s.chunks, 10);
+  assert.deepEqual(s.no_docs, [{ package: "rust", reason: "no hay" }]);
 });
 
 test("checkRequirements traduce las respuestas de docker, ollama y uv", async () => {
@@ -190,9 +227,20 @@ test("checkRequirements traduce las respuestas de docker, ollama y uv", async ()
   };
   const r = await checkRequirements(fake);
   assert.equal(r.docker.ok, false);
-  assert.match(r.docker.detalle, /no responde/);
-  assert.equal(r.modelo.ok, true);
-  assert.match(r.uv.detalle, /no está instalado/);
+  assert.match(r.docker.detail, /no responde/);
+  assert.equal(r.model.ok, true);
+  assert.match(r.uv.detail, /no está instalado/);
+});
+
+test("detect da el canal mirando docs-rag en el proyecto y context7 en el usuario", async () => {
+  const root = project(["claude"]);
+  const home = homeOf(root);
+  write(home, ".claude.json", { mcpServers: { context7: { type: "http", url: "u" } } });
+  write(root, ".mcp.json", { mcpServers: { "docs-rag": { command: "uv" } } });
+  const out = JSON.parse(await run(["detect", "--root", root, "--home", home]));
+  assert.deepEqual(Object.keys(out), ["inventory", "requirements", "index", "tools"]);
+  assert.deepEqual(out.tools, [{ tool: "claude", name: "Claude Code", configFile: ".mcp.json", channel: "both" }]);
+  assert.deepEqual(keysOf(out).filter((k) => SPANISH_KEYS.includes(k)), []);
 });
 
 test("parseArgs y run validan las órdenes y las herramientas", async () => {
@@ -203,3 +251,4 @@ test("parseArgs y run validan las órdenes y las herramientas", async () => {
   const empty = project([]);
   await assert.rejects(run(["detect", "--root", empty, "--home", homeOf(empty)]), /apm install/);
 });
+

@@ -1,4 +1,4 @@
-"""Servidor MCP docs-rag: resolver_paquete y consultar_docs sobre el índice local del proyecto.
+"""Servidor MCP docs-rag: resolve_package y query_docs sobre el índice local del proyecto.
 
 Arranca siempre, aunque no haya índice, y sin cargar modelos: Ollama, Qdrant y el reordenador
 se cargan en la primera consulta. Ninguna herramienta indexa.
@@ -28,26 +28,26 @@ def _raiz_inicial(argumento: str | None) -> Path:
 
 
 @mcp.tool()
-def resolver_paquete(nombre: str) -> dict:
-    """Busca un paquete o runtime en el índice de documentación de este proyecto.
+def resolve_package(name: str) -> dict:
+    """Finds a package or runtime in this project's documentation index.
 
-    Devuelve cada coincidencia con su id (ecosistema:paquete), la versión indexada, el tipo de
-    documentación y los filtros que admite consultar_docs. Si no tiene documentación, dice por qué.
-    Llámala antes de consultar_docs.
+    Returns each match with its id (ecosystem:package), the indexed version, the documentation type
+    and the filters that query_docs accepts. If it has no documentation, says why.
+    Call it before query_docs.
     """
-    return _consultor.resolver_paquete(nombre)
+    return _consultor.resolver_paquete(name)
 
 
 @mcp.tool()
-def consultar_docs(paquete: str, pregunta: str, filtros: dict | None = None, k: int = 4) -> dict:
-    """Fragmentos de la documentación oficial de ese paquete, en la versión que usa el proyecto.
+def query_docs(package: str, question: str, filters: dict | None = None, k: int = 4) -> dict:
+    """Chunks of the official documentation of that package, in the version the project uses.
 
-    paquete: el id que devuelve resolver_paquete (ecosistema:paquete). pregunta: en inglés, una por
-    decisión de API y con el nombre exacto de la API. filtros: opcionales, solo los que devolvió
-    resolver_paquete (por ejemplo {"simbolos": "asyncio.timeout"} o {"deprecated": false}).
-    Comprueba que el primer fragmento nombra la API buscada; si no, repite con el nombre exacto.
+    package: the id that resolve_package returns (ecosystem:package). question: in English, one per
+    API decision and with the exact API name. filters: optional, only the ones resolve_package
+    returned (for example {"symbols": "asyncio.timeout"} or {"deprecated": false}).
+    Check that the first chunk names the API you asked about; if not, ask again with the exact name.
     """
-    return _consultor.consultar_docs(paquete, pregunta, filtros, k)
+    return _consultor.consultar_docs(package, question, filters, k)
 
 
 def _separar_stdin() -> None:

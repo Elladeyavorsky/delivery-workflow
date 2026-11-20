@@ -1,7 +1,7 @@
 """Perfiles de documentación: qué metadatos marca cada tipo de forma fiable y cómo se calculan.
 
 Todos los fragmentos llevan el núcleo común. Cada perfil añade sus campos. Si ningún perfil
-reconoce la documentación, se usa `generico` (solo el núcleo). Son funciones puras sobre texto.
+reconoce la documentación, se usa `generic` (solo el núcleo). Son funciones puras sobre texto.
 """
 
 from __future__ import annotations
@@ -9,27 +9,27 @@ from __future__ import annotations
 import re
 from pathlib import PurePosixPath
 
-NUCLEO = ("paquete", "version", "ecosistema", "tipo_doc", "fuente", "ruta_titulos", "texto", "tiene_codigo", "deprecated")
+NUCLEO = ("package", "version", "ecosystem", "doc_type", "source", "heading_path", "text", "has_code", "deprecated")
 
 CAMPOS_EXTRA: dict[str, tuple[str, ...]] = {
-    "sphinx": ("modulo", "simbolos", "added_in", "changed_in"),
-    "mkdocs": ("modulo", "simbolos", "tipo_pagina"),
-    "markdown": ("simbolos", "tipo_pagina", "lenguaje_codigo"),
-    "node": ("modulo", "simbolos", "added_in", "estabilidad"),
-    "typedoc": ("simbolos", "tipo_simbolo"),
-    "go": ("paquete_import", "simbolos", "tipo_simbolo", "receptor", "tiene_ejemplo"),
-    "rust": ("modulo", "simbolos", "tipo_simbolo", "feature"),
-    "generico": (),
+    "sphinx": ("module", "symbols", "added_in", "changed_in"),
+    "mkdocs": ("module", "symbols", "page_type"),
+    "markdown": ("symbols", "page_type", "code_language"),
+    "node": ("module", "symbols", "added_in", "stability"),
+    "typedoc": ("symbols", "symbol_kind"),
+    "go": ("import_path", "symbols", "symbol_kind", "receiver", "has_example"),
+    "rust": ("module", "symbols", "symbol_kind", "feature"),
+    "generic": (),
 }
 
-# Campos por los que el agente puede filtrar en consultar_docs (además de paquete, que es siempre).
-BOOLEANOS = ("tiene_codigo", "deprecated", "tiene_ejemplo")
+# Campos por los que el agente puede filtrar en query_docs (además de package, que es siempre).
+BOOLEANOS = ("has_code", "deprecated", "has_example")
 
 
 def filtros_de(tipo: str) -> list[str]:
     """Campos filtrables de un perfil: sus campos extra más los booleanos que tiene."""
     extra = list(CAMPOS_EXTRA.get(tipo, ()))
-    return extra + [b for b in BOOLEANOS if b in ("tiene_codigo", "deprecated") or b in extra]
+    return extra + [b for b in BOOLEANOS if b in ("has_code", "deprecated") or b in extra]
 
 
 _VALLA = re.compile(r"^\s*(```|~~~)")
@@ -50,12 +50,12 @@ _DEPRECATED = {
     "typedoc": re.compile(r"(?im)(?:@deprecated|\*\*`?Deprecated`?\*\*|^#+\s*Deprecated\b)"),
     "go": re.compile(r"(?m)^\s*Deprecated:"),
     "rust": re.compile(r"(?im)(?:Deprecated since|#\[deprecated|👎)"),
-    "generico": re.compile(r"(?im)^\s*(?:>\s*)?(?:\*\*)?\s*deprecated\b"),
+    "generic": re.compile(r"(?im)^\s*(?:>\s*)?(?:\*\*)?\s*deprecated\b"),
 }
 
 
 def deprecated(tipo: str, texto: str) -> bool:
-    return bool(_DEPRECATED.get(tipo, _DEPRECATED["generico"]).search(texto))
+    return bool(_DEPRECATED.get(tipo, _DEPRECATED["generic"]).search(texto))
 
 
 # --- Ayudas ---
@@ -99,24 +99,24 @@ def metadatos_fichero(tipo: str, fuente: str, contenido: str) -> dict:
     if tipo == "sphinx":
         m = _H1_COMILLAS.search(contenido)
         if m:
-            meta["modulo"] = m.group(1).replace("\\", "").strip()
+            meta["module"] = m.group(1).replace("\\", "").strip()
         elif fuente.startswith("library/"):
-            meta["modulo"] = PurePosixPath(fuente).stem.split("-")[0]
+            meta["module"] = PurePosixPath(fuente).stem.split("-")[0]
         else:
-            meta["modulo"] = ""
+            meta["module"] = ""
     elif tipo == "mkdocs":
         m = _MKDOCSTRINGS.search(contenido) or _H1_COMILLAS.search(contenido)
-        meta["modulo"] = m.group(1) if m else ""
-        meta["tipo_pagina"] = tipo_pagina(fuente)
+        meta["module"] = m.group(1) if m else ""
+        meta["page_type"] = tipo_pagina(fuente)
     elif tipo == "markdown":
-        meta["tipo_pagina"] = tipo_pagina(fuente)
+        meta["page_type"] = tipo_pagina(fuente)
     elif tipo == "node":
         m = _NODE_SOURCE.search(contenido)
         stem = m.group(1) if m else PurePosixPath(fuente).stem
-        meta["modulo"] = f"node:{stem}"
+        meta["module"] = f"node:{stem}"
     elif tipo == "go":
         m = _GO_IMPORT.search(contenido)
-        meta["paquete_import"] = m.group(1) if m else ""
+        meta["import_path"] = m.group(1) if m else ""
     return meta
 
 
@@ -162,26 +162,26 @@ def _versiones_yaml_added(texto: str) -> list[str]:
 def metadatos_fragmento(tipo: str, texto: str, fichero: dict | None = None) -> dict:
     """Núcleo calculable (tiene_codigo, deprecated) más los campos del perfil para un fragmento."""
     fichero = fichero or {}
-    meta: dict = {"tiene_codigo": tiene_codigo(texto), "deprecated": deprecated(tipo, texto)}
+    meta: dict = {"has_code": tiene_codigo(texto), "deprecated": deprecated(tipo, texto)}
     if tipo == "sphinx":
-        meta["modulo"] = fichero.get("modulo", "")
-        meta["simbolos"] = _unicos(_terminos_definicion(texto) + [_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t])
+        meta["module"] = fichero.get("module", "")
+        meta["symbols"] = _unicos(_terminos_definicion(texto) + [_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t])
         meta["added_in"] = _unicos(_ADDED.findall(texto))
         meta["changed_in"] = _unicos(_CHANGED.findall(texto))
     elif tipo == "mkdocs":
-        meta["modulo"] = fichero.get("modulo", "")
-        meta["tipo_pagina"] = fichero.get("tipo_pagina", "")
-        meta["simbolos"] = _unicos([_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t or "(" in t] + [m.group(1).split(".")[-1] for m in _MKDOCSTRINGS.finditer(texto)])
+        meta["module"] = fichero.get("module", "")
+        meta["page_type"] = fichero.get("page_type", "")
+        meta["symbols"] = _unicos([_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t or "(" in t] + [m.group(1).split(".")[-1] for m in _MKDOCSTRINGS.finditer(texto)])
     elif tipo == "markdown":
-        meta["tipo_pagina"] = fichero.get("tipo_pagina", "")
-        meta["simbolos"] = _unicos([_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t] + [_nombre_simbolo(s) for s in _TABLA_PRIMERA.findall(texto)])
-        meta["lenguaje_codigo"] = _unicos(m.group(1).lower() for l in texto.splitlines() if (m := _LENGUAJE.match(l)))
+        meta["page_type"] = fichero.get("page_type", "")
+        meta["symbols"] = _unicos([_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t] + [_nombre_simbolo(s) for s in _TABLA_PRIMERA.findall(texto)])
+        meta["code_language"] = _unicos(m.group(1).lower() for l in texto.splitlines() if (m := _LENGUAJE.match(l)))
     elif tipo == "node":
-        meta["modulo"] = fichero.get("modulo", "")
-        meta["simbolos"] = _unicos(_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t)
+        meta["module"] = fichero.get("module", "")
+        meta["symbols"] = _unicos(_nombre_simbolo(t) for _, t in _encabezados(texto) if "`" in t)
         meta["added_in"] = _versiones_yaml_added(texto)
         m = _ESTABILIDAD.search(texto)
-        meta["estabilidad"] = m.group(1) if m else ""
+        meta["stability"] = m.group(1) if m else ""
     elif tipo == "typedoc":
         simbolos, tipos = [], []
         for m in _TYPEDOC_TIPO.finditer(texto):
@@ -194,10 +194,10 @@ def metadatos_fragmento(tipo: str, texto: str, fichero: dict | None = None) -> d
             elif seccion and nivel >= 3:
                 simbolos.append(_nombre_simbolo(t))
                 tipos.append(seccion)
-        meta["simbolos"] = _unicos(simbolos)
-        meta["tipo_simbolo"] = _unicos(tipos)
+        meta["symbols"] = _unicos(simbolos)
+        meta["symbol_kind"] = _unicos(tipos)
     elif tipo == "go":
-        meta["paquete_import"] = fichero.get("paquete_import", "")
+        meta["import_path"] = fichero.get("import_path", "")
         simbolos, tipos, receptores = [], [], []
         for m in _GO_DECL.finditer(texto):
             clase, _, receptor, nombre = m.groups()
@@ -208,10 +208,10 @@ def metadatos_fragmento(tipo: str, texto: str, fichero: dict | None = None) -> d
             elif nombre:
                 simbolos.append(nombre)
                 tipos.append(clase)
-        meta["simbolos"] = _unicos(simbolos)
-        meta["tipo_simbolo"] = _unicos(tipos)
-        meta["receptor"] = _unicos(receptores)
-        meta["tiene_ejemplo"] = bool(re.search(r"(?m)^#{2,4}\s+Example", texto))
+        meta["symbols"] = _unicos(simbolos)
+        meta["symbol_kind"] = _unicos(tipos)
+        meta["receiver"] = _unicos(receptores)
+        meta["has_example"] = bool(re.search(r"(?m)^#{2,4}\s+Example", texto))
     elif tipo == "rust":
         simbolos, tipos, modulos = [], [], []
         for m in _RUST_ITEM.finditer(texto):
@@ -220,9 +220,9 @@ def metadatos_fragmento(tipo: str, texto: str, fichero: dict | None = None) -> d
             simbolos.append(ruta)
             if "::" in ruta:
                 modulos.append(ruta.rsplit("::", 1)[0])
-        meta["simbolos"] = _unicos(simbolos)
-        meta["tipo_simbolo"] = _unicos(tipos)
-        meta["modulo"] = modulos[0] if modulos else fichero.get("modulo", "")
+        meta["symbols"] = _unicos(simbolos)
+        meta["symbol_kind"] = _unicos(tipos)
+        meta["module"] = modulos[0] if modulos else fichero.get("module", "")
         features = []
         for m in _RUST_FEATURE.finditer(texto):
             features += re.findall(r"[\w-]+", m.group(1).replace(" and ", " ").replace(" or ", " "))
@@ -243,12 +243,12 @@ def detectar_tipo(ficheros: dict[str, str], pista: str | None = None) -> str:
     """Tipo de documentación de un paquete a partir de sus ficheros (ruta → Markdown).
 
     `pista` la da la fuente cuando lo sabe seguro (node, go, rust, sphinx, mkdocs). Si no, se
-    cuentan las señales del texto. Si nada encaja, markdown cuando hay ficheros y generico si no.
+    cuentan las señales del texto. Si nada encaja, markdown cuando hay ficheros y generic si no.
     """
     if pista in CAMPOS_EXTRA:
         return pista
     if not ficheros:
-        return "generico"
+        return "generic"
     cuentas = {tipo: sum(1 for t in ficheros.values() if rx.search(t)) for tipo, rx in _SENALES.items()}
     mejor = max(cuentas, key=lambda k: cuentas[k])
     if cuentas[mejor] >= max(2, len(ficheros) // 10):

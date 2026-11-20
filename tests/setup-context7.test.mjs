@@ -451,7 +451,7 @@ test("detect junta dependencias, herramientas y estado, y no escribe nada", asyn
   const out = await exec(root, ["detect"]);
   const by = Object.fromEntries(out.dependencies.map((d) => [d.name, d.status]));
   assert.deepEqual(by, { react: "sugerida", prisma: "sugerida", eslint: "sugerida", typescript: "descartada" });
-  assert.deepEqual(out.tools.map((t) => [t.tool, t.configured, t.channel]), [["cursor", false, "ninguno"], ["claude", false, "ninguno"]]);
+  assert.deepEqual(out.tools.map((t) => [t.tool, t.configured, t.channel]), [["cursor", false, "none"], ["claude", false, "none"]]);
   assert.ok(!existsSync(join(homeOf(root), ".cursor/mcp.json")));
   await exec(root, ["apply", "--target", "cursor", "--libs", "react"]);
   const after = await exec(root, ["detect"]);
@@ -478,7 +478,7 @@ test("apply registra context7 en la config de usuario y quita docs-rag", async (
   const out = await exec(root, ["apply"]);
   for (const r of out) {
     assert.deepEqual(r.config.removed, ["docs-rag"]);
-    assert.ok(r.notes.some((n) => n.includes("pasa a ser Context7")));
+    assert.ok(r.notes.some((n) => n.includes("versión anterior")));
   }
   const claude = JSON.parse(readHome(root, ".claude.json")).mcpServers;
   assert.deepEqual(Object.keys(claude).sort(), ["context7", "otro"]);

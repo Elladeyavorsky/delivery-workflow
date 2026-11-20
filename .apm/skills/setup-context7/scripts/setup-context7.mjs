@@ -507,11 +507,18 @@ export function serverState(home, tool, name = SERVER_NAME) {
   return serverStateIn(readIfExists(join(home, t.configFile)), t.format, name);
 }
 
-// Canal registrado en la config de usuario: context7, docs-rag, ninguno o los dos (no debería pasar).
-export function channelOf(home, tool) {
-  const on = CHANNELS.filter((name) => serverState(home, tool, name).configured);
-  if (on.length === 0) return "ninguno";
-  if (on.length > 1) return "los dos";
+// ¿Está docs-rag registrado? En la config del proyecto o, de versiones anteriores, en la de usuario.
+function docsRagConfigured(home, tool, root) {
+  const t = TOOLS[tool];
+  const inProject = root ? serverStateIn(readIfExists(join(root, t.projectConfigFile)), t.format, DOCS_RAG_SERVER).configured : false;
+  return inProject || serverState(home, tool, DOCS_RAG_SERVER).configured;
+}
+
+// Canal de documentación: context7 (config de usuario), docs-rag (config del proyecto), none o both.
+export function channelOf(home, tool, root = null) {
+  const on = CHANNELS.filter((name) => (name === DOCS_RAG_SERVER ? docsRagConfigured(home, tool, root) : serverState(home, tool, name).configured));
+  if (on.length === 0) return "none";
+  if (on.length > 1) return "both";
   return on[0];
 }
 
@@ -609,7 +616,7 @@ export function detectReport({ root, home = homedir(), tools, profiles = loadPro
         name: t.name,
         configFile: displayPath(tool),
         ...serverState(home, tool),
-        channel: channelOf(home, tool),
+        channel: channelOf(home, tool, root),
         legacyProjectConfig: legacyProjectConfig(root, tool) ? t.projectConfigFile : null,
         ruleFile: t.ruleFile,
         rule: hasRule(readIfExists(join(root, t.ruleFile))),
@@ -618,7 +625,8 @@ export function detectReport({ root, home = homedir(), tools, profiles = loadPro
   };
 }
 
-// Registra context7 y quita docs-rag en la config de usuario: solo hay un canal por ordenador.
+// Registra context7 en la config de usuario y quita el docs-rag que dejaban ahí versiones anteriores.
+// El docs-rag de la config del proyecto no se toca: cada proyecto decide si lo usa.
 function applyConfig(home, tool, withKey) {
   const t = TOOLS[tool];
   const file = displayPath(tool);
@@ -646,7 +654,7 @@ export function applyAll({ root, home = homedir(), tools, libs, withKey, key = {
     const config = applyConfig(home, tool, withKey);
     const rule = libs.length ? applyRule(root, tool, libs) : null;
     const notes = [];
-    if (config.removed.length) notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${config.file}: el canal de documentación de este ordenador pasa a ser Context7.`);
+    if (config.removed.length) notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${config.file}: era el registro de usuario de una versión anterior. Si un proyecto usa docs-rag, se registra en su propia config.`);
     if (legacyProjectConfig(root, tool)) {
       notes.push(`${t.projectConfigFile} del proyecto aún tiene context7 de una versión anterior. El MCP ya está en ${config.file}: quítalo del proyecto si nadie más del equipo lo usa.`);
     }

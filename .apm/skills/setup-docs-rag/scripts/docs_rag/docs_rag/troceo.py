@@ -120,7 +120,7 @@ def subdividir(texto: str, maximo: int) -> list[str]:
 
 
 def trocear(fuente: str, contenido: str, maximo: int = MAXIMO, minimo: int = MINIMO) -> list[dict]:
-    """Fragmentos de un fichero: {"fuente", "n", "texto", "ruta_titulos"}. n empieza en 0 por fichero."""
+    """Fragmentos de un fichero: {"source", "n", "text", "heading_path"}. n empieza en 0 por fichero."""
     if maximo <= 0 or minimo < 0 or minimo >= maximo:
         raise ValueError(f"maximo y minimo no válidos: {maximo}/{minimo}")
     fusion: list[list[str]] = []
@@ -141,5 +141,5 @@ def trocear(fuente: str, contenido: str, maximo: int = MAXIMO, minimo: int = MIN
     fragmentos: list[dict] = []
     for texto, titulos in fusion:
         for trozo in subdividir(texto, maximo):
-            fragmentos.append({"fuente": fuente, "n": len(fragmentos), "texto": trozo, "ruta_titulos": titulos})
+            fragmentos.append({"source": fuente, "n": len(fragmentos), "text": trozo, "heading_path": titulos})
     return fragmentos

@@ -13,15 +13,19 @@ PREFIJO_PREGUNTA = "search_query: "
 LOTE = 32
 # nomic-embed-text admite unos 2048 tokens: a partir de ~8000 caracteres el fragmento se trunca al embeberlo.
 LIMITE_TRUNCADO = 8000
-CAMPOS_INDICE = ("paquete", "version", "ecosistema")
+CAMPOS_INDICE = ("package", "version", "ecosystem")
+
+
+# Sube cuando cambia el formato de los metadatos: un índice de otro formato no se reutiliza.
+FORMATO = "v2"
 
 
 def nombre_coleccion(raiz: Path) -> str:
-    return "docs_" + hashlib.sha1(str(Path(raiz).resolve()).lower().encode()).hexdigest()[:12]
+    return f"docs_{FORMATO}_" + hashlib.sha1(str(Path(raiz).resolve()).lower().encode()).hexdigest()[:12]
 
 
 def clave(p: dict) -> str:
-    return f"{p['ecosistema']}:{p['paquete']}"
+    return f"{p['ecosystem']}:{p['package']}"
 
 
 def id_fragmento(ecosistema: str, paquete: str, version: str, fuente: str, n: int) -> str:
@@ -32,7 +36,7 @@ def id_fragmento(ecosistema: str, paquete: str, version: str, fuente: str, n: in
 def plan_reindexado(pedido: list[dict], actual: dict[str, dict]) -> dict[str, list[str]]:
     """Compara lo pedido con lo indexado: indexar (nuevo), reindexar (otra versión), borrar (ya no está) e igual.
 
-    Un paquete que quedó sin_doc por un fallo de red se vuelve a intentar; uno sin documentación publicada, no.
+    Un paquete que quedó no_docs por un fallo de red se vuelve a intentar; uno sin documentación publicada, no.
     """
     resultado = {"indexar": [], "reindexar": [], "borrar": [], "igual": []}
     pedidas = {clave(p): p for p in pedido}
@@ -42,7 +46,7 @@ def plan_reindexado(pedido: list[dict], actual: dict[str, dict]) -> dict[str, li
             resultado["indexar"].append(k)
         elif a.get("version") != p.get("version"):
             resultado["reindexar"].append(k)
-        elif a.get("estado") == "sin_doc" and str(a.get("motivo", "")).startswith("Error al descargar"):
+        elif a.get("status") == "no_docs" and str(a.get("reason", "")).startswith("Error al descargar"):
             resultado["reindexar"].append(k)
         else:
             resultado["igual"].append(k)
@@ -77,7 +81,7 @@ class IndiceQdrant:
 
         if not self.existe():
             return
-        filtro = Filter(must=[FieldCondition(key="ecosistema", match=MatchValue(value=ecosistema)), FieldCondition(key="paquete", match=MatchValue(value=paquete))])
+        filtro = Filter(must=[FieldCondition(key="ecosystem", match=MatchValue(value=ecosistema)), FieldCondition(key="package", match=MatchValue(value=paquete))])
         self.cliente.delete(self.coleccion, points_selector=FilterSelector(filter=filtro), wait=True)
 
     def subir(self, puntos: list[dict]) -> None:
@@ -92,9 +96,9 @@ class IndiceQdrant:
 
         condiciones = []
         if ecosistema:
-            condiciones.append(FieldCondition(key="ecosistema", match=MatchValue(value=ecosistema)))
+            condiciones.append(FieldCondition(key="ecosystem", match=MatchValue(value=ecosistema)))
         if paquete:
-            condiciones.append(FieldCondition(key="paquete", match=MatchValue(value=paquete)))
+            condiciones.append(FieldCondition(key="package", match=MatchValue(value=paquete)))
         return self.cliente.count(self.coleccion, count_filter=Filter(must=condiciones) if condiciones else None, exact=True).count
 
     def borrar_coleccion(self) -> bool:

@@ -1,4 +1,4 @@
-"""Consulta del índice: resolver_paquete y consultar_docs (receta del informe en docs/research/).
+"""Consulta del índice: resolve_package y query_docs (receta del informe en docs/research/).
 
 20 candidatos de Qdrant filtrados por paquete, reordenados con MiniLM-L6, y los 4 mejores. Si los
 filtros opcionales no dejan ningún candidato con puntuación >= 0,0, se repite sin ellos dentro del
@@ -18,7 +18,7 @@ RERANKER = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 CANDIDATOS = 20
 K = 4
 UMBRAL = 0.0
-INVENTARIO = Path(".docs-rag") / "inventario.json"
+INVENTARIO = Path(".docs-rag") / "inventory.json"
 
 
 class SinIndice(Exception):
@@ -30,7 +30,7 @@ class ConsultaNoValida(Exception):
 
 
 def buscar_raiz(inicio: Path) -> Path | None:
-    """Carpeta del proyecto con .docs-rag/inventario.json, mirando desde `inicio` hacia arriba."""
+    """Carpeta del proyecto con .docs-rag/inventory.json, mirando desde `inicio` hacia arriba."""
     actual = Path(inicio).resolve()
     for carpeta in (actual, *actual.parents):
         if (carpeta / INVENTARIO).is_file():
@@ -75,7 +75,7 @@ class BuscadorQdrant:
             else:
                 must.append(FieldCondition(key=campo, match=MatchValue(value=valor)))
         puntos = self.cliente.query_points(self.coleccion, query=vector, limit=limite, query_filter=Filter(must=must), with_payload=True).points
-        return [{**(p.payload or {}), "score_vectorial": float(p.score)} for p in puntos]
+        return [{**(p.payload or {}), "vector_score": float(p.score)} for p in puntos]
 
 
 class ReordenadorMiniLM:
@@ -103,44 +103,44 @@ class Consultor:
     def resolver_paquete(self, nombre: str) -> dict:
         inv = self._inventario()
         buscado = _normalizar(nombre.split(":", 1)[-1])
-        paquetes = list(inv.get("paquetes", {}).values())
-        exactos = [p for p in paquetes if _normalizar(p["paquete"]) == buscado]
-        candidatos = exactos or [p for p in paquetes if buscado in _normalizar(p["paquete"]) or _normalizar(p["paquete"]) in buscado]
+        paquetes = list(inv.get("packages", {}).values())
+        exactos = [p for p in paquetes if _normalizar(p["package"]) == buscado]
+        candidatos = exactos or [p for p in paquetes if buscado in _normalizar(p["package"]) or _normalizar(p["package"]) in buscado]
         if ":" in nombre:
             eco = nombre.split(":", 1)[0]
-            candidatos = [p for p in candidatos if p["ecosistema"] == eco]
+            candidatos = [p for p in candidatos if p["ecosystem"] == eco]
         resultado = []
         for p in candidatos:
-            r = {"paquete": f"{p['ecosistema']}:{p['paquete']}", "nombre": p["paquete"], "version": p["version"], "ecosistema": p["ecosistema"], "estado": p.get("estado")}
-            if p.get("estado") == "indexado":
-                r.update({"tipo_doc": p.get("tipo_doc"), "filtros": p.get("filtros", []), "fragmentos": p.get("fragmentos")})
+            r = {"package": f"{p['ecosystem']}:{p['package']}", "name": p["package"], "version": p["version"], "ecosystem": p["ecosystem"], "status": p.get("status")}
+            if p.get("status") == "indexed":
+                r.update({"doc_type": p.get("doc_type"), "filters": p.get("filters", []), "chunks": p.get("chunks")})
             else:
-                r["sin_doc"] = p.get("motivo", "Sin documentación.")
+                r["no_docs"] = p.get("reason", "Sin documentación.")
             resultado.append(r)
         if not resultado:
-            disponibles = sorted(f"{p['ecosistema']}:{p['paquete']}" for p in paquetes)
-            return {"paquetes": [], "aviso": f"«{nombre}» no está en el índice de este proyecto. Indexados: {', '.join(disponibles) or 'ninguno'}."}
-        return {"paquetes": resultado}
+            disponibles = sorted(f"{p['ecosystem']}:{p['package']}" for p in paquetes)
+            return {"packages": [], "warning": f"«{nombre}» no está en el índice de este proyecto. Indexados: {', '.join(disponibles) or 'ninguno'}."}
+        return {"packages": resultado}
 
     def _paquete(self, inv: dict, paquete: str) -> dict:
-        todos = inv.get("paquetes", {})
+        todos = inv.get("packages", {})
         if paquete in todos:
             return todos[paquete]
-        coincidencias = [p for p in todos.values() if _normalizar(p["paquete"]) == _normalizar(paquete)]
+        coincidencias = [p for p in todos.values() if _normalizar(p["package"]) == _normalizar(paquete)]
         if len(coincidencias) == 1:
             return coincidencias[0]
         if len(coincidencias) > 1:
-            opciones = ", ".join(f"{p['ecosistema']}:{p['paquete']}" for p in coincidencias)
+            opciones = ", ".join(f"{p['ecosystem']}:{p['package']}" for p in coincidencias)
             raise ConsultaNoValida(f"«{paquete}» está en varios ecosistemas: usa uno de {opciones}.")
-        raise ConsultaNoValida(f"«{paquete}» no está en el índice. Llama antes a resolver_paquete.")
+        raise ConsultaNoValida(f"«{paquete}» no está en el índice. Llama antes a resolve_package.")
 
     def _validar_filtros(self, p: dict, filtros: dict | None) -> dict:
         if not filtros:
             return {}
-        validos = set(p.get("filtros", []))
+        validos = set(p.get("filters", []))
         malos = [c for c in filtros if c not in validos]
         if malos:
-            raise ConsultaNoValida(f"Filtros no válidos para {p['paquete']} ({p.get('tipo_doc')}): {', '.join(malos)}. Válidos: {', '.join(sorted(validos)) or 'ninguno'}.")
+            raise ConsultaNoValida(f"Filtros no válidos para {p['package']} ({p.get('doc_type')}): {', '.join(malos)}. Válidos: {', '.join(sorted(validos)) or 'ninguno'}.")
         limpios = {}
         for campo, valor in filtros.items():
             if campo in BOOLEANOS:
@@ -162,28 +162,28 @@ class Consultor:
             raise ConsultaNoValida(f"k va de 1 a {CANDIDATOS}.")
         inv = self._inventario()
         p = self._paquete(inv, paquete)
-        if p.get("estado") != "indexado":
-            raise ConsultaNoValida(f"{p['paquete']} {p['version']} no tiene documentación indexada: {p.get('motivo', 'sin_doc')}.")
+        if p.get("status") != "indexed":
+            raise ConsultaNoValida(f"{p['package']} {p['version']} no tiene documentación indexada: {p.get('reason', 'no_docs')}.")
         extra = self._validar_filtros(p, filtros)
         if self._buscador is None:
-            self._buscador = BuscadorQdrant(inv["coleccion"])
+            self._buscador = BuscadorQdrant(inv["collection"])
         if self._embebedor is None:
             self._embebedor = EmbebedorOllama()
         if self._reordenador is None:
             self._reordenador = ReordenadorMiniLM()
         vector = self._embebedor.pregunta(pregunta)
-        base = {"ecosistema": p["ecosistema"], "paquete": p["paquete"]}
+        base = {"ecosystem": p["ecosystem"], "package": p["package"]}
         resultados = self._reordenar(pregunta, self._buscador.buscar(vector, {**base, **extra}, CANDIDATOS))
         filtrado = bool(extra)
-        if extra and not any(r["score_reranking"] >= UMBRAL for r in resultados):
+        if extra and not any(r["rerank_score"] >= UMBRAL for r in resultados):
             resultados = self._reordenar(pregunta, self._buscador.buscar(vector, base, CANDIDATOS))
             filtrado = False
-        return {"paquete": f"{p['ecosistema']}:{p['paquete']}", "version": p["version"], "tipo_doc": p.get("tipo_doc"), "filtrado": filtrado, "resultados": resultados[:k]}
+        return {"package": f"{p['ecosystem']}:{p['package']}", "version": p["version"], "doc_type": p.get("doc_type"), "filtered": filtrado, "results": resultados[:k]}
 
     def _reordenar(self, pregunta: str, candidatos: list[dict]) -> list[dict]:
         if not candidatos:
             return []
-        puntos = self._reordenador.puntuar(pregunta, [c["texto"] for c in candidatos])
+        puntos = self._reordenador.puntuar(pregunta, [c["text"] for c in candidatos])
         for c, s in zip(candidatos, puntos):
-            c["score_reranking"] = s
-        return sorted(candidatos, key=lambda c: c["score_reranking"], reverse=True)
+            c["rerank_score"] = s
+        return sorted(candidatos, key=lambda c: c["rerank_score"], reverse=True)

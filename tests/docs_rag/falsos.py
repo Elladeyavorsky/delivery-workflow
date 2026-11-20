@@ -47,14 +47,14 @@ class IndiceFalso:
 
     def borrar_paquete(self, ecosistema, paquete):
         self.borrados.append((ecosistema, paquete))
-        self.puntos = {i: p for i, p in self.puntos.items() if not (p["payload"]["ecosistema"] == ecosistema and p["payload"]["paquete"] == paquete)}
+        self.puntos = {i: p for i, p in self.puntos.items() if not (p["payload"]["ecosystem"] == ecosistema and p["payload"]["package"] == paquete)}
 
     def subir(self, puntos):
         for p in puntos:
             self.puntos[p["id"]] = p
 
     def contar(self, ecosistema=None, paquete=None):
-        return sum(1 for p in self.puntos.values() if (not ecosistema or p["payload"]["ecosistema"] == ecosistema) and (not paquete or p["payload"]["paquete"] == paquete))
+        return sum(1 for p in self.puntos.values() if (not ecosistema or p["payload"]["ecosystem"] == ecosistema) and (not paquete or p["payload"]["package"] == paquete))
 
     def borrar_coleccion(self):
         existia = self.existe()
