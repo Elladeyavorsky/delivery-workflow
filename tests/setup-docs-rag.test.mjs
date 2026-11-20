@@ -25,6 +25,7 @@ import {
   run,
   SetupDocsRagError,
 } from "../.apm/skills/setup-docs-rag/scripts/setup-docs-rag.mjs";
+import { channelOf, ruleBlock } from "../.apm/skills/setup-context7/scripts/setup-context7.mjs";
 
 function project(tools = ["claude"]) {
   const root = mkdtempSync(join(tmpdir(), "rag-"));
@@ -195,6 +196,19 @@ test("registerTools migra el registro de usuario de la #64 al proyecto", () => {
   assert.ok(out[0].notes.some((n) => n.includes("~/.docs-rag/")));
   assert.ok(!out[1].notes.some((n) => n.includes("~/.docs-rag/")), "el aviso de ~/.docs-rag/ sale una vez");
   assert.equal(unregisterUserServer({ home, tool: "claude" }).result, "unchanged");
+});
+
+test("registerTools deja un solo canal: quita context7 de la config de usuario y su regla", () => {
+  const root = project(["claude"]);
+  const home = homeOf(root);
+  write(home, ".claude.json", { mcpServers: { context7: { type: "http", url: "https://mcp.context7.com/mcp" }, otro: { command: "echo" } } });
+  writeFileSync(join(root, "CLAUDE.md"), `# Proyecto\n\n${ruleBlock(["zod"])}\n`);
+  const [out] = registerTools({ root, home, tools: ["claude"] });
+  assert.deepEqual(Object.keys(JSON.parse(readHome(root, ".claude.json")).mcpServers), ["otro"]);
+  assert.doesNotMatch(readFileSync(join(root, "CLAUDE.md"), "utf8"), /context7/i);
+  assert.deepEqual(out.context7Removed, { config: { file: "~/.claude.json", result: "changed" }, rule: { file: "CLAUDE.md", result: "changed" } });
+  assert.ok(out.notes.some((n) => n.includes("otros proyectos") && n.includes("/setup-context7")));
+  assert.equal(channelOf(home, "claude", root), "docs-rag");
 });
 
 test("ensureRagDir crea .docs-rag/.gitignore con * y es idempotente", () => {

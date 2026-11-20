@@ -625,8 +625,18 @@ export function detectReport({ root, home = homedir(), tools, profiles = loadPro
   };
 }
 
+// Quita el servidor `name` del archivo de config `path` y borra el archivo si se queda vacío. Devuelve {file, result}.
+export function removeServerFromFile(path, tool, file, name) {
+  const { text, result } = TOOLS[tool].format === "toml" ? removeServerToml(readIfExists(path), name) : removeServerJson(readIfExists(path), file, name);
+  if (result === "cambiado") {
+    if (text === "") rmSync(path, { force: true });
+    else writeAtomic(path, text);
+  }
+  return { file, result };
+}
+
 // Registra context7 en la config de usuario y quita el docs-rag que dejaban ahí versiones anteriores.
-// El docs-rag de la config del proyecto no se toca: cada proyecto decide si lo usa.
+// El docs-rag de la config del proyecto lo quita applyAll: solo hay un canal de documentación.
 function applyConfig(home, tool, withKey) {
   const t = TOOLS[tool];
   const file = displayPath(tool);
@@ -652,9 +662,13 @@ export function applyAll({ root, home = homedir(), tools, libs, withKey, key = {
   return tools.map((tool, index) => {
     const t = TOOLS[tool];
     const config = applyConfig(home, tool, withKey);
+    const projectConfig = removeServerFromFile(join(root, t.projectConfigFile), tool, t.projectConfigFile, DOCS_RAG_SERVER);
     const rule = libs.length ? applyRule(root, tool, libs) : null;
     const notes = [];
-    if (config.removed.length) notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${config.file}: era el registro de usuario de una versión anterior. Si un proyecto usa docs-rag, se registra en su propia config.`);
+    if (config.removed.length) notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${config.file}: era el registro de usuario de una versión anterior.`);
+    if (projectConfig.result === "cambiado") {
+      notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${projectConfig.file} del proyecto: el canal de documentación pasa a ser Context7. El índice sigue en .docs-rag/; si no lo vas a usar, bórralo con «setup-docs-rag.mjs reset --drop-index».`);
+    }
     if (legacyProjectConfig(root, tool)) {
       notes.push(`${t.projectConfigFile} del proyecto aún tiene context7 de una versión anterior. El MCP ya está en ${config.file}: quítalo del proyecto si nadie más del equipo lo usa.`);
     }
@@ -677,22 +691,16 @@ export function applyAll({ root, home = homedir(), tools, libs, withKey, key = {
     }
     if (!libs.length) notes.push("No se ha escrito ninguna regla: pasa --libs con las librerías confirmadas.");
     notes.push(`Recarga ${t.name} para que cargue el MCP nuevo.`);
-    return { tool, name: t.name, config, rule, notes };
+    return { tool, name: t.name, config, projectConfig, rule, notes };
   });
 }
 
+// Quita context7 de la config de usuario y la regla del proyecto. También lo usa setup-docs-rag al cambiar de canal.
 export function resetAll({ root, home = homedir(), tools }) {
   const results = tools.map((tool) => {
     const t = TOOLS[tool];
-    const file = displayPath(tool);
-    const path = join(home, t.configFile);
-    const before = readIfExists(path);
-    const { text, result } = t.format === "toml" ? removeServerToml(before) : removeServerJson(before, file);
-    if (result === "cambiado") {
-      if (text === "") rmSync(path, { force: true });
-      else writeAtomic(path, text);
-    }
-    return { tool, name: t.name, config: { file, result }, rule: null, notes: [] };
+    const config = removeServerFromFile(join(home, t.configFile), tool, displayPath(tool), SERVER_NAME);
+    return { tool, name: t.name, config, rule: null, notes: [] };
   });
   // Cursor y Codex comparten AGENTS.md: el bloque solo se quita si ninguna herramienta que siga usando Context7 lo necesita.
   const stillUsing = toolsPresent(root).filter((tool) => !tools.includes(tool) && serverState(home, tool).configured);

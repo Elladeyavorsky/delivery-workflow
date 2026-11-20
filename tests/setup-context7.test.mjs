@@ -491,6 +491,20 @@ test("apply registra context7 en la config de usuario y quita docs-rag", async (
   assert.deepEqual(detect.tools.map((t) => t.channel), ["context7", "context7"]);
 });
 
+test("apply deja un solo canal: quita docs-rag de la config del proyecto", async () => {
+  const root = project(["claude", "codex"]);
+  writeFileSync(join(root, ".mcp.json"), JSON.stringify({ mcpServers: { "docs-rag": { command: "uv" }, otro: { command: "echo" } } }));
+  mkdirSync(join(root, ".codex"), { recursive: true });
+  writeFileSync(join(root, ".codex/config.toml"), `[mcp_servers."docs-rag"]\ncommand = "uv"\n`);
+  const out = await exec(root, ["apply"]);
+  assert.deepEqual(out.map((r) => r.projectConfig), [{ file: ".mcp.json", result: "cambiado" }, { file: ".codex/config.toml", result: "cambiado" }]);
+  assert.ok(out.every((r) => r.notes.some((n) => n.includes("pasa a ser Context7") && n.includes(".docs-rag/"))));
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, ".mcp.json"), "utf8")).mcpServers), ["otro"]);
+  assert.ok(!existsSync(join(root, ".codex/config.toml")), "solo tenía docs-rag");
+  const detect = await exec(root, ["detect"]);
+  assert.deepEqual(detect.tools.map((t) => t.channel), ["context7", "context7"]);
+});
+
 test("detect y apply avisan de un context7 antiguo en la config del proyecto sin tocarlo", async () => {
   const root = project(["claude"]);
   const legacy = JSON.stringify({ mcpServers: { context7: { type: "http", url: "https://mcp.context7.com/mcp" } } });

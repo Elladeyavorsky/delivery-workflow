@@ -14,8 +14,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 - Context7 es el canal de documentación por defecto. La alternativa es el RAG local (`/setup-docs-rag`), con su propio MCP `docs-rag`.
 - El MCP de Context7 se registra en la config de usuario, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex).
-- `docs-rag` se registra en la config de cada proyecto. Un proyecto con `docs-rag` puede tener los dos canales activos.
-- Registrar Context7 quita el `docs-rag` que versiones anteriores dejaban en la config de usuario. El de la config del proyecto no se toca.
+- `docs-rag` se registra en la config de cada proyecto. Solo hay un canal: registrar Context7 quita `docs-rag` de la config del proyecto (`projectConfig`) y el que versiones anteriores dejaban en la de usuario. El índice de `.docs-rag/` no se borra.
 - Si el proyecto aún tiene `context7` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml` de una versión anterior, `detect` lo marca en `legacyProjectConfig` y `apply` lo avisa en las `notes`. El script no lo borra.
 
 #### Especificación de Argumentos
@@ -25,8 +24,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
      - Las dependencias del proyecto: `sugerida`, o `descartada` con su motivo. Cada una trae `sources` con los archivos de donde sale.
      - Los manifiestos leídos, en la raíz y en cualquier subcarpeta (con `git ls-files`, sin lo que `.gitignore` ignora; sin git, hasta 3 niveles). Un manifiesto ilegible trae `error` y no para el resto.
      - `key`: si la clave está en el `.env` o en la terminal, y si git ignora el `.env`.
-     - Por herramienta, si Context7 ya está configurado y el `channel` actual: `context7`, `docs-rag`, `none` o `both`. `docs-rag` cuenta si está en la config del proyecto.
-   - `apply`: escribe el MCP de Context7 en la config de usuario de cada herramienta (y quita el `docs-rag` de usuario de versiones anteriores) y, con `--libs`, la regla del proyecto. Repetirlo no cambia nada.
+     - Por herramienta, si Context7 ya está configurado y el `channel` actual: `context7`, `docs-rag`, `none` o `both` (solo si alguien editó la config a mano; `apply` lo deja en `context7`). `docs-rag` cuenta si está en la config del proyecto.
+   - `apply`: escribe el MCP de Context7 en la config de usuario de cada herramienta, quita `docs-rag` de la config del proyecto (y el de usuario de versiones anteriores) y, con `--libs`, la regla del proyecto. Repetirlo no cambia nada.
    - `reset`: quita el MCP de Context7 y la regla.
 2. **`--libs a,b,c`** _(Opcional)_: las librerías confirmadas por la persona. Con ellas se escribe el bloque «Context7» en `AGENTS.md` (Cursor y Codex) o `CLAUDE.md` (Claude Code).
 3. **`--with-key`** _(Opcional)_: añade a la config la cabecera `Authorization: Bearer` con la variable `CONTEXT7_API_KEY`, que sale del `.env` de la persona. Sin esta opción no se escribe ninguna cabecera.

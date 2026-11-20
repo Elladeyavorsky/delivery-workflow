@@ -20,7 +20,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 - El código del MCP, su entorno Python y el índice van en `.docs-rag/` (`app/`, `venv/`, `inventory.json`, `request.json` y `docs/`). La carpeta trae su propio `.gitignore` con `*`.
 - El registro va en la config del proyecto: `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor) y `.codex/config.toml` (Codex). La entrada usa rutas relativas al proyecto, sin rutas de este ordenador. La skill no toca el `.gitignore` del proyecto: cada proyecto decide si sube esos ficheros.
-- Context7 sigue en la config de usuario (`/setup-context7`). Un proyecto con `docs-rag` puede tener los dos canales activos.
+- Solo hay un canal de documentación. `apply` quita `context7` de la config de usuario y la regla «Context7» de `AGENTS.md` o `CLAUDE.md`. Esa config es de usuario: la herramienta deja de usar Context7 también en los demás proyectos del ordenador. Para volver, `/setup-context7`, que quita `docs-rag` del proyecto.
 - `apply` quita el `docs-rag` que versiones anteriores dejaban en `~/.claude.json`, `~/.cursor/mcp.json` y `~/.codex/config.toml`. `~/.docs-rag/` ya no se usa y no se borra solo.
 - `apm install` no lee ni cambia nada de esto.
 
@@ -35,14 +35,14 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
        - `manifests` y `warnings`.
      - `requirements`: `docker`, `ollama`, `uv`, `model` y `qdrant`, cada uno con `ok` y `detail`.
      - `index`: si ya hay índice (`exists`), cuántos paquetes están `indexed`, cuáles quedaron en `no_docs` y por qué, y los `chunks`. `legacy: true` si solo hay un índice del formato anterior.
-     - `tools`: el fichero de config del proyecto y el canal actual de cada herramienta (`context7`, `docs-rag`, `none` o `both`).
+     - `tools`: el fichero de config del proyecto y el canal actual de cada herramienta (`context7`, `docs-rag`, `none` o, si alguien editó la config a mano, `both`; `apply` lo deja en `docs-rag`).
    - `apply`: hace todo el proceso:
      1. Comprueba los requisitos. Si falta alguno, para sin tocar nada.
      2. Escribe `.docs-rag/request.json`.
      3. Usa el Qdrant que ya responda en `localhost:6333` (`qdrant: "existing"`). Si no hay ninguno, arranca el contenedor `docs-rag-qdrant`. Después descarga `nomic-embed-text` si no está (`model`: `unchanged` o `downloaded`).
      4. Instala el código en `.docs-rag/app` y su entorno en `.docs-rag/venv`.
      5. Indexa solo lo que cambió: lo nuevo, las versiones distintas y lo que ya no está. Un índice del formato anterior (`.docs-rag/inventario.json`) se borra y se indexa todo de nuevo.
-     6. Registra `docs-rag` en la config del proyecto de cada herramienta y lo quita de la config de usuario.
+     6. Registra `docs-rag` en la config del proyecto de cada herramienta, quita Context7 (su MCP de la config de usuario y su regla del proyecto, en `context7Removed`) y quita el `docs-rag` de usuario de versiones anteriores.
 
      Repetirlo sin cambios no descarga ni embebe nada.
    - `reset`: quita el MCP `docs-rag` de la config del proyecto (y de la de usuario, si queda de una versión anterior). Con `--drop-index` borra también la colección de Qdrant y la carpeta `.docs-rag/` entera.
@@ -62,6 +62,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
      - Una tabla con paquete, ecosistema, versión y origen: primero los runtimes, después las dependencias.
      - Debajo, en una línea, las `discarded` con su `reason` y los `warnings`.
      - Si ya hay índice, di cuántos paquetes tiene, cuáles están en `no_docs` y el canal actual de cada herramienta. Si `index.legacy` es `true`, avisa de que se indexará todo de nuevo.
+     - Si el `channel` de alguna herramienta es `context7` o `both`, avisa de que Context7 dejará de usarse en esa herramienta, también en los demás proyectos del ordenador, hasta lanzar `/setup-context7`.
   3. Pregunta **una vez**: «¿Indexo esto? [Enter = sí | nombre de un paquete para quitarlo | "sin runtimes"]». Repite hasta que acepte.
   4. Avisa de lo que tarda la primera vez: descarga Qdrant, el modelo de embeddings, el reordenador y la documentación, y luego embebe. Después, lanza `apply` con `--libs` solo si la persona quitó algo. El progreso sale por stderr.
   5. Muestra el resultado:

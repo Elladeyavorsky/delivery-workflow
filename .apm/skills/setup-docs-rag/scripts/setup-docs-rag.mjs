@@ -16,8 +16,8 @@ import {
   loadProfiles,
   classify,
   parseLibs,
-  removeServerJson,
-  removeServerToml,
+  removeServerFromFile,
+  resetAll as removeContext7,
   setServerJson,
   setServerTomlBlock,
   tomlStdioBlock,
@@ -427,16 +427,11 @@ export function serverEntry(tool) {
 const projectFile = (tool) => TOOLS[tool].projectConfigFile;
 
 function removeDocsRag(path, tool, file) {
-  const before = readText(path);
-  const { text, result } = TOOLS[tool].format === "toml" ? removeServerToml(before, DOCS_RAG_SERVER) : removeServerJson(before, file, DOCS_RAG_SERVER);
-  if (result === "cambiado") {
-    if (text === "") rmSync(path, { force: true });
-    else writeAtomic(path, text);
-  }
+  const { result } = removeServerFromFile(path, tool, file, DOCS_RAG_SERVER);
   return { file, result: resultInEnglish(result) };
 }
 
-// Registra docs-rag en la config del proyecto. No toca context7 ni los demás servidores.
+// Registra docs-rag en la config del proyecto. No toca los demás servidores: context7 lo quita registerTools.
 export function registerServer({ root, tool }) {
   const t = TOOLS[tool];
   const file = projectFile(tool);
@@ -489,7 +484,7 @@ export function buildRequest(inventory, { libs = [], withRuntimes = true } = {})
 export const USAGE = [
   "Uso: setup-docs-rag.mjs <detect|apply|reset> [opciones]",
   "  detect        Inventario (dependencias con versión, runtimes, descartes), requisitos, índice y canal de cada herramienta (JSON).",
-  "  apply         Arranca Qdrant, descarga el modelo, instala el MCP en .docs-rag/, indexa lo que haya cambiado y registra docs-rag en la config del proyecto.",
+  "  apply         Arranca Qdrant, descarga el modelo, instala el MCP en .docs-rag/, indexa lo que haya cambiado, registra docs-rag en la config del proyecto y quita Context7 (canal único).",
   "  reset         Quita el MCP docs-rag de la config del proyecto. Con --drop-index borra también la colección y .docs-rag/.",
   "Opciones: --libs a,b,c  --no-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
 ].join("\n");
@@ -607,19 +602,28 @@ function runIndexer(root, extra = []) {
   });
 }
 
-// Registra docs-rag en el proyecto y quita el registro de usuario de versiones anteriores. Notas para la persona.
+// Solo hay un canal de documentación: registra docs-rag en el proyecto y quita Context7 (su MCP de la config de
+// usuario y su regla del proyecto) y el docs-rag de usuario de versiones anteriores. Notas para la persona.
 export function registerTools({ root, home, tools }) {
   const legacyApp = existsSync(join(home, RAG_DIR));
+  const context7 = removeContext7({ root, home, tools });
   return tools.map((tool, index) => {
     const t = TOOLS[tool];
     const config = registerServer({ root, tool });
     const legacy = unregisterUserServer({ home, tool });
+    const removed = context7[index];
+    const context7Removed = { config: { file: removed.config.file, result: resultInEnglish(removed.config.result) }, rule: { file: removed.rule.file, result: resultInEnglish(removed.rule.result) } };
     const notes = [];
+    if (context7Removed.config.result === "changed") {
+      notes.push(`Se ha quitado context7 de ${removed.config.file}: el canal de documentación pasa a ser docs-rag. Esa config es de usuario, así que ${t.name} deja de usar Context7 también en tus otros proyectos. Para volver, lanza /setup-context7.`);
+    }
+    if (context7Removed.rule.result === "changed") notes.push(`Se ha quitado la regla de Context7 de ${removed.rule.file}.`);
+    notes.push(...removed.notes);
     if (legacy.result === "changed") notes.push(`Se ha quitado docs-rag de ${legacy.file}: ahora se registra en ${config.file} del proyecto.`);
     if (legacyApp && index === 0) notes.push(`~/${RAG_DIR}/ es de una versión anterior y ya no se usa. Bórralo si ningún otro proyecto lo necesita.`);
     notes.push(`${config.file} usa rutas relativas al proyecto. Si lo subes a git, quien no haya lanzado /setup-docs-rag verá un MCP docs-rag que no arranca.`);
     notes.push(`Recarga ${t.name} para que cargue el MCP docs-rag.`);
-    return { tool, name: t.name, config, notes };
+    return { tool, name: t.name, config, context7Removed, notes };
   });
 }
 
