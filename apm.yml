@@ -5,3 +5,10 @@ author: Ventura Rodríguez
 repository: https://github.com/venturars/delivery-workflow
 keywords: [git, github, workflow, spec, agents, claude-code, cursor, codex]
 targets: [claude, cursor, codex]
+dependencies:
+  mcp:
+    - name: eur-lex
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["-y", "@cyanheads/eur-lex-mcp-server@0.21.0"]

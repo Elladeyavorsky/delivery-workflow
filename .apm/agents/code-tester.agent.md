@@ -37,5 +37,6 @@ skills:
 - **Si no hay tests y el plan no pide ninguno:** El veredicto lo dice. Una suite se crea solo si el plan la pide, y con el framework que propone el plan.
 - **Si el MCP de documentación no está, no tiene índice o no encuentra la API:** Dilo en el cierre y espera a confirmarla antes de usarla.
 - **Si un test falla:** El veredicto es fallo. Deja la producción como está: el arreglo lo hace `code-developer` en la ronda siguiente.
+- **Si el código no hace lo que pide un requisito de la spec, también uno de protección de datos:** Es un desajuste con la spec y falla el veredicto.
 - **Si encuentras un secreto o un test necesita uno:** Para. Nombra el fichero, no el valor.
 - **Si arrancas un servidor, un navegador o un proceso:** Páralo antes de cerrar.

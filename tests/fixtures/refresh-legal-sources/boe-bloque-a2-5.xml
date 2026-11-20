@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<response>
+  <status>
+    <code>200</code>
+    <text>ok</text>
+  </status>
+  <data>
+    <bloque id="a2-5" tipo="precepto" titulo="Artículo 23">
+      <version id_norma="BOE-A-2018-16673" fecha_publicacion="20181206" fecha_vigencia="20181207">
+        <p class="articulo">Artículo 23. Sistemas de exclusión publicitaria.</p>
+        <p class="parrafo">1. Texto de la versión original.</p>
+      </version>
+      <version id_norma="BOE-A-2025-26698" fecha_publicacion="20251227" fecha_vigencia="20251228">
+        <p class="articulo">Artículo 23. Sistemas de exclusión publicitaria.</p>
+        <p class="parrafo">1. Texto de la última versión.</p>
+        <p class="parrafo_2">a) Primera letra.</p>
+        <blockquote>
+          <p class="nota_pie">Se modifica por la disposición final de fixture. <a class="refPost">Ref. BOE-A-2025-26698</a></p>
+        </blockquote>
+      </version>
+    </bloque>
+  </data>
+</response>
