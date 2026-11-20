@@ -15,7 +15,7 @@ description: "Guía de protección de datos (RGPD y LOPDGDD) para la spec, la do
 
 - **Cuándo actuar:** `concept-developer` al escribir la spec; `concept-tester` al comprobar la spec y la documentación de la ronda; `legal-advisor` como primera fuente de las consultas legales. `code-tester` y `code-developer` no la precargan: siguen los requisitos de la spec.
 - **Activación:** Solo si `docs/CONSTITUTION.md` del proyecto tiene la sección `## Datos personales`. La plantilla de esa sección está en `<carpeta de esta skill>/assets/datos-personales.md`.
-- **Límites:** La guía no añade condiciones de parada. El ciclo sigue parando solo por un hueco, un secreto o la ronda 9 fallida (ADR 0004). Nunca deduce el rol en el tratamiento: lo escribe la persona responsable del proyecto.
+- **Límites:** La guía no añade condiciones de parada. El ciclo sigue parando solo por un hueco, un secreto o la ronda 9 fallida. Nunca deduce el rol en el tratamiento: lo escribe la persona responsable del proyecto.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/data-protection-guideline`.
 

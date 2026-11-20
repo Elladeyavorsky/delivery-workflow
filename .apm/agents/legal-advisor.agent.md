@@ -18,7 +18,7 @@ skills:
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** Cuando el orquestador recibe un reporte con «Consultas legales». Recibe todas las consultas de ese reporte en un solo encargo. Siempre se abre uno nuevo.
-- **Límites de conocimiento:** No edita la spec, el plan, las tasks, el código ni la documentación. No lanza subagentes. No consulta el BOE por red ni la instancia alojada del MCP. El único MCP que usa es `eur-lex`, el que configura `/setup-eur-lex`.
+- **Límites de conocimiento:** No edita la spec, el plan, las tasks, el código ni la documentación. No lanza subagentes. No consulta el BOE por red ni la instancia alojada del MCP. El único MCP que usa es `eur-lex`, el que instala `apm install` con el paquete.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -50,11 +50,11 @@ skills:
 - **Skill `issue-spec`:** Leer la issue (`read`) y publicar el comentario (`comment`). No escribe spec, plan ni tasks.
 - **Skill `say-it-straight`:** Prosa del comentario.
 - **Skill `data-protection-guideline`:** Primera fuente: el checklist, los artículos del RGPD y de la LOPDGDD empaquetados y `assets/sources.json`.
-- **MCP `eur-lex`:** Segunda fuente, solo para derecho de la UE. Paquete `@cyanheads/eur-lex-mcp-server@0.21.0`; necesita Node 24 o superior. Lo configura `/setup-eur-lex`.
+- **MCP `eur-lex`:** Segunda fuente, solo para derecho de la UE. Paquete `@cyanheads/eur-lex-mcp-server@0.21.0`; necesita Node 24 o superior. Lo instala `apm install` con el paquete.
 
 ## 5. Manejo de Errores y Excepciones
 
-- **Si el MCP `eur-lex` no está configurado, no arranca o `npx` no puede descargar el paquete:** Responde solo con la guía y escribe en el comentario que no usaste EUR-Lex y por qué. Lo que la guía no resuelve es un hueco.
+- **Si el MCP `eur-lex` no arranca o `npx` no puede descargar el paquete:** Responde solo con la guía y escribe en el comentario que no usaste EUR-Lex y por qué. Lo que la guía no resuelve es un hueco.
 - **Si la consulta es de la LOPDGDD y el artículo no está empaquetado:** Es un hueco. No lo busques en el BOE.
 - **Si la consulta pide certificar que el proyecto cumple la norma:** Responde con los artículos que aplican y deja la decisión a la persona responsable del proyecto. Nunca escribas que el proyecto cumple la norma.
 - **Si `issue-spec comment` falla:** Devuelve las respuestas completas en el reporte, con el texto del error.

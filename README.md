@@ -30,7 +30,7 @@ El comentario es opcional. Si alguien no está en Discord o nadie confirma la re
 ## Requisitos
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
-- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión. El MCP de EUR-Lex, opcional, necesita Node 24 o superior ([Protección de datos](#protección-de-datos)).
+- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión. El MCP de EUR-Lex necesita Node 24 o superior ([Protección de datos](#protección-de-datos)).
 - **Un `.env` en la raíz del proyecto con tu token de GitHub**, y `.env` en `.gitignore`. Sin eso, el flujo no arranca.
 
 ## El token de GitHub
@@ -71,8 +71,6 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 5. (Opcional) Elige el modelo de cada agente con `/configure-models`, según se describe en [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
 
 6. (Opcional) Configura el canal de documentación: Context7 con `/setup-context7` o el RAG local con `/setup-docs-rag`, según se describe en [Documentación de las dependencias](#documentación-de-las-dependencias).
-
-7. (Opcional, con Node 24 o superior) Configura el MCP de EUR-Lex con `/setup-eur-lex`, si tu proyecto trata datos personales, según se describe en [Consultas legales con EUR-Lex](#consultas-legales-con-eur-lex).
 
 ## Documentación de las dependencias
 
@@ -140,7 +138,7 @@ Sin la sección, la guía dice en una línea que no actúa. Con ella:
 - Sin hallazgos, el reporte dice «Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).».
 - Una duda que el checklist no resuelve va a `legal-advisor` como consulta legal ([Consultas legales con EUR-Lex](#consultas-legales-con-eur-lex)).
 
-Los artículos citados viajan en la skill como copia informativa de los textos consolidados, con su fuente y su fecha. El checklist está pendiente de revisión jurídica. El motivo de este diseño está en el [ADR 0013](docs/adr/0013-guia-de-proteccion-de-datos.md).
+Los artículos citados viajan en la skill como copia informativa de los textos consolidados, con su fuente y su fecha. El checklist está pendiente de revisión jurídica.
 
 ### Consultas legales con EUR-Lex
 
@@ -148,9 +146,9 @@ Los artículos citados viajan en la skill como copia informativa de los textos c
 
 Lo que `legal-advisor` no resuelve es un hueco y el orquestador te lo pregunta. EUR-Lex solo tiene derecho de la UE: para la LOPDGDD, `legal-advisor` usa los artículos empaquetados, y un artículo que no está empaquetado es un hueco.
 
-El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Para configurarlo, ejecuta `/setup-eur-lex` (en Codex, `$setup-eur-lex`): escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. Repetirlo no cambia nada, y `apm install` no lo borra. Recarga el editor o la sesión después.
+El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
 
-**Necesita Node 24 o superior.** Sin él, o sin `/setup-eur-lex`, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20. El motivo de este diseño está en el [ADR 0014](docs/adr/0014-asesor-legal-con-eur-lex.md).
+**Necesita Node 24 o superior.** Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20.
 
 ## Modelos de los agentes
 

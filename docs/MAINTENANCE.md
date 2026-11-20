@@ -56,7 +56,6 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    | `/configure-models` | Una tabla con agente, modelo y motivo, y la pregunta de aceptación. Tras aceptar: 9 archivos con `model` (`grep -l "^model" .cursor/agents/* .claude/agents/* .codex/agents/*`, según la herramienta), y `/check-status` con `Modelos: configurado (cursor 9/9)`. Tras otro `apm install` indica `desincronizado`, y `/configure-models` con Enter lo restaura. Sin la CLI de la herramienta no propone ningún modelo y permite indicar uno a mano. En Codex, `codex debug models` no está verificado con un Codex real: conviene revisar la propuesta. |
    | `/setup-context7` | Una tabla con las dependencias sugeridas (y las descartadas con motivo) y la pregunta de aceptación. Tras aceptar: `context7` en la config de usuario (`~/.cursor/mcp.json`, `~/.claude.json` o `~/.codex/config.toml`), nada en las configs MCP del proyecto, y un bloque «Context7» con las librerías en `AGENTS.md` o `CLAUDE.md`. Si `docs-rag` estaba registrado, desaparece. Repetirlo no cambia nada. Sin `--with-key` no hay cabecera. Con ella, `grep -n -i context7_api_key` muestra el nombre de la variable y nunca un valor, y las `notes` explican cómo cargar el `.env` (la clave se lee de ahí). Tras recargar el editor, «¿Cómo uso useState? use context7» llama a `resolve-library-id` y luego a `query-docs`. La sintaxis de la cabecera con variable de entorno no está probada con un editor real. |
    | `/setup-docs-rag` (con Docker, Ollama y `uv`; antes, `npm i zod@3.23.8` y un `.nvmrc` con `22`) | Una tabla con `zod 3.23.8` (origen `lockfile`) y el runtime `node 22`, y la pregunta de aceptación. Tras aceptar: el contenedor `docs-rag-qdrant` en marcha, `.docs-rag/` con `inventario.json` y su `.gitignore` (`git status` no lo muestra), `docs-rag` en la config de usuario y `context7` fuera de ella. Repetirlo dice `iguales` y no descarga nada. Tras recargar el editor, «¿Cómo valido un email con zod?» llama a `resolver_paquete` y luego a `consultar_docs`. `/setup-context7` devuelve el canal a Context7. |
-   | `/setup-eur-lex`, con otro MCP ya configurado | Una tabla con herramienta, fichero y `result`. `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml` traen `eur-lex` con `@cyanheads/eur-lex-mcp-server@0.21.0`, y el otro MCP sigue igual. Repetirlo da `igual`. Con Node anterior a 24, escribe la configuración y lo avisa en `notes`. |
    | `/delivery-workflow` «Crea la issue y hazla: una función `sum(a, b)` en `sum.js` que suma dos números, con su test» | Issue #1 con la etiqueta `feat`. Rama `1-feat-…`, commit `chore: open #1`, pull request en draft con `Closes #1` y la etiqueta. Después, en la issue, `## Spec`, `## Plan` y `## Tasks` y un comentario por ronda. Al final, un commit con `sum.js` y su test, subido. |
    | Edita la parte de arriba de la issue en GitHub mientras corren las rondas | La escritura siguiente en la issue para y el agente te pregunta. |
    | «Que la revise TU_NOMBRE» | Te contesta que el autor no puede revisar su propia pull request y no pide nada. |
@@ -64,7 +63,7 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 
    Compruébalo también fuera del chat: `git log --oneline`, `gh issue view 1 --comments` y `gh pr view --web`.
 
-   Para probar las consultas legales, añade a `docs/CONSTITUTION.md` la sección `## Datos personales` con sus cuatro campos rellenos ([Protección de datos](../README.md#protección-de-datos)) y ejecuta `/setup-eur-lex`. Después, con un gestor de versiones de Node:
+   Para probar las consultas legales, añade a `docs/CONSTITUTION.md` la sección `## Datos personales` con sus cuatro campos rellenos ([Protección de datos](../README.md#protección-de-datos)) y ejecuta `apm install`, que escribe el MCP `eur-lex`. Después, con un gestor de versiones de Node:
 
    | Con | Escribe | Tiene que pasar |
    |---|---|---|
@@ -90,7 +89,7 @@ El script lee `assets/sources.json` de la skill y descarga cada artículo: el RG
 - **Opciones:** `--sources RUTA` lee otro `sources.json` y `--out CARPETA` escribe en otra carpeta.
 - **Tests:** `tests/refresh-legal-sources.test.mjs` corre con `node --test tests/*.mjs` contra los fixtures de `tests/fixtures/refresh-legal-sources/`, sin red.
 
-Revisa el diff antes de hacer commit: un cambio en el texto de un artículo puede pedir un cambio en el checklist. La versión del paquete con la guía espera a dos dudas de #56 ([ADR 0013](adr/0013-guia-de-proteccion-de-datos.md)).
+Revisa el diff antes de hacer commit: un cambio en el texto de un artículo puede pedir un cambio en el checklist. La versión del paquete con la guía espera a dos dudas de #56.
 
 ## Publicar una versión
 

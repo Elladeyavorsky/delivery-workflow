@@ -349,14 +349,14 @@ for agent in code-developer code-tester; do
   check "${agent} no precarga data-protection-guideline" bash -c "$(declare -f frontmatter); ! frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -q 'data-protection-guideline'"
 done
 
-# legal-advisor: agente del paquete, sin mcpServers (opción B del ADR 0014).
+# legal-advisor: agente del paquete, sin mcpServers (el MCP va en apm.yml).
 la="${package}/.apm/agents/legal-advisor.agent.md"
 check "legal-advisor declara su name" bash -c "$(declare -f frontmatter); frontmatter '$la' | grep -qx 'name: legal-advisor'"
 for skill in issue-spec say-it-straight; do
   check "legal-advisor precarga ${skill}" bash -c "$(declare -f frontmatter); frontmatter '$la' | grep -qx '  - ${skill}'"
 done
 check "legal-advisor no declara mcpServers" bash -c "$(declare -f frontmatter); ! frontmatter '$la' | grep -q 'mcpServers'"
-check "legal-advisor nombra el MCP eur-lex y /setup-eur-lex" bash -c "grep -q 'eur-lex' '$la' && grep -q 'setup-eur-lex' '$la'"
+check "legal-advisor nombra el MCP eur-lex" grep -q 'eur-lex' "$la"
 check "legal-advisor dice que no certifica cumplimiento" grep -qF "Orientativo: no certifica cumplimiento." "$la"
 check "legal-advisor avisa sin Node 24" grep -qF "No se usó EUR-Lex: el MCP necesita Node 24 o superior." "$la"
 check "legal-advisor está en agent-profiles con nivel pesado" node -e '
@@ -369,11 +369,10 @@ for agent in concept-developer concept-tester; do
   check "${agent} devuelve «Consultas legales»" grep -qF "Consultas legales" "${package}/.apm/agents/${agent}.agent.md"
 done
 
-# setup-eur-lex: MCP fijado a una versión.
-sel="${skills}/setup-eur-lex/scripts/setup-eur-lex.mjs"
-check "setup-eur-lex declara su name" grep -q "^name: setup-eur-lex" "${skills}/setup-eur-lex/SKILL.md"
-check "setup-eur-lex fija el MCP a 0.21.0" grep -qF 'export const VERSION = "0.21.0";' "$sel"
-check "setup-eur-lex no usa latest" bash -c "! grep -q 'eur-lex-mcp-server@latest' '$sel' '${skills}/setup-eur-lex/SKILL.md'"
+# apm.yml: el MCP eur-lex viaja con el paquete, fijado a una versión.
+check "apm.yml declara el MCP eur-lex en dependencies.mcp" bash -c "grep -q '^  mcp:' '${package}/apm.yml' && grep -qF -- '- name: eur-lex' '${package}/apm.yml'"
+check "apm.yml fija el MCP a 0.21.0" grep -qF '@cyanheads/eur-lex-mcp-server@0.21.0' "${package}/apm.yml"
+check "apm.yml no usa latest" bash -c "! grep -q 'eur-lex-mcp-server@latest' '${package}/apm.yml'"
 
 # delivery-workflow: consultas legales sin gastar ronda.
 dw="${skills}/delivery-workflow/SKILL.md"
