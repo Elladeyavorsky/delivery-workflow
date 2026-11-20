@@ -82,8 +82,10 @@ node --test tests/*.mjs
 node --test tests/discord-pr-notifications/*.test.mjs
 bash tests/scripts.test.sh
 uv run --no-project --python 3.15 --with pytest --with markdownify --with beautifulsoup4 python -m pytest -p no:cacheprovider tests/docs_rag
-apm audit --ci
+bash tests/apm-audit.test.sh
 ```
+
+`bash tests/apm-audit.test.sh` crea una copia temporal del paquete, excluye el estado local y los artefactos generados, regenera allí los artefactos APM y ejecuta `apm audit --ci`. Al terminar, elimina la copia temporal y deja intacto el checkout.
 
 Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MAINTENANCE.md#probar-el-paquete).
 

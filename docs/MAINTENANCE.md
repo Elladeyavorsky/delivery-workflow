@@ -11,10 +11,10 @@ node --test tests/*.mjs
 node --test tests/discord-pr-notifications/*.test.mjs
 bash tests/scripts.test.sh
 uv run --no-project --python 3.15 --with pytest --with markdownify --with beautifulsoup4 python -m pytest -p no:cacheprovider tests/docs_rag
-apm audit --ci
+bash tests/apm-audit.test.sh
 ```
 
-Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). El audit comprueba la integridad de los archivos del paquete.
+Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). `bash tests/apm-audit.test.sh` crea una copia temporal del paquete, excluye el estado local y los artefactos generados, regenera allí los artefactos APM y ejecuta `apm audit --ci`. Al terminar, elimina la copia temporal y deja intacto el checkout.
 
 El aviso de PR de este repositorio y su acción compuesta se describen en [DISCORD-PR-NOTIFICATIONS.md](DISCORD-PR-NOTIFICATIONS.md). APM no instala workflows de GitHub en los proyectos.
 
@@ -95,10 +95,53 @@ Revisa el diff antes de hacer commit: un cambio en el texto de un artículo pued
 
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
-1. En `staging`, sube `version` en `apm.yml` con un commit `chore: release X.Y.Z`, por pull request como cualquier otro cambio. Quien prepara la versión elige el número.
-2. Abre la pull request de `staging` a `main`. *Comprobar la versión* mira si `vX.Y.Z` se puede publicar. Si la etiqueta ya existe o la versión es menor que la última, sube `version` en la rama con un commit `chore: release X.Y.Z`.
-3. Al hacer merge, el mismo job corre otra vez sobre el push a `main`. Si ese commit no se puede publicar, sube la versión en `main` y la release sale de ese commit. Si se puede publicar, crea la etiqueta `vX.Y.Z` y la release ahí. No hace falta etiquetar a mano.
+1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: `release.yml` calcula el siguiente `major`, `minor` o `patch` a partir de los commits desde la última etiqueta estable cuando recibe el push a `main`.
+2. El workflow `Open release PR` abre automáticamente la pull request de `staging` a `main` con `GITHUB_TOKEN`. GitHub no inicia `release.yml` en respuesta a esa PR creada con el token; no cuentes con una ejecución de validación mientras la PR está abierta. En una PR desde un fork, si el workflow se ejecuta y `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada.
+3. Al hacer merge, el push a `main` dispara `release.yml`. Ese workflow calcula y valida la versión en el push; si hace falta, la fija en un commit `chore: release X.Y.Z` y continúa con la publicación en la misma ejecución. Si la versión no supera la última estable o la etiqueta ya existe, termina sin crear la etiqueta ni la release. Si la validación pasa, crea la etiqueta `vX.Y.Z` y la release. No hace falta etiquetar a mano.
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
 
+La versión siguiente se calcula desde los Conventional Commits posteriores a la
+última etiqueta estable. Aplica esta prioridad determinista: un `!` o
+`BREAKING CHANGE` produce `major`; si no existe ninguno, un `feat` produce
+`minor`; los demás cambios producen `patch`. Las reglas de los commits
+seleccionan el tipo y el número; una IA no interviene en el cálculo.
+
+Las releases estables usan etiquetas `vX.Y.Z` inmutables. Si `vX.Y.Z` ya
+existe o la versión calculada no supera la última etiqueta estable, el workflow
+termina sin mover, borrar ni recrear la etiqueta.
+
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
+
+## Actualizar automáticamente los proyectos consumidores
+
+Añade este workflow en cada repositorio consumidor para que abra una PR semanal con
+la última release estable:
+
+```yaml
+name: Update delivery-workflow
+
+on:
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update:
+    uses: venturars/delivery-workflow/.github/workflows/update-apm-dependency.yml@main
+    with:
+      dependency_repo: venturars/delivery-workflow
+      target: codex # claude, cursor o codex
+      base_branch: staging
+    permissions:
+      contents: write
+      pull-requests: write
+```
+
+El workflow selecciona la mayor versión SemVer estable con etiqueta `vX.Y.Z`,
+sin ordenar por fecha de publicación. Actualiza la referencia en `apm.yml` y
+ejecuta `apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes`, pasando el
+repositorio de paquete y el target indicados en las entradas. Después abre una
+PR que incluye `apm.yml`, `apm.lock.yaml` y todos los archivos APM generados. La
+PR debe pasar los tests del proyecto antes de fusionarse. Si el repositorio
+necesita permisos adicionales, pasa un secreto llamado `gh_token`.
