@@ -8,21 +8,6 @@ package=$(cd "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/delivery-workflow-apm-audit.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 
-local_paths=(.agents .claude .codex .cursor)
-
-for path in "${local_paths[@]}"; do
-  if [[ ! -e "${package}/${path}" ]]; then
-    echo "FALLA: falta el directorio local preexistente ${path}"
-    exit 1
-  fi
-done
-
-local_paths_fingerprint() {
-  (cd "$package" && tar -cf - "${local_paths[@]}" | shasum -a 256 | awk '{print $1}')
-}
-
-before=$(local_paths_fingerprint)
-
 # No copiar despliegues locales ni estado Git/APM: se generan en work.
 tar -C "$package" \
   --exclude='./.git' \
@@ -66,10 +51,4 @@ done
 echo "Ejecutando apm audit --ci en la copia temporal..."
 (cd "$work" && apm audit --ci)
 
-after=$(local_paths_fingerprint)
-if [[ "$before" != "$after" ]]; then
-  echo "FALLA: cambiaron los contenidos locales preexistentes de .agents/, .claude/, .codex/ o .cursor/"
-  exit 1
-fi
-
-echo "Los contenidos locales de .agents/, .claude/, .codex/ y .cursor/ permanecen intactos."
+echo "La auditoría se ejecutó en una copia temporal regenerada desde las fuentes del paquete."

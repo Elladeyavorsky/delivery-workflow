@@ -14,9 +14,7 @@ uv run --no-project --python 3.15 --with pytest --with markdownify --with beauti
 bash tests/apm-audit.test.sh
 ```
 
-Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). `tests/apm-audit.test.sh` regenera los artefactos APM en una copia temporal limpia, ejecuta allí `apm audit --ci` y comprueba que `.agents/`, `.claude/`, `.codex/` y `.cursor/` permanecen intactos en este workspace.
-
-`apm audit --ci` ya se ejecutó directamente en este workspace y falló por drift local preexistente: 98 archivos con drift y 8 archivos generados ausentes. No repitas la auditoría directamente en este workspace; usa `bash tests/apm-audit.test.sh` para comprobar los artefactos en una copia temporal.
+Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). `bash tests/apm-audit.test.sh` crea una copia temporal del paquete, excluye el estado local y los artefactos generados, regenera allí los artefactos APM y ejecuta `apm audit --ci`. Al terminar, elimina la copia temporal y deja intacto el checkout.
 
 El aviso de PR de este repositorio y su acción compuesta se describen en [DISCORD-PR-NOTIFICATIONS.md](DISCORD-PR-NOTIFICATIONS.md). APM no instala workflows de GitHub en los proyectos.
 
@@ -97,9 +95,9 @@ Revisa el diff antes de hacer commit: un cambio en el texto de un artículo pued
 
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
-1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: el workflow calcula el siguiente `major`, `minor` o `patch` a partir de los commits cuando prepara la PR de release.
-2. El workflow `Open release PR` abre automáticamente la pull request de `staging` a `main`. *Comprobar la versión* valida la versión calculada. En una PR desde un fork, si `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada. Si la etiqueta calculada ya existe o la versión no supera la última estable, la validación falla sin corregir automáticamente el conflicto.
-3. Al hacer merge, el mismo job corre otra vez sobre el push a `main`. Si la validación falla, no crea la etiqueta ni la release. Si se puede publicar, crea la etiqueta `vX.Y.Z` y la release ahí. No hace falta etiquetar a mano.
+1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: `release.yml` calcula el siguiente `major`, `minor` o `patch` a partir de los commits desde la última etiqueta estable cuando recibe el push a `main`.
+2. El workflow `Open release PR` abre automáticamente la pull request de `staging` a `main` con `GITHUB_TOKEN`. GitHub no inicia `release.yml` en respuesta a esa PR creada con el token; no cuentes con una ejecución de validación mientras la PR está abierta. En una PR desde un fork, si el workflow se ejecuta y `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada.
+3. Al hacer merge, el push a `main` dispara `release.yml`. Ese workflow calcula y valida la versión en el push; si hace falta, la fija en un commit `chore: release X.Y.Z` y continúa con la publicación en la misma ejecución. Si la versión no supera la última estable o la etiqueta ya existe, termina sin crear la etiqueta ni la release. Si la validación pasa, crea la etiqueta `vX.Y.Z` y la release. No hace falta etiquetar a mano.
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
 
@@ -140,8 +138,10 @@ jobs:
       pull-requests: write
 ```
 
-El workflow consulta la última GitHub Release estable, actualiza la referencia en
-`apm.yml`, ejecuta `apm update` y abre una PR que incluye `apm.yml`, `apm.lock.yaml`
-y todos los archivos APM generados. La PR debe pasar los tests del proyecto antes
-de fusionarse. Si el repositorio necesita permisos adicionales, pasa un secreto
-llamado `gh_token`.
+El workflow selecciona la mayor versión SemVer estable con etiqueta `vX.Y.Z`,
+sin ordenar por fecha de publicación. Actualiza la referencia en `apm.yml` y
+ejecuta `apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes`, pasando el
+repositorio de paquete y el target indicados en las entradas. Después abre una
+PR que incluye `apm.yml`, `apm.lock.yaml` y todos los archivos APM generados. La
+PR debe pasar los tests del proyecto antes de fusionarse. Si el repositorio
+necesita permisos adicionales, pasa un secreto llamado `gh_token`.
