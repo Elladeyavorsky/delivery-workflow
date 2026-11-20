@@ -21,6 +21,7 @@ jobs:
       - name: Abrir o actualizar staging → main
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           existing=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
 
