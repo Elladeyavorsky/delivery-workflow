@@ -11,10 +11,12 @@ node --test tests/*.mjs
 node --test tests/discord-pr-notifications/*.test.mjs
 bash tests/scripts.test.sh
 uv run --no-project --python 3.15 --with pytest --with markdownify --with beautifulsoup4 python -m pytest -p no:cacheprovider tests/docs_rag
-apm audit --ci
+bash tests/apm-audit.test.sh
 ```
 
-Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). El audit comprueba la integridad de los archivos del paquete.
+Los tests de Python cubren el paquete `docs_rag` de `/setup-docs-rag` sin red, Qdrant ni modelos; necesitan [uv](https://docs.astral.sh/uv/). `tests/apm-audit.test.sh` regenera los artefactos APM en una copia temporal limpia, ejecuta allí `apm audit --ci` y comprueba que `.agents/`, `.claude/`, `.codex/` y `.cursor/` permanecen intactos en este workspace.
+
+`apm audit --ci` ya se ejecutó directamente en este workspace y falló por drift local preexistente: 98 archivos con drift y 8 archivos generados ausentes. No repitas la auditoría directamente en este workspace; usa `bash tests/apm-audit.test.sh` para comprobar los artefactos en una copia temporal.
 
 El aviso de PR de este repositorio y su acción compuesta se describen en [DISCORD-PR-NOTIFICATIONS.md](DISCORD-PR-NOTIFICATIONS.md). APM no instala workflows de GitHub en los proyectos.
 
@@ -95,10 +97,51 @@ Revisa el diff antes de hacer commit: un cambio en el texto de un artículo pued
 
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
-1. En `staging`, sube `version` en `apm.yml` con un commit `chore: release X.Y.Z`, por pull request como cualquier otro cambio. Quien prepara la versión elige el número.
-2. Abre la pull request de `staging` a `main`. *Comprobar la versión* mira si `vX.Y.Z` se puede publicar. Si la etiqueta ya existe o la versión es menor que la última, sube `version` en la rama con un commit `chore: release X.Y.Z`.
-3. Al hacer merge, el mismo job corre otra vez sobre el push a `main`. Si ese commit no se puede publicar, sube la versión en `main` y la release sale de ese commit. Si se puede publicar, crea la etiqueta `vX.Y.Z` y la release ahí. No hace falta etiquetar a mano.
+1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: el workflow calcula el siguiente `major`, `minor` o `patch` a partir de los commits cuando prepara la PR de release.
+2. El workflow `Open release PR` abre automáticamente la pull request de `staging` a `main`. *Comprobar la versión* valida la versión calculada. En una PR desde un fork, si `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada. Si la etiqueta calculada ya existe o la versión no supera la última estable, la validación falla sin corregir automáticamente el conflicto.
+3. Al hacer merge, el mismo job corre otra vez sobre el push a `main`. Si la validación falla, no crea la etiqueta ni la release. Si se puede publicar, crea la etiqueta `vX.Y.Z` y la release ahí. No hace falta etiquetar a mano.
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
 
+La versión siguiente se calcula desde los Conventional Commits posteriores a la
+última etiqueta estable. Aplica esta prioridad determinista: un `!` o
+`BREAKING CHANGE` produce `major`; si no existe ninguno, un `feat` produce
+`minor`; los demás cambios producen `patch`. Las reglas de los commits
+seleccionan el tipo y el número; una IA no interviene en el cálculo.
+
+Las releases estables usan etiquetas `vX.Y.Z` inmutables. Si `vX.Y.Z` ya
+existe o la versión calculada no supera la última etiqueta estable, el workflow
+termina sin mover, borrar ni recrear la etiqueta.
+
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
+
+## Actualizar automáticamente los proyectos consumidores
+
+Añade este workflow en cada repositorio consumidor para que abra una PR semanal con
+la última release estable:
+
+```yaml
+name: Update delivery-workflow
+
+on:
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update:
+    uses: venturars/delivery-workflow/.github/workflows/update-apm-dependency.yml@main
+    with:
+      dependency_repo: venturars/delivery-workflow
+      target: codex # claude, cursor o codex
+      base_branch: staging
+    permissions:
+      contents: write
+      pull-requests: write
+```
+
+El workflow consulta la última GitHub Release estable, actualiza la referencia en
+`apm.yml`, ejecuta `apm update` y abre una PR que incluye `apm.yml`, `apm.lock.yaml`
+y todos los archivos APM generados. La PR debe pasar los tests del proyecto antes
+de fusionarse. Si el repositorio necesita permisos adicionales, pasa un secreto
+llamado `gh_token`.
