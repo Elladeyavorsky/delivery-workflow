@@ -31,6 +31,6 @@
 ### Fase 4: Pull request
 
 - [ ] **TASK-08:** Generar el mensaje de commit y guardar el trozo
-  - **Agente:** `create-commit`
+  - **Agente:** `manage-commit`
 - [ ] **TASK-09:** Pedir la revisión si la issue nombra revisores
-  - **Agente:** `create-pr`
+  - **Agente:** `manage-pr`

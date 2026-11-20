@@ -26,19 +26,19 @@
       "tier": "heavy",
       "why": "Responde dudas legales con su fuente: una respuesta mal leída acaba como requisito en la spec."
     },
-    "create-issue": {
+    "manage-issue": {
       "tier": "light",
       "why": "Rellena una plantilla y lanza scripts."
     },
-    "create-pr": {
+    "manage-pr": {
       "tier": "light",
       "why": "Rellena una plantilla y lanza scripts."
     },
-    "create-branch": {
+    "manage-branch": {
       "tier": "light",
       "why": "Un script, sin criterio."
     },
-    "create-commit": {
+    "manage-commit": {
       "tier": "light",
       "why": "Uno o dos scripts, sin criterio."
     }

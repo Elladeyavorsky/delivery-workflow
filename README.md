@@ -35,7 +35,7 @@ El comentario es opcional. Si alguien no está en Discord o nadie confirma la re
 
 ## El token de GitHub
 
-El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, etiquetas, revisiones) usa el token del `.env`, nunca la sesión de `gh` ni las variables de tu terminal. El aviso de Discord usa el `github.token` del workflow y los secretos del entorno protegido. Por eso no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
+El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, etiquetas, revisiones) usa el token del `.env`; la sesión de `gh` y las variables de tu terminal no entran en el flujo. El aviso de Discord usa el `github.token` del workflow y los secretos del entorno protegido. Por eso no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
 
 1. Crea un token **clásico** con el permiso `repo` en <https://github.com/settings/tokens/new?scopes=repo>. Que sea de tu cuenta: todo lo que haga el flujo aparecerá a tu nombre. Los tokens *fine-grained* no sirven en repositorios personales de otra persona.
 2. En la raíz del proyecto, crea o abre el fichero `.env` con tu editor y añade esta línea, con tu token:
@@ -46,7 +46,7 @@ El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, e
 
 3. Comprueba que `.env` está en `.gitignore`. Si no, añádelo: `echo .env >> .gitignore`.
 
-Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nunca. El push sigue usando tus credenciales de git.
+Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ## Instalación en macOS y Linux
 
@@ -70,15 +70,28 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` no se sube nu
 
 5. (Opcional) Elige el modelo de cada agente con `/configure-models`, según se describe en [Modelos de los agentes](#modelos-de-los-agentes). Repítelo después de cada `apm install` o `apm update`.
 
-6. (Opcional) Configura Context7 con `/setup-context7`, según se describe en [Context7](#context7).
+6. (Opcional) Configura el canal de documentación: Context7 con `/setup-context7` o el RAG local con `/setup-docs-rag`, según se describe en [Documentación de las dependencias](#documentación-de-las-dependencias).
 
 7. (Opcional, con Node 24 o superior) Configura el MCP de EUR-Lex con `/setup-eur-lex`, si tu proyecto trata datos personales, según se describe en [Consultas legales con EUR-Lex](#consultas-legales-con-eur-lex).
 
-## Context7
+## Documentación de las dependencias
+
+`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por un solo canal por ordenador, cada uno con su propio MCP:
+
+| Canal | MCP | Qué sale del ordenador | Requisitos |
+|---|---|---|---|
+| **Context7** (por defecto) | `context7`, remoto | El nombre de la librería y la pregunta, hacia Upstash | Ninguno |
+| **RAG local** | `docs-rag`, local | Solo la descarga de la documentación | Docker, Ollama y `uv` |
+
+Los dos se registran en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). Registrar uno quita el otro. `apm install` y `apm update` no tocan esta elección.
+
+Las dos skills leen las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git las buscan con `git ls-files`, así que respetan `.gitignore` (sin `node_modules` ni `dist`) y no tienen límite de profundidad; sin git recorren hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build y piden confirmación una sola vez.
+
+### Context7
 
 [Context7](https://context7.com) da a los agentes la documentación actual y de la versión concreta de cada librería, para que no escriban código para versiones antiguas.
 
-`/setup-context7` lee las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git los busca con `git ls-files`, así que respeta `.gitignore` (sin `node_modules` ni `dist`) y no tiene límite de profundidad; sin git recorre hasta 3 niveles. Propone todas salvo los tipos y las utilidades de build, y pide confirmación una sola vez: quita las que no quieras. Después escribe el MCP en `.cursor/mcp.json`, `.mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
+`/setup-context7` escribe el MCP `context7` en la config de usuario, sin tocar otros MCP, y deja una regla con tus librerías en `AGENTS.md` o `CLAUDE.md`.
 
 **La clave es opcional.** Context7 funciona sin ella, con un límite menor de peticiones. Si quieres más, crea una clave gratis en context7.com/dashboard y añádela a tu `.env`, junto al token de GitHub:
 
@@ -92,6 +105,27 @@ Los editores no leen el `.env` solos. Antes de abrir el editor, cárgalo en la t
 set -a; source .env; set +a
 cursor .      # o claude, o codex
 ```
+
+### RAG local
+
+`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después registra el MCP `docs-rag`, con dos herramientas: `resolver_paquete` y `consultar_docs`.
+
+- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
+- **Fuera de git:** el índice de cada proyecto va en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
+- **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [docs/research/rag-documentacion-python-3.15.pdf](docs/research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.
+
+## Docker
+
+La skill `docker-best-practices` reúne las reglas para el Docker de un proyecto: decidir para qué es Docker, fijar cada versión (imagen, herramientas, binarios con su checksum y paquetes de `apt-get` con fecha de snapshot), separar las dependencias de cada proyecto en volúmenes, y comprobar antes de la pull request. El agente la usa al crear, cambiar o revisar un `Dockerfile`, un `docker-compose.yml` o un `devcontainer.json`. También puedes pedirla tú: «Revisa el Dockerfile con docker-best-practices».
+
+Trae plantillas de `Dockerfile` y `docker-compose.yml`, y un script que revisa un `Dockerfile` y avisa de lo que no tiene versión fija:
+
+```bash
+bash .agents/skills/docker-best-practices/scripts/check-docker.sh Dockerfile
+```
+
+En Claude Code, la carpeta es `.claude/skills/docker-best-practices/`.
 
 ## Protección de datos
 
@@ -127,7 +161,7 @@ Compatible con **Cursor, Claude Code y Codex**. Qué tener en cuenta:
 - `apm install` y `apm update` eliminan la línea `model` de los agentes: vuelve a ejecutar `/configure-models`, que conserva tus elecciones anteriores. `check-status` lo señala con `Modelos: desincronizado`.
 - La línea `model` es personal: no la incluyas en los commits.
 
-Funcionamiento, cambio de modelo y verificación en cada herramienta: [docs/MODELOS.md](docs/MODELOS.md).
+Funcionamiento, cambio de modelo y verificación en cada herramienta: [docs/MODELS.md](docs/MODELS.md).
 
 ## Instalación en Windows
 
@@ -211,7 +245,7 @@ Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así ti
 ## Más información
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): cómo proponer un cambio: issues, ramas, commits y pull requests.
-- [CAMBIOS.md](CAMBIOS.md): de dónde sale el paquete y qué cambia respecto al original.
-- [docs/MODELOS.md](docs/MODELOS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
-- [docs/MANTENIMIENTO.md](docs/MANTENIMIENTO.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
-- [docs/adr/](docs/adr/) y [GLOSSARY.md](GLOSSARY.md): decisiones de diseño y vocabulario.
+- [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
+- [docs/MODELS.md](docs/MODELS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
+- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
+- [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.

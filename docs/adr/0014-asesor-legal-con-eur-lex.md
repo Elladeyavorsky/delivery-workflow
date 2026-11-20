@@ -48,7 +48,7 @@ La regla de la spec es que la prueba falla si APM pierde el campo en cualquiera 
 
 ## Consecuencias
 
-- Hay nueve agentes en `.apm/agents/` y veintitrés skills en `.apm/skills/`. `setup-eur-lex` lleva script y tests.
+- Hay nueve agentes en `.apm/agents/` y veintiocho skills en `.apm/skills/`. `setup-eur-lex` lleva script y tests.
 - Con la skill, el MCP queda configurado para el proyecto y lo ven el chat y todos los agentes. `concept-developer` y `concept-tester` dicen que no lo usan; `legal-advisor` es el único que lo nombra.
 - El MCP necesita Node 24 o superior. Sin él, o si `npx` no puede descargar el paquete, `legal-advisor` responde solo con la guía y lo dice en el comentario. El resto del paquete sigue funcionando con Node 20.
 - Si APM empieza a traducir `mcpServers` para Codex, hay que repetir la prueba previa con Node 24 antes de mover el MCP al frontmatter.
