@@ -68,7 +68,7 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 
    | Con | Escribe | Tiene que pasar |
    |---|---|---|
-   | Node 24 | `/delivery-workflow` «Crea la issue y hazla: enviar el nombre y el correo de cada usuario a un chatbot alojado fuera del EEE» | `concept-developer` devuelve una consulta legal sobre transferencias internacionales (RGPD 44 a 49). El orquestador llama a `legal-advisor` antes de la ronda 1. La issue recibe un comentario `## Consultas legales` con la respuesta, los artículos y el CELEX `32016R0679` con la fecha. La spec recoge el requisito con `(CL-NN; RGPD …)`. La ronda siguiente es la 1. |
+   | Node 24 | `/delivery-workflow` «Crea la issue y hazla: enviar el nombre y el correo de cada usuario a un chatbot alojado fuera del EEE» | `concept-developer` devuelve una consulta legal sobre transferencias internacionales (RGPD 44 a 49). El orquestador llama a `legal-advisor` antes de la ronda 1. La issue recibe un comentario `## Consultas legales` con la respuesta, los artículos y el CELEX `32016R0679` con la fecha. La spec recoge el requisito con `(CL-NN; RGPD …)`. |
    | Node 20 | La misma tarea, en otro repositorio desechable o en una issue nueva | El comentario de `legal-advisor` dice que no usó EUR-Lex, o la consulta queda como hueco y el orquestador te la pregunta. |
 
 6. Anota lo que falle: la herramienta, el paso, lo que escribiste y el error. Ábrelo como issue en [este repositorio](https://github.com/venturars/delivery-workflow/issues) con el tipo `fix`.

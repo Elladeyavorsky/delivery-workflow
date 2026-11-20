@@ -5,7 +5,8 @@ El agente `legal-advisor` responde las dudas de protección de datos que el chec
 ## Cómo encaja en el ciclo
 
 - **Quién pregunta:** `concept-developer` y `concept-tester` devuelven en su reporte las dudas que la guía no resuelve como «Consultas legales», cada una con su id `CL-NN`. No usan el MCP.
-- **Quién llama:** El orquestador llama a `legal-advisor` una vez con todas las consultas de cada reporte: el de `concept-developer` que crea la spec, antes de la ronda 1, y los de cada ronda. Pregunta a la persona los huecos que devuelva y vuelve a llamar a `concept-developer` con las respuestas. Ningún subagente lanza a otro ([ADR 0001](0001-orquestador-y-entrevista-como-skills.md)). La consulta no gasta ronda.
+- **Quién llama:** El orquestador llama a `legal-advisor` una vez con todas las consultas de cada reporte: el de `concept-developer` que crea la spec, antes de la ronda 1, y los de cada ronda. La consulta no gasta ronda.
+- **Qué hace con la respuesta:** Pregunta a la persona los huecos que devuelva y vuelve a llamar a `concept-developer` con las respuestas. Ningún subagente lanza a otro ([ADR 0001](0001-orquestador-y-entrevista-como-skills.md)).
 - **Dónde queda la respuesta:** En un comentario de la issue ([ADR 0005](0005-la-spec-vive-en-la-issue.md)), con la respuesta, los artículos y la fuente de cada consulta: la guía con el fichero y la versión del checklist, o EUR-Lex con el CELEX y la fecha. El comentario no certifica cumplimiento.
 - **Qué no resuelve:** Una consulta sin respuesta en la guía ni en EUR-Lex es un hueco para la persona. El paquete no añade condiciones de parada ([ADR 0004](0004-el-ciclo-corre-sin-aprobacion-humana.md)).
 - **LOPDGDD:** EUR-Lex solo tiene derecho de la UE. Para la LOPDGDD, `legal-advisor` usa los artículos empaquetados; un artículo que no está empaquetado es un hueco. No consulta el BOE por red.
@@ -48,8 +49,8 @@ La regla de la spec es que la prueba falla si APM pierde el campo en cualquiera 
 
 ## Consecuencias
 
-- Hay nueve agentes en `.apm/agents/` y veintiocho skills en `.apm/skills/`. `setup-eur-lex` lleva script y tests.
-- Con la skill, el MCP queda configurado para el proyecto y lo ven el chat y todos los agentes. `concept-developer` y `concept-tester` dicen que no lo usan; `legal-advisor` es el único que lo nombra.
+- `setup-eur-lex` lleva script y tests.
+- Con la skill, el MCP queda configurado para el proyecto y lo ven el chat y todos los agentes. Las instrucciones de `concept-developer` y `concept-tester` no mencionan el MCP; `legal-advisor` es el único que lo nombra.
 - El MCP necesita Node 24 o superior. Sin él, o si `npx` no puede descargar el paquete, `legal-advisor` responde solo con la guía y lo dice en el comentario. El resto del paquete sigue funcionando con Node 20.
 - Si APM empieza a traducir `mcpServers` para Codex, hay que repetir la prueba previa con Node 24 antes de mover el MCP al frontmatter.
 - Cómo se ejecuta `/setup-eur-lex` y qué necesita está en el [README](../../README.md), no aquí.

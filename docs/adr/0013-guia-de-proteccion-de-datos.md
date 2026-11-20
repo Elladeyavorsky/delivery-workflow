@@ -9,7 +9,7 @@ La skill `data-protection-guideline` es un checklist de protección de datos (RG
 - **Requisitos en la spec:** `concept-developer` escribe como requisitos los ítems que aplican, cada uno con su artículo. Si el código o la documentación no los cumplen, `concept-tester` y `code-tester` fallan el veredicto como con cualquier desajuste con la spec.
 - **Notas fuera de la spec:** Un hallazgo frente al checklist que la spec no recoge va al reporte como nota y no cambia el veredicto.
 - **Huecos:** Un choque entre un ítem y lo que dice el proyecto es un hueco. La guía no elige por la persona.
-- **DPIA:** Una tarea de perfilado, predicción, monitorización o rankings visibles de personas con el campo Estado de la DPIA vacío levanta un hueco: probablemente hace falta una evaluación de impacto (RGPD 35). Con el campo relleno, el hallazgo es una nota. Son los únicos casos en que la DPIA levanta un hueco: tratar a gran escala categorías especiales o datos de menores, o combinar fuentes de datos, da una nota con DP-14 y RGPD 35.
+- **DPIA:** Una tarea de perfilado, predicción, monitorización o rankings visibles de personas con el campo Estado de la DPIA vacío levanta un hueco: probablemente hace falta una evaluación de impacto (RGPD 35). Con el campo relleno, el hallazgo es una nota. Tratar a gran escala categorías especiales o datos de menores, o combinar fuentes de datos, da siempre una nota con DP-14 y RGPD 35.
 - **Salida sin hallazgos:** «Sin hallazgos frente al checklist vX.Y.Z (AAAA-MM-DD).», con la versión y la fecha del checklist. Nunca «cumple». La cabecera del checklist dice que la revisión jurídica está pendiente.
 
 ## Textos legales empaquetados
@@ -25,6 +25,6 @@ Cada artículo citado viaja en `assets/rgpd/` o `assets/lopdgdd/` como copia del
 
 ## Consecuencias
 
-- Hay veintidós skills en `.apm/skills/`. La nueva no lleva scripts; el de refresco vive en `.github/scripts/` con sus tests contra fixtures.
+- La skill nueva no lleva scripts; el de refresco vive en `.github/scripts/` con sus tests contra fixtures.
 - La versión del paquete que incluye la guía no se publica hasta resolver dos dudas de #56: qué implica la cláusula de indemnidad del BOE para empaquetar la LOPDGDD (duda 1) y quién hace la revisión jurídica del checklist (duda 6). Si la LOPDGDD deja de empaquetarse, cambia su `distribucion` en `sources.json`.
 - Cómo activar la guía está en el [README](../../README.md#protección-de-datos), no aquí.
