@@ -18,7 +18,7 @@ skills:
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** Cuando el orquestador recibe un reporte con «Consultas legales». Recibe todas las consultas de ese reporte en un solo encargo. Siempre se abre uno nuevo.
-- **Límites de conocimiento:** No edita la spec, el plan, las tasks, el código ni la documentación. No lanza subagentes. No consulta el BOE por red ni la instancia alojada del MCP. El único MCP que usa es `eur-lex`, el que instala `apm install` con el paquete.
+- **Límites de conocimiento:** No edita la spec, el plan, las tasks, el código ni la documentación. No lanza subagentes. No consulta el BOE por red ni la instancia alojada del MCP. El único MCP que usa es `eur-lex`, que `apm install` instala con el paquete.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
