@@ -1,0 +1,229 @@
+name: Update an APM dependency
+
+on:
+  workflow_call:
+    inputs:
+      dependency_repo:
+        description: Repositorio GitHub de la dependencia
+        required: true
+        type: string
+      target:
+        description: Herramienta APM que debe actualizarse
+        required: true
+        type: string
+      base_branch:
+        description: Rama destino de la PR de actualización
+        required: false
+        default: staging
+        type: string
+    secrets:
+      gh_token:
+        required: false
+  workflow_dispatch:
+    inputs:
+      dependency_repo:
+        description: Repositorio GitHub de la dependencia
+        required: true
+        type: string
+      target:
+        description: Herramienta APM que debe actualizarse
+        required: true
+        type: string
+      base_branch:
+        description: Rama destino de la PR
+        required: false
+        default: staging
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Actualizar dependencia APM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar las entradas
+        env:
+          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
+          TARGET: ${{ inputs.target }}
+          BASE_BRANCH: ${{ inputs.base_branch }}
+        run: |
+          [[ "$DEPENDENCY_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
+            echo "dependency_repo debe tener el formato organizacion/repositorio." >&2
+            exit 1
+          }
+          [[ "$TARGET" == claude || "$TARGET" == cursor || "$TARGET" == codex ]] || {
+            echo "target debe ser claude, cursor o codex." >&2
+            exit 1
+          }
+          git check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 || {
+            echo "base_branch no es una rama válida." >&2
+            exit 1
+          }
+
+      - name: Instalar APM
+        run: curl -sSL https://aka.ms/apm-unix | sh
+
+      - name: Obtener la última release estable
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.gh_token || github.token }}
+          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
+        run: |
+          releases=$(gh api \
+            --paginate \
+            --slurp \
+            "repos/$DEPENDENCY_REPO/releases?per_page=100")
+          tag=$(jq -r '
+            [
+              .[]
+              | if type == "array" then .[] else . end
+              | select(
+                  (if has("draft") then .draft else .isDraft end) == false
+                  and (if has("prerelease") then .prerelease else .isPrerelease end) == false
+                )
+              | select(
+                  (if has("tag_name") then .tag_name else .tagName end)
+                  | test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
+                )
+            ]
+            | sort_by(
+                (if has("tag_name") then .tag_name else .tagName end)
+                | ltrimstr("v")
+                | split(".")
+                | map([length, .])
+              )
+            | last
+            | .tag_name // .tagName // empty
+          ' <<<"$releases")
+          [[ -n "$tag" ]] || {
+            echo "No hay ninguna GitHub Release estable válida con tag vX.Y.Z para $DEPENDENCY_REPO." >&2
+            exit 1
+          }
+          echo "ref=$tag" >>"$GITHUB_OUTPUT"
+          echo "Última release estable: $tag"
+
+      - name: Actualizar la dependencia y regenerar los archivos de APM
+        env:
+          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
+          REF: ${{ steps.release.outputs.ref }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          python3 - "$DEPENDENCY_REPO" "$REF" <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import stat
+          import sys
+          import tempfile
+
+          repo, ref = sys.argv[1:]
+          if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+              raise SystemExit("Repositorio no válido.")
+          if not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", ref):
+              raise SystemExit("La release no tiene un tag vX.Y.Z válido.")
+
+          path = Path("apm.yml")
+          if not path.is_file():
+              raise SystemExit("No existe apm.yml en el directorio actual.")
+          original = path.read_bytes()
+          lines = original.decode("utf-8").splitlines(keepends=True)
+
+          key_re = re.compile(r"^(?P<indent>[ \t]*)(?P<key>[A-Za-z0-9_-]+):[ \t]*(?:#.*)?(?:\r?\n)?$")
+          item_re = re.compile(
+              r"^(?P<prefix>[ \t]*-[ \t]*)(?P<quote>['\"]?)"
+              r"(?P<value>[^'\"\s]+)(?P=quote)(?P<suffix>[ \t]*(?:#.*)?)(?P<newline>\r?\n?)$"
+          )
+
+          dependencies = None
+          for index, line in enumerate(lines):
+              match = key_re.match(line)
+              if match and match.group("key") == "dependencies":
+                  dependencies = (index, len(match.group("indent")))
+                  break
+          if dependencies is None:
+              raise SystemExit("apm.yml no contiene dependencies.")
+
+          dependencies_index, dependencies_indent = dependencies
+          apm_index = None
+          apm_indent = None
+          for index in range(dependencies_index + 1, len(lines)):
+              line = lines[index]
+              if not line.strip() or line.lstrip().startswith("#"):
+                  continue
+              indent = len(line) - len(line.lstrip(" \t"))
+              if indent <= dependencies_indent:
+                  break
+              match = key_re.match(line)
+              if match and match.group("key") == "apm":
+                  apm_index = index
+                  apm_indent = len(match.group("indent"))
+                  break
+          if apm_index is None:
+              raise SystemExit("apm.yml no contiene dependencies.apm.")
+
+          matches = []
+          for index in range(apm_index + 1, len(lines)):
+              line = lines[index]
+              if not line.strip() or line.lstrip().startswith("#"):
+                  continue
+              indent = len(line) - len(line.lstrip(" \t"))
+              if indent <= apm_indent:
+                  break
+              match = item_re.match(line)
+              if not match:
+                  continue
+              value = match.group("value")
+              if value == repo or value.startswith(repo + "#"):
+                  matches.append((index, match, value))
+
+          if len(matches) != 1:
+              reason = "no se encontró" if not matches else "hay más de una coincidencia"
+              raise SystemExit(f"apm.yml: {reason} para {repo} en dependencies.apm.")
+          index, match, value = matches[0]
+          if not value.startswith(repo + "#") or not value[len(repo) + 1:]:
+              raise SystemExit(f"apm.yml: la dependencia {repo} no contiene un ref.")
+
+          line = lines[index]
+          lines[index] = (
+              line[:match.start("value")]
+              + f"{repo}#{ref}"
+              + line[match.end("value"):]
+          )
+          updated = "".join(lines).encode("utf-8")
+          if updated != original:
+              mode = stat.S_IMODE(path.stat().st_mode)
+              fd, temporary = tempfile.mkstemp(prefix=".apm.yml.", dir=path.parent)
+              try:
+                  with os.fdopen(fd, "wb") as stream:
+                      stream.write(updated)
+                      stream.flush()
+                      os.fsync(stream.fileno())
+                  os.chmod(temporary, mode)
+                  os.replace(temporary, path)
+              except BaseException:
+                  try:
+                      os.unlink(temporary)
+                  except FileNotFoundError:
+                      pass
+                  raise
+          PY
+          apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes
+
+      - name: Crear o actualizar la PR del consumidor
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.gh_token || github.token }}
+          branch: chore/update-${{ inputs.dependency_repo }}
+          base: ${{ inputs.base_branch }}
+          delete-branch: true
+          commit-message: "chore: update ${{ inputs.dependency_repo }} to ${{ steps.release.outputs.ref }}"
+          title: "chore: update ${{ inputs.dependency_repo }} to ${{ steps.release.outputs.ref }}"
+          body: |
+            Actualiza `${{ inputs.dependency_repo }}` a `${{ steps.release.outputs.ref }}`.
+
+            Incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
