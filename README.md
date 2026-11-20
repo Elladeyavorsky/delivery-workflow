@@ -72,6 +72,8 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 
 6. (Opcional) Configura el canal de documentación: Context7 con `/setup-context7` o el RAG local con `/setup-docs-rag`, según se describe en [Documentación de las dependencias](#documentación-de-las-dependencias).
 
+7. (Opcional) Genera la documentación de compliance del proyecto con `/setup-compliance`, según se describe en [Documentación de compliance](#documentación-de-compliance).
+
 ## Documentación de las dependencias
 
 `code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por uno de estos canales, cada uno con su propio MCP:
@@ -151,6 +153,31 @@ Lo que `legal-advisor` no resuelve es un hueco y el orquestador te lo pregunta. 
 El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
 
 **Necesita Node 24 o superior.** Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20.
+
+## Documentación de compliance
+
+`/setup-compliance` (en Codex, `$setup-compliance`) genera en `docs/` del proyecto la base de los documentos que piden el AI Act y el RGPD. Se lanza a mano tras `apm install`; la instalación no la ejecuta.
+
+| Documento | Qué trae | Cuándo lo propone |
+|---|---|---|
+| `docs/ai-act.md` | Clasificación del sistema según el Reglamento (UE) 2024/1689: prohibido, alto riesgo, riesgo limitado o riesgo mínimo, con el motivo y los artículos | Siempre |
+| `docs/dpia.md` | Evaluación de impacto del RGPD 35.7: tratamiento y fines, necesidad y proporcionalidad, riesgos y medidas | Siempre |
+| `docs/security.md` | Threat model: activos, actores, amenazas (incluidas inyección de instrucciones, fuga de datos por las respuestas y envenenamiento de datos) y una mitigación por amenaza | Siempre |
+| `docs/system-card.md` | Ficha del sistema, para quien lo opera | Siempre |
+| `docs/model-card.md` | Ficha del modelo, para quien lo usa | Con ficheros de pesos o una dependencia de entrenamiento |
+| `docs/data-card.md` | Ficha de los datos, para quien los audita | Con ficheros de pesos, una dependencia de entrenamiento o ficheros de datos de entrenamiento |
+
+La skill lee el proyecto sin escribir nada: las dependencias de IA de `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod` y `Cargo.toml`, los ficheros de pesos de modelo (`.safetensors`, `.onnx`, `.pt`, `.pth`, `.gguf`, `.h5`, `.joblib`, `.pkl`) y la sección `## Datos personales` de `docs/CONSTITUTION.md`. La lista de dependencias que cuentan está en `assets/ai-signals.json` de la skill. Después te entrevista en tandas, con una respuesta recomendada por pregunta, y confirma una vez qué documentos genera; puedes quitar o añadir fichas. Si `data-protection-guideline` está instalada, la DPIA usa sus ítems `DP-NN` para los riesgos y las medidas.
+
+En cada documento:
+
+- Cada afirmación cita su fuente: un fichero del proyecto, la sección de `docs/CONSTITUTION.md` o «entrevista (AAAA-MM-DD)».
+- Lo que la skill no deduce ni obtiene en la entrevista queda como `> **Hueco:** <qué falta>`, para que lo rellenes.
+- La última línea dice «Documento orientativo: no certifica cumplimiento ni es asesoramiento jurídico.». La skill no escribe un documento sin ella.
+
+**No pisa lo que editas.** Cada documento generado empieza por `<!-- setup-compliance sha256=… -->`, el hash del resto del fichero. Al repetir `/setup-compliance`, un documento sin editar se actualiza; uno que editaste, o que escribiste tú sin esa marca, se conserva tal cual. Al terminar, la skill muestra una tabla con cada documento, su ruta, el resultado (`creado`, `igual`, `actualizado` o `conservado`) y el número de huecos.
+
+La skill no cambia `docs/CONSTITUTION.md` ni mantiene los documentos al día en cada tarea: repítela cuando el proyecto cambie.
 
 ## Modelos de los agentes
 

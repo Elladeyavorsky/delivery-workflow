@@ -385,6 +385,18 @@ for agent in concept-developer concept-tester; do
 done
 check "delivery-workflow nombra legal-advisor en herramientas" grep -qF '**Subagente `legal-advisor`:**' "$dw"
 
+# setup-compliance: skill instalable con sus plantillas.
+sc="${skills}/setup-compliance"
+check "setup-compliance declara su name" grep -qx "name: setup-compliance" "${sc}/SKILL.md"
+check "setup-compliance trae una description en español" bash -c "$(declare -f frontmatter); frontmatter '${sc}/SKILL.md' | grep -qE '^description: .*(Genera|documentación|Úsala)'"
+check "setup-compliance nombra detect y write" bash -c "grep -q 'detect' '${sc}/SKILL.md' && grep -q 'write' '${sc}/SKILL.md'"
+for t in ai-act dpia model-card data-card system-card security; do
+  check "plantilla ${t} termina con la línea orientativa" bash -c "[[ \"\$(grep -v '^[[:space:]]*\$' '${sc}/assets/${t}.md' | tail -n 1)\" == 'Documento orientativo: no certifica cumplimiento ni es asesoramiento jurídico.' ]]"
+  check "plantilla ${t} trae Fuente: y hueco y no dice cumple" bash -c "grep -q '^Fuente:' '${sc}/assets/${t}.md' && grep -qF '> **Hueco:**' '${sc}/assets/${t}.md' && ! grep -qi 'cumple' '${sc}/assets/${t}.md'"
+done
+check "setup-compliance trae la lista de señales de IA" test -f "${sc}/assets/ai-signals.json"
+check "la guía del AI Act cita el CELEX 32024R1689" grep -qF "32024R1689" "${sc}/assets/ai-act-classification.md"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."
