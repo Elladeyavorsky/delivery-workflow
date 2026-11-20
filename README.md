@@ -74,14 +74,14 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 
 ## Documentación de las dependencias
 
-`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por un solo canal por ordenador, cada uno con su propio MCP:
+`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. La leen por uno de estos canales, cada uno con su propio MCP:
 
 | Canal | MCP | Qué sale del ordenador | Requisitos |
 |---|---|---|---|
 | **Context7** (por defecto) | `context7`, remoto | El nombre de la librería y la pregunta, hacia Upstash | Ninguno |
 | **RAG local** | `docs-rag`, local | Solo la descarga de la documentación | Docker, Ollama y `uv` |
 
-Los dos se registran en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). Registrar uno quita el otro. `apm install` y `apm update` no tocan esta elección.
+Context7 se registra en la config de usuario de cada herramienta, fuera de git: `~/.claude.json` (Claude Code), `~/.cursor/mcp.json` (Cursor) y `~/.codex/config.toml` (Codex). `docs-rag` se registra en la config de cada proyecto: `.mcp.json`, `.cursor/mcp.json` y `.codex/config.toml`. Solo hay un canal activo: `/setup-docs-rag` quita Context7 de la config de usuario y su regla del proyecto, y `/setup-context7` quita `docs-rag` de la config del proyecto. Como la config de Context7 es de usuario, pasar un proyecto al RAG local deja sin Context7 a los demás proyectos de ese ordenador hasta que vuelvas a lanzar `/setup-context7`. `apm install` y `apm update` no tocan esta elección.
 
 Las dos skills leen las dependencias de tu proyecto (`package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, `Cargo.toml`), en la raíz y en cualquier subcarpeta. En un repositorio git las buscan con `git ls-files`, así que respetan `.gitignore` (sin `node_modules` ni `dist`) y no tienen límite de profundidad; sin git recorren hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build y piden confirmación una sola vez.
 
@@ -106,10 +106,12 @@ cursor .      # o claude, o codex
 
 ### RAG local
 
-`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después registra el MCP `docs-rag`, con dos herramientas: `resolver_paquete` y `consultar_docs`.
+`/setup-docs-rag` indexa en tu ordenador la documentación oficial de cada dependencia y de cada runtime fijado (Python, Node, Go y Rust), en la versión exacta del lockfile. Sin lockfile usa la mínima del rango y lo avisa. Después instala y registra en el proyecto el MCP `docs-rag`, con dos herramientas: `resolve_package` y `query_docs`. Sus datos y sus respuestas tienen las claves en inglés.
 
-- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `~/.docs-rag/`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
-- **Fuera de git:** el índice de cada proyecto va en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Requisitos:** [Docker](https://www.docker.com) (arranca Qdrant en el contenedor `docs-rag-qdrant`), [Ollama](https://ollama.com) (descarga `nomic-embed-text`) y [uv](https://docs.astral.sh/uv/) (descarga Python 3.15 si no está y prepara el entorno en `.docs-rag/venv`). La primera vez descarga también el reordenador, unos cientos de MB con PyTorch.
+- **En el proyecto, fuera de git:** el código del MCP, su entorno y el índice van en `.docs-rag/`, que trae su propio `.gitignore`.
+- **Registro:** `docs-rag` va en `.mcp.json`, `.cursor/mcp.json` y `.codex/config.toml` del proyecto, con rutas relativas. Si subes esos ficheros a git, quien no haya lanzado `/setup-docs-rag` verá un MCP que no arranca.
+- **Desde una versión anterior:** `/setup-docs-rag` quita el `docs-rag` de la config de usuario y vuelve a indexar todo, porque el índice anterior tenía los metadatos en español. `~/.docs-rag/` ya no se usa: puedes borrarlo.
 - **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
 - **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [docs/research/rag-documentacion-python-3.15.pdf](docs/research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.
 
