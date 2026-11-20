@@ -1,6 +1,6 @@
 # La guía de protección de datos es orientativa
 
-La skill `data-protection-guideline` es un checklist de protección de datos (RGPD y LOPDGDD) que precargan `concept-developer`, `concept-tester` y `code-tester`. Señala posibles problemas de una tarea con el id del ítem y el artículo. No certifica cumplimiento ni añade una puerta bloqueante propia: el ciclo sigue parando solo por un hueco, un secreto o la ronda 9 fallida ([ADR 0004](0004-el-ciclo-corre-sin-aprobacion-humana.md)).
+La skill `data-protection-guideline` es un checklist de protección de datos (RGPD y LOPDGDD) que precargan `concept-developer`, `concept-tester` y `legal-advisor` ([ADR 0014](0014-asesor-legal-con-eur-lex.md)). `code-tester` comprueba los requisitos de protección de datos como cualquier otro requisito de la spec. Señala posibles problemas de una tarea con el id del ítem y el artículo. No certifica cumplimiento ni añade una puerta bloqueante propia: el ciclo sigue parando solo por un hueco, un secreto o la ronda 9 fallida ([ADR 0004](0004-el-ciclo-corre-sin-aprobacion-humana.md)).
 
 ## Cómo encaja en el ciclo
 

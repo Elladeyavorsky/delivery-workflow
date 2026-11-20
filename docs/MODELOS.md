@@ -24,6 +24,7 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 | Agente | Nivel | Por qué |
 |---|---|---|
 | `concept-developer` | pesado | Redacta la especificación y el plan: un error se propaga a todas las rondas posteriores. |
+| `legal-advisor` | pesado | Responde las consultas legales con su fuente: una respuesta mal leída acaba como requisito en la especificación. |
 | `code-developer`, `code-tester`, `concept-tester` | estándar | Escriben código y pruebas y comparan la documentación con el código: un modelo insuficiente puede dar aprobaciones erróneas. |
 | `create-issue`, `create-pr`, `create-branch`, `create-commit` | ligero | Completan una plantilla o ejecutan uno o dos scripts. |
 
@@ -31,7 +32,7 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 
 `apm install` elimina la línea `model` de los agentes sin avisar (verificado con `apm` 0.35.0 en las tres herramientas). Por ello:
 
-- `check-status` muestra `Modelos: desincronizado (cursor 0/8)`; si ningún agente lleva modelo, muestra `configurado, pero ningún agente lleva modelo`.
+- `check-status` muestra `Modelos: desincronizado (cursor 0/9)`; si ningún agente lleva modelo, muestra `configurado, pero ningún agente lleva modelo`.
 - `/configure-models` parte de lo guardado: con Enter (o `--yes`) se restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un valor guardado se considera válido si el modelo sigue en la lista actual, si no se pudo leer la lista o si se escribió a mano (en este último caso se emite un aviso, pero se conserva). Si no había nada que proponer (herramienta no disponible, lista vacía), no se guarda nada y el siguiente `apply` vuelve a proponer. Solo `--set agente=inherit` registra «heredar».
 - `apm audit` marcará esos agentes como modificados. Es el comportamiento esperado.
 

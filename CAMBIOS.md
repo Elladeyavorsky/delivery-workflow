@@ -28,6 +28,9 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas ([ADR 0011](docs/adr/0011-say-it-straight.md)). |
 | — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP y la regla del proyecto ([ADR 0012](docs/adr/0012-context7-se-configura-con-una-skill.md)). |
+| — | `.apm/skills/data-protection-guideline/` | Nueva: checklist orientativo del RGPD y la LOPDGDD con los artículos citados empaquetados ([ADR 0013](docs/adr/0013-guia-de-proteccion-de-datos.md)). |
+| — | `.apm/agents/legal-advisor.agent.md` | Nuevo: responde las consultas legales que la guía no resuelve, con la guía y el MCP de EUR-Lex, en un comentario de la issue ([ADR 0014](docs/adr/0014-asesor-legal-con-eur-lex.md)). |
+| — | `.apm/skills/setup-eur-lex/` | Nueva: escribe el MCP `eur-lex` (`@cyanheads/eur-lex-mcp-server@0.21.0`) en la config de cada herramienta, sin tocar otros MCP ([ADR 0014](docs/adr/0014-asesor-legal-con-eur-lex.md)). |
 | — | `apm.yml`, `README.md`, `CAMBIOS.md`, `GLOSSARY.md`, `docs/MANTENIMIENTO.md`, `docs/adr/`, `tests/`, `.github/` | Manifiesto, documentación, tests y publicación del paquete. |
 
 ## Plantilla de git
@@ -63,6 +66,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **Al terminar.** «Para lo que hayas arrancado» deja de ser el servidor de Chroma: cualquier servidor, navegador o proceso que el ciclo arrancó se para antes del informe.
 - **Cambios pedidos en un comentario.** Si la pull request tiene `CHANGES_REQUESTED`, spec, plan y tasks van en un comentario `<!-- Revisión N -->` con las plantillas de siempre.
 - **Huecos.** Como en ChromaDB, `concept-developer` marca como hueco lo que el proyecto no responde y para. Aquí el orquestador pregunta a la persona y lo vuelve a llamar con las respuestas antes de la ronda 1.
+- **Consultas legales.** Nuevo. Si `concept-developer` o `concept-tester` devuelven dudas de protección de datos que la guía no resuelve, el orquestador llama a `legal-advisor` con todas y después a `concept-developer` con las respuestas, sin gastar ronda. Lo que `legal-advisor` no resuelve es un hueco ([ADR 0014](docs/adr/0014-asesor-legal-con-eur-lex.md)).
 - **Sin aprobación humana.** Como en ChromaDB, el ciclo no espera a que nadie apruebe la spec ([ADR 0004](docs/adr/0004-el-ciclo-corre-sin-aprobacion-humana.md)).
 - **Commit final.** Como en ChromaDB, un solo commit con los ficheros del ciclo al terminar, con el desglose y el pie de `commit-changes` (`Refs #N`).
 

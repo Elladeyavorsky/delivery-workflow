@@ -54,18 +54,24 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 
 Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de la issue, la huella, la ronda, la task y, si las hay, las listas que dice cada paso. Si es un ciclo de cambios pedidos, el encargo dice revisión: entonces `read`, `write`, `tick`, `state` y `top-hash` llevan `--revision`. No lleva el chat ni el reporte de otro agente: todo lo que necesitan está en la issue (el cuerpo, o el comentario de revisión).
 
-1. **Spec:** El subagente `concept-developer`, ronda 0. En la primera entrega escribe `## Spec`, `## Plan` y `## Tasks` debajo de la plantilla de la issue. En cambios pedidos las publica con `issue-spec revision`.
+1. **Spec:** El subagente `concept-developer`, ronda 0. En la primera entrega escribe `## Spec`, `## Plan` y `## Tasks` debajo de la plantilla de la issue. En cambios pedidos las publica con `issue-spec revision`. Si su reporte trae «Consultas legales», sigue el paso «Consultas legales» antes de la ronda 1.
 2. **Rondas:** Como máximo 9. En cada una:
    1. Si queda una task de `code-developer` sin marcar, un `code-developer` nuevo con la primera. Si no queda ninguna, no se le llama.
    2. Si al cerrar dice que la documentación ha quedado desfasada, `concept-developer` otra vez en la misma ronda, con esa lista. No gasta una ronda.
    3. Un `code-tester` nuevo.
    4. Un `concept-tester` nuevo.
-   5. Un comentario en la issue con `issue-spec comment`: la ronda, la task, los ficheros cambiados, los dos veredictos con sus comprobaciones fallidas y las notas de protección de datos de los testers, si las hay.
+   5. Un comentario en la issue con `issue-spec comment`: la ronda, la task, los ficheros cambiados, los dos veredictos con sus comprobaciones fallidas, las notas de protección de datos de `concept-tester` y los ids de las consultas legales, si los hay.
    6. Si los dos testers pasan, marca con `issue-spec tick` cada task que se cumplió en esa ronda.
-   7. Si fallan y quedan rondas, `concept-developer` con las comprobaciones fallidas: precisa la spec, actualiza el plan y añade la task siguiente. No añadas un objetivo nuevo ni escribas código.
-3. **Pasa** cuando todas las tasks de preparación, implementación y verificación están marcadas y los dos testers de la última ronda pasan. Cambia el estado con `issue-spec state N Implementada` y sigue con el commit final.
-4. **Falla** si la ronda 9 no pasa. Publica en la issue un informe con cada ronda, su task, el veredicto y las comprobaciones fallidas, y cambia el estado a Fallida. No hagas el commit final ni pidas la revisión. Espera a que la persona confirme otra pasada.
-5. **Al terminar**, pasa o falle: para lo que hayas arrancado. Si un subagente dejó un servidor o un proceso en marcha, páralo.
+   7. Si `concept-tester` trae «Consultas legales», sigue el paso «Consultas legales» con la ronda actual, pasen o fallen los testers.
+   8. Si fallan y quedan rondas, `concept-developer` con las comprobaciones fallidas: precisa la spec, actualiza el plan y añade la task siguiente. No añadas un objetivo nuevo ni escribas código. Si hubo consultas legales, es la misma llamada del paso «Consultas legales», con las dos listas.
+3. **Consultas legales:** Cuando el reporte de `concept-developer` o de `concept-tester` trae «Consultas legales». No gasta ronda: la ronda siguiente tiene el mismo número que sin la consulta.
+   1. Un `legal-advisor` nuevo, una sola vez, con el número de la issue y todas las consultas del reporte. Publica las respuestas en un comentario de la issue.
+   2. Si devuelve huecos, pregúntalos a la persona en una tanda, cada uno con su respuesta recomendada si la hay.
+   3. `concept-developer` con la ronda actual (0 si viene de la spec), las respuestas de `legal-advisor` y las de la persona. Escribe los requisitos en la spec con `(CL-NN; artículo)` y, si la ronda es 1 o más, añade la task que los recoge. Si era la ronda 9, el ciclo falla como cualquier ronda 9 con tasks pendientes.
+   4. Los ids `CL-NN` no se repiten en la issue: el encargo de `concept-developer` y de `concept-tester` lleva el primer id libre, que empieza en `CL-01`.
+4. **Pasa** cuando todas las tasks de preparación, implementación y verificación están marcadas y los dos testers de la última ronda pasan. Cambia el estado con `issue-spec state N Implementada` y sigue con el commit final.
+5. **Falla** si la ronda 9 no pasa. Publica en la issue un informe con cada ronda, su task, el veredicto y las comprobaciones fallidas, y cambia el estado a Fallida. No hagas el commit final ni pidas la revisión. Espera a que la persona confirme otra pasada.
+6. **Al terminar**, pasa o falle: para lo que hayas arrancado. Si un subagente dejó un servidor o un proceso en marcha, páralo.
 
 ## 4. Herramientas y APIs Asignadas
 
@@ -85,12 +91,15 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
 - **Subagente `code-developer`:** El código de la ronda. Siempre nuevo.
 - **Subagente `code-tester`:** Los tests de la ronda. Siempre nuevo.
 - **Subagente `concept-tester`:** Documentación y spec frente a código. Siempre nuevo. No edita.
+- **Subagente `legal-advisor`:** Las respuestas a las consultas legales, con su fuente, en un comentario de la issue. Siempre nuevo. Es el único que usa el MCP `eur-lex`.
 
 ## 5. Manejo de Errores y Excepciones
 
 - **Si falta un dato:** Pídelo antes de seguir. No inventes el número de issue, el título, el tipo ni los revisores.
 - **Si un subagente devuelve una pregunta:** Hazla en este chat, espera la respuesta y vuelve a llamar a ese subagente con ella. Así se resuelven los nombres de revisor ambiguos de `create-pr`.
 - **Si la spec tiene huecos:** Pregunta a la persona en una tanda, cada hueco con su respuesta recomendada si la hay. Llama a `concept-developer` con las respuestas antes de la ronda 1. No empieces las rondas con huecos abiertos.
+- **Si `legal-advisor` devuelve huecos:** Son huecos como los de la spec: pregúntalos en una tanda y pasa las respuestas a `concept-developer` junto con las de `legal-advisor`. No sigas con la ronda siguiente con huecos abiertos.
+- **Si `legal-advisor` no pudo publicar el comentario:** Comunica el error y pasa a `concept-developer` las respuestas de su reporte.
 - **Si `issue-spec` sale con 3:** Alguien cambió la parte de arriba de la issue. Para, enséñale a la persona qué iba a escribirse y pregunta si el cambio sigue valiendo. Si sí, toma una huella nueva con `issue-spec top-hash` y repite el paso.
 - **Si aparece un secreto:** Si un subagente encuentra una credencial en un fichero que toca, o necesita una para seguir, o `issue-spec` sale con 4, para el ciclo. No hagas commit ni pidas revisión. Nombra el fichero, nunca el valor, y espera a la persona.
 - **Si un subagente o una skill fallan:** Comunica el error y continúa cuando se resuelva.

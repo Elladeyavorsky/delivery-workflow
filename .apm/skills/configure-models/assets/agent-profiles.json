@@ -22,6 +22,10 @@
       "tier": "standard",
       "why": "Compara la documentación con el código en cada ronda: un modelo débil da falsos aprobados."
     },
+    "legal-advisor": {
+      "tier": "heavy",
+      "why": "Responde dudas legales con su fuente: una respuesta mal leída acaba como requisito en la spec."
+    },
     "create-issue": {
       "tier": "light",
       "why": "Rellena una plantilla y lanza scripts."
