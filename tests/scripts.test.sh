@@ -396,6 +396,11 @@ for t in ai-act dpia model-card data-card system-card security; do
 done
 check "setup-compliance trae la lista de señales de IA" test -f "${sc}/assets/ai-signals.json"
 check "la guía del AI Act cita el CELEX 32024R1689" grep -qF "32024R1689" "${sc}/assets/ai-act-classification.md"
+for n in 5 6 50; do
+  check "el artículo ${n} del Reglamento de IA está guardado con su CELEX" bash -c "grep -qF 'Artículo ${n}' '${sc}/assets/reglamento-ia/articulo-${n}.md' && grep -qF '32024R1689' '${sc}/assets/reglamento-ia/articulo-${n}.md'"
+done
+check "el paso del art. 50 cita los apartados 1 a 6 y los dos roles" bash -c "step=\$(sed -n '/^### 5\\. Transparencia/,/^### 6\\./p' '${sc}/assets/ai-act-classification.md'); for a in 50.1 50.2 50.3 50.4 50.5 50.6; do grep -qF \"art. \$a\" <<<\"\$step\" || grep -qF \"\$a)\" <<<\"\$step\" || exit 1; done; grep -qF 'proveedor' <<<\"\$step\" && grep -qF 'responsable del despliegue' <<<\"\$step\""
+check "el paso del art. 50 no se salta en alto riesgo" bash -c "grep -qF 'El paso 5 se evalúa además' '${sc}/assets/ai-act-classification.md' && ! grep -qF 'pasos en este orden y para en el primero' '${sc}/assets/ai-act-classification.md'"
 
 echo
 if [[ $failures -eq 0 ]]; then

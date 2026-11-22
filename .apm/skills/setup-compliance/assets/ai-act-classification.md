@@ -2,7 +2,7 @@
 
 Guía para `docs/ai-act.md`. Ordena las preguntas con que la skill propone una de cuatro categorías: prohibido, alto riesgo, riesgo limitado o riesgo mínimo. La clasificación es una propuesta que la persona confirma.
 
-Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32024R1689. La guía cita artículos y anexos y no copia su texto: consulta el texto oficial antes de decidir.
+Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32024R1689. La guía cita artículos y anexos. El texto oficial en español de los arts. 5, 6 y 50 está en `assets/reglamento-ia/articulo-N.md`: consúltalo antes de decidir.
 
 ## Antes de empezar
 
@@ -10,7 +10,7 @@ Pregunta primero si el proyecto tiene un sistema de IA, es decir, si usa un mode
 
 ## Orden de preguntas
 
-Recorre los pasos en este orden y para en el primero que aplique.
+Recorre los pasos 1 a 3 en este orden y para en el primero que aplique. El paso 4 solo sigue a un alto riesgo del paso 3. El paso 5 se evalúa además, salvo que el paso 1 dé «prohibido».
 
 ### 1. Prácticas prohibidas (art. 5)
 
@@ -51,23 +51,28 @@ Fuente: art. 6, apartado 2, y anexo III.
 
 Si el paso 3 dio alto riesgo, pregunta si el sistema no plantea un riesgo significativo para la salud, la seguridad o los derechos fundamentales porque solo hace una tarea de procedimiento limitada, mejora el resultado de una actividad humana ya hecha, detecta patrones sin sustituir ni influir en la evaluación humana, o hace una tarea preparatoria. Sin perfilado de personas.
 
-- Si aplica y la persona lo confirma: anota la excepción, el motivo y que el proveedor debe documentar la evaluación antes de comercializar el sistema (art. 6.4). La categoría pasa a la del paso 5.
+- Si aplica y la persona lo confirma: anota la excepción, el motivo y que el proveedor debe documentar la evaluación antes de comercializar el sistema (art. 6.4). Sigue en el paso 5.
 - Si no está claro: hueco, con lo que falta.
 
 Fuente: art. 6, apartados 3 y 4.
 
 ### 5. Transparencia (art. 50)
 
-Pregunta si el sistema:
+Los pasos 2 a 4 deciden si el sistema es de alto riesgo. El paso 5 se evalúa siempre, salvo que el paso 1 diera «prohibido»: el art. 50.6 deja intactas las obligaciones de alto riesgo y suma las de transparencia. Pregunta qué hace el sistema y quién tiene cada obligación:
 
-- interactúa directamente con personas (un chatbot): hay que informarles de que hablan con una IA;
-- genera o manipula audio, imagen, vídeo o texto sintético: las salidas se marcan como generadas por IA;
-- reconoce emociones o categoriza por datos biométricos: hay que informar a las personas expuestas;
-- genera o manipula contenido que parece real (ultrafalsificaciones) o texto publicado para informar al público: hay que revelar que es artificial.
+- **Interactúa directamente con personas físicas** (un chatbot): el proveedor lo diseña para que las personas sepan que hablan con una IA, salvo que sea evidente para una persona razonablemente informada (art. 50.1).
+- **Genera contenido sintético de audio, imagen, vídeo o texto**, incluidos los sistemas de IA de uso general: el proveedor marca las salidas en formato legible por máquina para que se detecte que son artificiales. No aplica si el sistema solo apoya la edición estándar o no altera sustancialmente los datos de entrada (art. 50.2).
+- **Reconoce emociones o categoriza por datos biométricos**: el responsable del despliegue informa del funcionamiento a las personas expuestas y trata sus datos conforme al RGPD (art. 50.3).
+- **Genera o manipula imágenes, audio o vídeo que constituyen una ultrasuplantación**: el responsable del despliegue hace público que son artificiales. En una obra manifiestamente creativa, satírica, artística o de ficción basta con declararlo de forma que no estorbe su disfrute (art. 50.4, párrafo primero).
+- **Genera o manipula texto publicado para informar al público sobre asuntos de interés público**: el responsable del despliegue declara que es artificial, salvo que una persona revise el texto o lo controle editorialmente y alguien asuma la responsabilidad editorial (art. 50.4, párrafo segundo).
 
-- Si aplica alguno: categoría **riesgo limitado**, con el apartado del art. 50.
+La información llega a las personas de forma clara y distinguible, a más tardar en la primera interacción o exposición (art. 50.5). Las excepciones para fines de detección y enjuiciamiento de delitos no se preguntan: no aplican a un proyecto corriente.
 
-Fuente: art. 50.
+- Si aplica alguno y el sistema no es de alto riesgo: categoría **riesgo limitado** (etiqueta de esta guía: el art. 50 no la usa), con el apartado del art. 50 y el rol (proveedor o responsable del despliegue).
+- Si aplica alguno y el sistema es de alto riesgo: la categoría sigue siendo **alto riesgo**; anota las obligaciones del art. 50 además.
+- Si no está claro quién es proveedor y quién responsable del despliegue: hueco.
+
+Fuente: art. 50, apartados 1 a 6.
 
 ### 6. Riesgo mínimo
 
