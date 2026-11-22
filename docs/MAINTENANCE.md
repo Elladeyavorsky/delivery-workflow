@@ -92,6 +92,10 @@ El script lee `assets/sources.json` de la skill y descarga cada artículo: el RG
 
 Revisa el diff antes de hacer commit: un cambio en el texto de un artículo puede pedir un cambio en el checklist. La versión del paquete con la guía espera a dos dudas de #56.
 
+### Textos del Reglamento de IA
+
+La skill `setup-compliance` lleva en `assets/reglamento-ia/` el texto oficial en español de los arts. 5, 6 y 50 y del anexo III del Reglamento (UE) 2024/1689 (CELEX `32024R1689`). `refresh-legal-sources.mjs` no los refresca: se descargan a mano del Cellar de EUR-Lex (`http://publications.europa.eu/resource/celex/32024R1689`, con `Accept: application/xhtml+xml` y `Accept-Language: spa`) y se convierten a Markdown sin cambiar el texto. Cada fichero lleva su fecha de descarga. Si cambia un artículo, revisa el paso que lo cita en `assets/ai-act-classification.md`.
+
 ## Publicar una versión
 
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:

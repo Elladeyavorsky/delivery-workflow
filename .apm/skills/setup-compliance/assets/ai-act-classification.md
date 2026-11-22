@@ -2,7 +2,7 @@
 
 Guía para `docs/ai-act.md`. Ordena las preguntas con que la skill propone una de cuatro categorías: prohibido, alto riesgo, riesgo limitado o riesgo mínimo. La clasificación es una propuesta que la persona confirma.
 
-Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32024R1689. La guía cita artículos y anexos. El texto oficial en español de los arts. 5, 6 y 50 está en `assets/reglamento-ia/articulo-N.md`: consúltalo antes de decidir.
+Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32024R1689. La guía cita artículos y anexos. El texto oficial en español de los arts. 5, 6 y 50 y del anexo III está en `assets/reglamento-ia/articulo-N.md`: consúltalo antes de decidir.
 
 ## Antes de empezar
 
@@ -14,12 +14,21 @@ Recorre los pasos 1 a 3 en este orden y para en el primero que aplique. El paso 
 
 ### 1. Prácticas prohibidas (art. 5)
 
-Pregunta si el sistema hace alguna de las prácticas que enumera el art. 5: manipulación subliminal o engañosa que distorsiona el comportamiento, explotación de vulnerabilidades (edad, discapacidad, situación social), puntuación social, evaluación del riesgo de delito basada solo en perfiles, creación de bases de datos de reconocimiento facial por rastreo masivo, inferencia de emociones en el trabajo o en centros educativos, categorización biométrica para deducir datos sensibles e identificación biométrica remota en tiempo real en espacios públicos para la ley.
+Pregunta si el sistema hace alguna de las prácticas del art. 5.1:
 
-- Si aplica alguna: categoría **prohibido**, con el apartado del art. 5.
+- **a)** técnicas subliminales o deliberadamente manipuladoras o engañosas que alteran de manera sustancial el comportamiento de una persona o un colectivo y provocan, o es razonablemente probable que provoquen, perjuicios considerables;
+- **b)** explotación de vulnerabilidades por edad, discapacidad o situación social o económica específica, con ese mismo efecto sobre el comportamiento y el perjuicio;
+- **c)** puntuación ciudadana (evaluar o clasificar personas durante un tiempo por su comportamiento social o sus características) que provoque un trato perjudicial en contextos ajenos a donde se recogieron los datos, o un trato injustificado o desproporcionado;
+- **d)** evaluar el riesgo de que una persona cometa un delito basándose únicamente en su perfil o en los rasgos de su personalidad. No se prohíbe apoyar la valoración humana que ya se base en hechos objetivos y verificables;
+- **e)** crear o ampliar bases de datos de reconocimiento facial con extracción no selectiva de imágenes de internet o de circuitos cerrados de televisión;
+- **f)** inferir emociones en el trabajo o en centros educativos, salvo por motivos médicos o de seguridad;
+- **g)** categorización biométrica que deduzca raza, opiniones políticas, afiliación sindical, convicciones religiosas o filosóficas, vida sexual u orientación sexual. Quedan fuera el etiquetado o filtrado de conjuntos de datos biométricos adquiridos lícitamente y la categorización en el ámbito de la garantía del cumplimiento del Derecho;
+- **h)** identificación biométrica remota «en tiempo real» en espacios de acceso público para la garantía del cumplimiento del Derecho, salvo para los objetivos tasados del art. 5.1.h) y con las condiciones y la autorización previa de los apartados 2 y 3.
+
+- Si aplica alguna: categoría **prohibido**, con la letra del art. 5.1.
 - Si hay duda: hueco, con la práctica dudosa.
 
-Fuente: art. 5.
+Fuente: art. 5, apartado 1 (texto en `assets/reglamento-ia/articulo-5.md`).
 
 ### 2. Alto riesgo por producto (art. 6.1 y anexo I)
 
@@ -31,7 +40,7 @@ Fuente: art. 6, apartado 1, y anexo I.
 
 ### 3. Alto riesgo por ámbito (art. 6.2 y anexo III)
 
-Pregunta si el sistema se usa en alguno de los ámbitos del anexo III:
+Pregunta si el sistema es uno de los casos de uso que el anexo III enumera en alguno de estos ámbitos. Mira la letra concreta en `assets/reglamento-ia/anexo-III.md`: un sistema del mismo ámbito que no encaja en un caso de uso no entra por aquí.
 
 1. Biometría (identificación remota, categorización, reconocimiento de emociones).
 2. Infraestructuras críticas (componente de seguridad de tráfico, agua, gas, calefacción, electricidad, digital).
@@ -42,16 +51,23 @@ Pregunta si el sistema se usa en alguno de los ámbitos del anexo III:
 7. Migración, asilo y control de fronteras.
 8. Administración de justicia y procesos democráticos.
 
-- Si aplica un ámbito: categoría **alto riesgo**, con art. 6.2 y el punto del anexo III.
+- Si aplica un ámbito: categoría **alto riesgo**, con art. 6.2 y el punto y la letra del anexo III.
 - Si el sistema hace perfilado de personas en un ámbito del anexo III, es alto riesgo siempre (art. 6.3, último párrafo).
 
 Fuente: art. 6, apartado 2, y anexo III.
 
 ### 4. Excepciones del art. 6.3
 
-Si el paso 3 dio alto riesgo, pregunta si el sistema no plantea un riesgo significativo para la salud, la seguridad o los derechos fundamentales porque solo hace una tarea de procedimiento limitada, mejora el resultado de una actividad humana ya hecha, detecta patrones sin sustituir ni influir en la evaluación humana, o hace una tarea preparatoria. Sin perfilado de personas.
+Si el paso 3 dio alto riesgo, pregunta si el sistema no plantea un riesgo importante de perjuicio para la salud, la seguridad o los derechos fundamentales, también por no influir sustancialmente en el resultado de la toma de decisiones, y cumple alguna condición del art. 6.3:
 
-- Si aplica y la persona lo confirma: anota la excepción, el motivo y que el proveedor debe documentar la evaluación antes de comercializar el sistema (art. 6.4). Sigue en el paso 5.
+- **a)** hace una tarea de procedimiento limitada;
+- **b)** mejora el resultado de una actividad humana ya realizada;
+- **c)** detecta patrones de toma de decisiones o desviaciones respecto a patrones anteriores, sin sustituir ni influir en la valoración humana previa sin una revisión humana adecuada;
+- **d)** hace una tarea preparatoria de una evaluación pertinente para los casos de uso del anexo III.
+
+Con perfilado de personas físicas la excepción no existe: sigue siendo alto riesgo.
+
+- Si aplica y la persona lo confirma: anota la condición, el motivo y que el proveedor documenta la evaluación antes de introducir el sistema en el mercado o ponerlo en servicio, se registra conforme al art. 49.2 y entrega la documentación a las autoridades nacionales que se la pidan (art. 6.4). Sigue en el paso 5.
 - Si no está claro: hueco, con lo que falta.
 
 Fuente: art. 6, apartados 3 y 4.
