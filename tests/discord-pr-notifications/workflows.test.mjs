@@ -58,7 +58,7 @@ test('el disparador recoge cualquier PR a staging sin secretos', () => {
 });
 
 test('delivery-workflow publica desde su staging con la acción local confiable', () => {
-  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \[Discord: capture pull request, Discord: capture confirmation\]/);
+  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \["Discord: capture pull request", "Discord: capture confirmation"\]/);
   assert.match(packagePublisher, /github\.ref == 'refs\/heads\/staging'/);
   assert.match(packagePublisher, /workflow_run\.conclusion == 'success'/);
   assert.match(packagePublisher, /workflow_run\.event == 'pull_request'/);

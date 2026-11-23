@@ -1,4 +1,4 @@
-name: Discord: capture pull request
+name: "Discord: capture pull request"
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Discord: capture confirmation
+name: "Discord: capture confirmation"
 
 on:
   issue_comment:

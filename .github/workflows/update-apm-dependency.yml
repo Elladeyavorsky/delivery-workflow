@@ -1,4 +1,4 @@
-name: APM: update dependency
+name: "APM: update dependency"
 
 on:
   workflow_call:
