@@ -1,11 +1,11 @@
 # Reglamento de IA · Anexo III. Sistemas de IA de alto riesgo a que se refiere el artículo 6, apartado 2
 
 - **Fuente:** EUR-Lex (Cellar), texto publicado en el Diario Oficial, versión en español
-- **Enlace:** http://publications.europa.eu/resource/celex/32024R1689
-- **Versión:** 32024R1689
-- **Fecha de descarga:** 2026-11-22
+- **Enlace:** http://publications.europa.eu/resource/celex/02024R1689-20260727
+- **Versión:** 02024R1689-20260727 (texto consolidado de 32024R1689 con el Reglamento (UE) 2026/1744)
+- **Fecha de descarga:** 2026-11-23
 - **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
-- **Adaptación:** Extracto de un anexo, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto.
+- **Adaptación:** Extracto de un anexo del texto consolidado, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto.
 
 Los sistemas de IA de alto riesgo con arreglo al artículo 6, apartado 2, son los sistemas de IA que formen parte de cualquiera de los ámbitos siguientes:
 

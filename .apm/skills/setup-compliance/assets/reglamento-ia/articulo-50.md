@@ -1,11 +1,11 @@
 # Reglamento de IA · Artículo 50. Obligaciones de transparencia de los proveedores y responsables del despliegue de determinados sistemas de IA
 
 - **Fuente:** EUR-Lex (Cellar), texto publicado en el Diario Oficial, versión en español
-- **Enlace:** http://publications.europa.eu/resource/celex/32024R1689
-- **Versión:** 32024R1689
-- **Fecha de descarga:** 2026-11-22
+- **Enlace:** http://publications.europa.eu/resource/celex/02024R1689-20260727
+- **Versión:** 02024R1689-20260727 (texto consolidado de 32024R1689 con el Reglamento (UE) 2026/1744)
+- **Fecha de descarga:** 2026-11-23
 - **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
-- **Adaptación:** Extracto de un artículo, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto.
+- **Adaptación:** Extracto de un artículo del texto consolidado, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto; se conservan las marcas ▼B, ▼M1 y ▼C1 del consolidado.
 
 1. Los proveedores garantizarán que los sistemas de IA destinados a interactuar directamente con personas físicas se diseñen y desarrollen de forma que las personas físicas de que se trate estén informadas de que están interactuando con un sistema de IA, excepto cuando resulte evidente desde el punto de vista de una persona física razonablemente informada, atenta y perspicaz, teniendo en cuenta las circunstancias y el contexto de utilización. Esta obligación no se aplicará a los sistemas de IA autorizados por ley para detectar, prevenir, investigar o enjuiciar delitos, con sujeción a las garantías adecuadas para los derechos y libertades de terceros, salvo que estos sistemas estén a disposición del público para denunciar un delito penal.
 
@@ -13,7 +13,7 @@
 
 3. Los responsables del despliegue de un sistema de reconocimiento de emociones o de un sistema de categorización biométrica informarán del funcionamiento del sistema a las personas físicas expuestas a él y tratarán sus datos personales de conformidad con los Reglamentos (UE) 2016/679 y (UE) 2018/1725 y con la Directiva (UE) 2016/680, según corresponda. Esta obligación no se aplicará a los sistemas de IA utilizados para la categorización biométrica y el reconocimiento de emociones que hayan sido autorizados por ley para detectar, prevenir e investigar delitos, con sujeción a las garantías adecuadas para los derechos y libertades de terceros y de conformidad con el Derecho de la Unión.
 
-4. Los responsables del despliegue de un sistema de IA que genere o manipule imágenes o contenidos de audio o vídeo que constituyan una ultrasuplantación harán público que estos contenidos o imágenes han sido generados o manipulados de manera artificial. Esta obligación no se aplicará cuando la ley autorice su uso para para detectar, prevenir, investigar o enjuiciar delitos. Cuando el contenido forme parte de una obra o programa manifiestamente creativos, satíricos, artísticos, de ficción o análogos, las obligaciones de transparencia establecidas en el presente apartado se limitarán a la obligación de hacer pública la existencia de dicho contenido generado o manipulado artificialmente de una manera adecuada que no dificulte la exhibición o el disfrute de la obra.
+4. ►C1 Los responsables del despliegue de un sistema de IA que genere o manipule imágenes o contenidos de audio o vídeo que constituyan una ultrafalsificación harán público que estos contenidos o imágenes han sido generados o manipulados de manera artificial. Esta obligación no se aplicará cuando la ley autorice su uso para para detectar, prevenir, investigar o enjuiciar delitos. ◄ Cuando el contenido forme parte de una obra o programa manifiestamente creativos, satíricos, artísticos, de ficción o análogos, las obligaciones de transparencia establecidas en el presente apartado se limitarán a la obligación de hacer pública la existencia de dicho contenido generado o manipulado artificialmente de una manera adecuada que no dificulte la exhibición o el disfrute de la obra.
 
 Los responsables del despliegue de un sistema de IA que genere o manipule texto que se publique con el fin de informar al público sobre asuntos de interés público divulgarán que el texto se ha generado o manipulado de manera artificial. Esta obligación no se aplicará cuando el uso esté autorizado por ley para detectar, prevenir, investigar o enjuiciar delitos, o cuando el contenido generado por IA haya sido sometido a un proceso de revisión humana o de control editorial y cuando una persona física o jurídica tenga la responsabilidad editorial por la publicación del contenido.
 
@@ -21,4 +21,8 @@ Los responsables del despliegue de un sistema de IA que genere o manipule texto 
 
 6. Los apartados 1 a 4 no afectarán a los requisitos y obligaciones establecidos en el capítulo III y se entenderán sin perjuicio de otras obligaciones de transparencia establecidas en el Derecho nacional o de la Unión para los responsables del despliegue de sistemas de IA.
 
-7. La Oficina de IA fomentará y facilitará la elaboración de códigos de buenas prácticas a escala de la Unión para promover la aplicación efectiva de las obligaciones relativas a la detección y el etiquetado de contenidos generados o manipulados de manera artificial. La Comisión podrá adoptar actos de ejecución a fin de aprobar dichos códigos de buenas prácticas, de conformidad con el procedimiento establecido en el artículo 56, apartado 6. Si considera que el código no es adecuado, la Comisión podrá adoptar un acto de ejecución que especifique normas comunes para el cumplimiento de las citadas obligaciones de conformidad con el procedimiento de examen establecido en el artículo 98, apartado 2.
+▼M1
+
+7. La Comisión fomentará y facilitará la elaboración de códigos de buenas prácticas en el ámbito de la Unión para promover la aplicación efectiva de las obligaciones relativas a la detección, el marcado y el etiquetado de contenidos generados o manipulados de manera artificial. La Comisión, teniendo en cuenta en la mayor medida posible el dictamen del Consejo de IA, evaluará si la observancia de dichos códigos de buenas prácticas es adecuada para garantizar el cumplimiento de las obligaciones previstas en los apartados 2 y 4 del presente artículo, de conformidad con el procedimiento establecido en el artículo 56, apartado 6. Si considera que el código de buenas prácticas es inadecuado, la Comisión podrá adoptar un acto de ejecución que especifique normas comunes para el cumplimiento de dichas obligaciones de conformidad con el procedimiento de examen establecido en el artículo 98, apartado 2.
+
+▼B

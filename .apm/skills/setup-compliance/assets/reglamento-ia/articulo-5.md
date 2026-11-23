@@ -1,33 +1,70 @@
 # Reglamento de IA · Artículo 5. Prácticas de IA prohibidas
 
 - **Fuente:** EUR-Lex (Cellar), texto publicado en el Diario Oficial, versión en español
-- **Enlace:** http://publications.europa.eu/resource/celex/32024R1689
-- **Versión:** 32024R1689
-- **Fecha de descarga:** 2026-11-22
+- **Enlace:** http://publications.europa.eu/resource/celex/02024R1689-20260727
+- **Versión:** 02024R1689-20260727 (texto consolidado de 32024R1689 con el Reglamento (UE) 2026/1744)
+- **Fecha de descarga:** 2026-11-23
 - **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
-- **Adaptación:** Extracto de un artículo, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto.
+- **Adaptación:** Extracto de un artículo del texto consolidado, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto; se conservan las marcas ▼B, ▼M1 y ▼C1 del consolidado.
 
 1. Quedan prohibidas las siguientes prácticas de IA:
 
 - a) la introducción en el mercado, la puesta en servicio o la utilización de un sistema de IA que se sirva de técnicas subliminales que trasciendan la conciencia de una persona o de técnicas deliberadamente manipuladoras o engañosas con el objetivo o el efecto de alterar de manera sustancial el comportamiento de una persona o un colectivo de personas, mermando de manera apreciable su capacidad para tomar una decisión informada y haciendo que tomen una decisión que de otro modo no habrían tomado, de un modo que provoque, o sea razonablemente probable que provoque, perjuicios considerables a esa persona, a otra persona o a un colectivo de personas;
+
 - b) la introducción en el mercado, la puesta en servicio o la utilización de un sistema de IA que explote alguna de las vulnerabilidades de una persona física o un determinado colectivo de personas derivadas de su edad o discapacidad, o de una situación social o económica específica, con la finalidad o el efecto de alterar de manera sustancial el comportamiento de dicha persona o de una persona que pertenezca a dicho colectivo de un modo que provoque, o sea razonablemente probable que provoque, perjuicios considerables a esa persona o a otra;
+
+▼M1
+
+- b bis) la introducción en el mercado, la puesta en servicio o la utilización de un sistema de IA que genere o manipule imágenes, vídeos o audios realistas o material similar de las partes íntimas de una persona física identificable, o de una persona física identificable que participe en actividades sexualmente explícitas, sin el consentimiento libre, específico, informado e inequívoco y explícito de dicha persona para tal generación o manipulación;
+
+- b ter) la introducción en el mercado, la puesta en servicio o la utilización de un sistema de IA que genere o manipule material o espectáculos en el sentido del artículo 2, letras c) y e), de la Directiva 2011/93/UE, excepto cuando se aplique una defensa de «forma ilícita» en virtud del Derecho nacional;
+
+▼B
+
 - c) la introducción en el mercado, la puesta en servicio o la utilización de sistemas de IA para evaluar o clasificar a personas físicas o a colectivos de personas durante un período determinado de tiempo atendiendo a su comportamiento social o a características personales o de su personalidad conocidas, inferidas o predichas, de forma que la puntuación ciudadana resultante provoque una o varias de las situaciones siguientes:
+
   - i) un trato perjudicial o desfavorable hacia determinadas personas físicas o colectivos de personas en contextos sociales que no guarden relación con los contextos donde se generaron o recabaron los datos originalmente,
+
   - ii) un trato perjudicial o desfavorable hacia determinadas personas físicas o colectivos de personas que sea injustificado o desproporcionado con respecto a su comportamiento social o la gravedad de este;
+
 - d) la introducción en el mercado, la puesta en servicio para este fin específico o el uso de un sistema de IA para realizar evaluaciones de riesgos de personas físicas con el fin de valorar o predecir el riesgo de que una persona física cometa un delito basándose únicamente en la elaboración del perfil de una persona física o en la evaluación de los rasgos y características de su personalidad; esta prohibición no se aplicará a los sistemas de IA utilizados para apoyar la valoración humana de la implicación de una persona en una actividad delictiva que ya se base en hechos objetivos y verificables directamente relacionados con una actividad delictiva;
+
 - e) la introducción en el mercado, la puesta en servicio para este fin específico o el uso de sistemas de IA que creen o amplíen bases de datos de reconocimiento facial mediante la extracción no selectiva de imágenes faciales de internet o de circuitos cerrados de televisión;
+
 - f) la introducción en el mercado, la puesta en servicio para este fin específico o el uso de sistemas de IA para inferir las emociones de una persona física en los lugares de trabajo y en los centros educativos, excepto cuando el sistema de IA esté destinado a ser instalado o introducido en el mercado por motivos médicos o de seguridad;
+
 - g) la introducción en el mercado, la puesta en servicio para este fin específico o el uso de sistemas de categorización biométrica que clasifiquen individualmente a las personas físicas sobre la base de sus datos biométricos para deducir o inferir su raza, opiniones políticas, afiliación sindical, convicciones religiosas o filosóficas, vida sexual u orientación sexual; esta prohibición no incluye el etiquetado o filtrado de conjuntos de datos biométricos adquiridos lícitamente, como imágenes, basado en datos biométricos ni la categorización de datos biométricos en el ámbito de la garantía del cumplimiento del Derecho;
+
 - h) el uso de sistemas de identificación biométrica remota «en tiempo real» en espacios de acceso público con fines de garantía del cumplimiento del Derecho, salvo y en la medida en que dicho uso sea estrictamente necesario para alcanzar uno o varios de los objetivos siguientes:
+
   - i) la búsqueda selectiva de víctimas concretas de secuestro, trata de seres humanos o explotación sexual de seres humanos, así como la búsqueda de personas desaparecidas,
+
   - ii) la prevención de una amenaza específica, importante e inminente para la vida o la seguridad física de las personas físicas o de una amenaza real y actual o real y previsible de un atentado terrorista,
+
   - iii) la localización o identificación de una persona sospechosa de haber cometido un delito a fin de llevar a cabo una investigación o un enjuiciamiento penales o de ejecutar una sanción penal por alguno de los delitos mencionados en el anexo II que en el Estado miembro de que se trate se castigue con una pena o una medida de seguridad privativas de libertad cuya duración máxima sea de al menos cuatro años.
 
 El párrafo primero, letra h), se entiende sin perjuicio de lo dispuesto en el artículo 9 del Reglamento (UE) 2016/679 en lo que respecta al tratamiento de datos biométricos con fines distintos de la garantía del cumplimiento del Derecho.
 
+▼M1
+
+1 bis. A efectos del apartado 1, párrafo primero, letras b bis) y b ter):
+
+- a) la introducción en el mercado o la puesta en servicio de un sistema de IA que genere o manipule el material o los espectáculos a que se refiere el apartado 1, párrafo primero, letras b bis) o b ter), solo estará prohibida cuando:
+
+  - i) dicha generación o manipulación sea la finalidad prevista del sistema de IA, o
+
+  - ii) el diseño, el entrenamiento, la arquitectura, las capacidades o las funcionalidades orientadas al usuario del sistema hagan que esa generación o manipulación sea un resultado razonablemente previsible y reproducible, sin requerir modificaciones técnicas sustanciales, y el sistema no disponga de medidas técnicas de seguridad razonables y adecuadas y de otras salvaguardias para evitar de forma fiable dicha generación o manipulación, tomando en consideración un uso indebido razonablemente previsible, ni para corregir el uso indebido observado o notificado;
+
+- b) la utilización de un sistema de IA que genere o manipule el material o los espectáculos a que se refiere el apartado 1, párrafo primero, letras b bis) y b ter), solo está prohibida cuando el responsable del despliegue utilice el sistema con el fin de generar o manipular dicho material o espectáculos.
+
+1 ter. A efectos del apartado 1, párrafo primero, letra b bis), no constituirán manipulación los sistemas de IA que manipulen el material en un modo que no aumente la exposición de ninguna parte íntima representada ni altere la naturaleza de ninguna actividad sexualmente explícita representada.
+
+▼B
+
 2. El uso de sistemas de identificación biométrica remota «en tiempo real» en espacios de acceso público con fines de garantía del cumplimiento del Derecho para cualquiera de los objetivos mencionados en el apartado 1, párrafo primero, letra h), debe desplegarse para los fines establecidos en dicha letra, únicamente para confirmar la identidad de la persona que constituya el objetivo específico y tendrá en cuenta los siguientes aspectos:
 
 - a) la naturaleza de la situación que dé lugar al posible uso, y en particular la gravedad, probabilidad y magnitud del perjuicio que se produciría de no utilizarse el sistema;
+
 - b) las consecuencias que tendría el uso del sistema en los derechos y las libertades de las personas implicadas, y en particular la gravedad, probabilidad y magnitud de dichas consecuencias.
 
 Además, el uso de sistemas de identificación biométrica remota «en tiempo real» en espacios de acceso público con fines de garantía del cumplimiento del Derecho para cualquiera de los objetivos mencionados en el apartado 1, párrafo primero, letra h), del presente artículo deberá cumplir garantías y condiciones necesarias y proporcionadas en relación con el uso de conformidad con el Derecho nacional que autorice dicho uso, en particular en lo que respecta a las limitaciones temporales, geográficas y personales. El uso del sistema de identificación biométrica remota «en tiempo real» en espacios de acceso público solo se autorizará si la autoridad garante del cumplimiento del Derecho ha completado una evaluación de impacto relativa a los derechos fundamentales según lo dispuesto en el artículo 27 y ha registrado el sistema en la base de datos de la UE de conformidad con el artículo 49. No obstante, en casos de urgencia debidamente justificados, se podrá empezar a utilizar tales sistemas sin el registro en la base de datos de la UE, siempre que dicho registro se complete sin demora indebida.

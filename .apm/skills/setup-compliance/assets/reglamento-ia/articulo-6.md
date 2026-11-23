@@ -1,16 +1,27 @@
 # Reglamento de IA · Artículo 6. Reglas de clasificación de los sistemas de IA de alto riesgo
 
 - **Fuente:** EUR-Lex (Cellar), texto publicado en el Diario Oficial, versión en español
-- **Enlace:** http://publications.europa.eu/resource/celex/32024R1689
-- **Versión:** 32024R1689
-- **Fecha de descarga:** 2026-11-22
+- **Enlace:** http://publications.europa.eu/resource/celex/02024R1689-20260727
+- **Versión:** 02024R1689-20260727 (texto consolidado de 32024R1689 con el Reglamento (UE) 2026/1744)
+- **Fecha de descarga:** 2026-11-23
 - **Aviso:** Copia informativa, no auténtica: el texto auténtico es el publicado en el Diario Oficial.
-- **Adaptación:** Extracto de un artículo, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto.
+- **Adaptación:** Extracto de un artículo del texto consolidado, sin considerandos. Formato XHTML convertido a Markdown sin cambiar el texto; se conservan las marcas ▼B, ▼M1 y ▼C1 del consolidado.
 
 1. Con independencia de si se ha introducido en el mercado o se ha puesto en servicio sin estar integrado en los productos que se mencionan en las letras a) y b), un sistema de IA se considerará de alto riesgo cuando reúna las dos condiciones que se indican a continuación:
 
 - a) que el sistema de IA esté destinado a ser utilizado como componente de seguridad de un producto que entre en el ámbito de aplicación de los actos legislativos de armonización de la Unión enumerados en el anexo I, o que el propio sistema de IA sea uno de dichos productos, y
+
 - b) que el producto del que el sistema de IA sea componente de seguridad con arreglo a la letra a), o el propio sistema de IA como producto, deba someterse a una evaluación de la conformidad de terceros para su introducción en el mercado o puesta en servicio con arreglo a los actos legislativos de armonización de la Unión enumerados en el anexo I.
+
+▼M1
+
+1 bis. A efectos del presente Reglamento, incluido el apartado 1 del presente artículo, los sistemas de IA que se utilicen únicamente para aspectos no relacionados con la seguridad en los ámbitos de la asistencia al usuario, la optimización del rendimiento, la eficiencia del servicio, la automatización, la comodidad o el control de calidad no se considerarán componentes de seguridad.
+
+1 ter. No obstante lo dispuesto en el apartado 1 bis, los sistemas de IA cuyo fallo o defecto de funcionamiento pueda poner en peligro la salud y la seguridad se considerarán componentes de seguridad.
+
+1 quater. Se considerará que no cumplen la condición establecida en el apartado 1, letra b), los productos que deban someterse a una evaluación de la conformidad de terceros únicamente debido a riesgos distintos de los riesgos para la salud y la seguridad, en particular los riesgos relacionados con la distribución del espectro radioeléctrico o las interferencias electromagnéticas que no afecten a la salud y la seguridad.
+
+▼B
 
 2. Además de los sistemas de IA de alto riesgo a que se refiere el apartado 1, también se considerarán de alto riesgo los sistemas de IA contemplados en el anexo III.
 
@@ -19,8 +30,11 @@
 El párrafo primero se aplicará cuando se cumpla cualquiera de las condiciones siguientes:
 
 - a) que el sistema de IA esté destinado a realizar una tarea de procedimiento limitada;
+
 - b) que el sistema de IA esté destinado a mejorar el resultado de una actividad humana previamente realizada;
+
 - c) que el sistema de IA esté destinado a detectar patrones de toma de decisiones o desviaciones con respecto a patrones de toma de decisiones anteriores y no esté destinado a sustituir la valoración humana previamente realizada sin una revisión humana adecuada, ni a influir en ella, o
+
 - d) que el sistema de IA esté destinado a realizar una tarea preparatoria para una evaluación que sea pertinente a efectos de los casos de uso enumerados en el anexo III.
 
 No obstante lo dispuesto en el párrafo primero, los sistemas de IA a que se refiere el anexo III siempre se considerarán de alto riesgo cuando el sistema de IA efectúe la elaboración de perfiles de personas físicas.

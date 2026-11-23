@@ -2,7 +2,7 @@
 
 Guía para `docs/ai-act.md`. Ordena las preguntas con que la skill propone una de cuatro categorías: prohibido, alto riesgo, riesgo limitado o riesgo mínimo. La clasificación es una propuesta que la persona confirma.
 
-Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32024R1689. La guía cita artículos y anexos. El texto oficial en español de los arts. 5, 6 y 50 y del anexo III está en `assets/reglamento-ia/articulo-N.md`: consúltalo antes de decidir.
+Fuente: Reglamento (UE) 2024/1689 (Reglamento de Inteligencia Artificial), CELEX `32024R1689`, en su texto consolidado `02024R1689-20260727`, que incorpora el Reglamento (UE) 2026/1744 (Omnibus digital sobre IA): https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:02024R1689-20260727. La guía cita artículos y anexos. El texto en español de los arts. 5, 6 y 50 y del anexo III está en `assets/reglamento-ia/articulo-N.md` y `anexo-III.md`: consúltalo antes de decidir. Las marcas `▼M1` señalan lo que añadió o cambió el Reglamento 2026/1744.
 
 ## Antes de empezar
 
@@ -18,6 +18,8 @@ Pregunta si el sistema hace alguna de las prácticas del art. 5.1:
 
 - **a)** técnicas subliminales o deliberadamente manipuladoras o engañosas que alteran de manera sustancial el comportamiento de una persona o un colectivo y provocan, o es razonablemente probable que provoquen, perjuicios considerables;
 - **b)** explotación de vulnerabilidades por edad, discapacidad o situación social o económica específica, con ese mismo efecto sobre el comportamiento y el perjuicio;
+- **b bis)** generar o manipular imágenes, vídeos o audios realistas de las partes íntimas de una persona física identificable, o de ella en actividades sexualmente explícitas, sin su consentimiento libre, específico, informado e inequívoco;
+- **b ter)** generar o manipular material o espectáculos de abuso sexual infantil en el sentido del art. 2, letras c) y e), de la Directiva 2011/93/UE, salvo que el Derecho nacional aplique la defensa de «forma ilícita»;
 - **c)** puntuación ciudadana (evaluar o clasificar personas durante un tiempo por su comportamiento social o sus características) que provoque un trato perjudicial en contextos ajenos a donde se recogieron los datos, o un trato injustificado o desproporcionado;
 - **d)** evaluar el riesgo de que una persona cometa un delito basándose únicamente en su perfil o en los rasgos de su personalidad. No se prohíbe apoyar la valoración humana que ya se base en hechos objetivos y verificables;
 - **e)** crear o ampliar bases de datos de reconocimiento facial con extracción no selectiva de imágenes de internet o de circuitos cerrados de televisión;
@@ -25,18 +27,22 @@ Pregunta si el sistema hace alguna de las prácticas del art. 5.1:
 - **g)** categorización biométrica que deduzca raza, opiniones políticas, afiliación sindical, convicciones religiosas o filosóficas, vida sexual u orientación sexual. Quedan fuera el etiquetado o filtrado de conjuntos de datos biométricos adquiridos lícitamente y la categorización en el ámbito de la garantía del cumplimiento del Derecho;
 - **h)** identificación biométrica remota «en tiempo real» en espacios de acceso público para la garantía del cumplimiento del Derecho, salvo para los objetivos tasados del art. 5.1.h) y con las condiciones y la autorización previa de los apartados 2 y 3.
 
+Las letras b bis) y b ter) tienen condiciones propias en los apartados 1 bis y 1 ter. Un proveedor solo incurre en la prohibición si generar o manipular ese material es la finalidad prevista del sistema, o si su diseño, entrenamiento, arquitectura, capacidades o funcionalidades hacen ese resultado razonablemente previsible y reproducible. Quien lo utiliza solo incurre si lo emplea para generarlo. Lee el texto completo de los apartados 1 bis y 1 ter antes de decidir.
+
 - Si aplica alguna: categoría **prohibido**, con la letra del art. 5.1.
 - Si hay duda: hueco, con la práctica dudosa.
 
-Fuente: art. 5, apartado 1 (texto en `assets/reglamento-ia/articulo-5.md`).
+Fuente: art. 5, apartados 1, 1 bis y 1 ter (texto en `assets/reglamento-ia/articulo-5.md`).
 
 ### 2. Alto riesgo por producto (art. 6.1 y anexo I)
 
 Pregunta si el sistema es un componente de seguridad de un producto, o es él mismo un producto, que cae bajo la legislación de armonización de la Unión del anexo I (por ejemplo máquinas, juguetes, productos sanitarios, vehículos, aviación, ascensores) y que exige una evaluación de conformidad de tercero.
 
+Los apartados 1 bis a 1 quater acotan la condición: un sistema que solo sirve a aspectos ajenos a la seguridad (asistencia al usuario, rendimiento, eficiencia, automatización, comodidad, control de calidad) no es componente de seguridad, salvo que su fallo pueda poner en peligro la salud y la seguridad. Un producto que exige evaluación de tercero solo por riesgos distintos de los de salud y seguridad no cumple la condición de la letra b).
+
 - Si aplica: categoría **alto riesgo**, con art. 6.1 y el acto del anexo I.
 
-Fuente: art. 6, apartado 1, y anexo I.
+Fuente: art. 6, apartados 1 a 1 quater, y anexo I.
 
 ### 3. Alto riesgo por ámbito (art. 6.2 y anexo III)
 
@@ -79,7 +85,7 @@ Los pasos 2 a 4 deciden si el sistema es de alto riesgo. El paso 5 se evalúa si
 - **Interactúa directamente con personas físicas** (un chatbot): el proveedor lo diseña para que las personas sepan que hablan con una IA, salvo que sea evidente para una persona razonablemente informada, atenta y perspicaz, según las circunstancias y el contexto de uso (art. 50.1).
 - **Genera contenido sintético de audio, imagen, vídeo o texto**, incluidos los sistemas de IA de uso general: el proveedor marca las salidas en formato legible por máquina para que se detecte que son artificiales. No aplica si el sistema solo apoya la edición estándar o no altera sustancialmente los datos de entrada (art. 50.2).
 - **Reconoce emociones o categoriza por datos biométricos**: el responsable del despliegue informa del funcionamiento a las personas expuestas y trata sus datos conforme al RGPD, o a la norma de protección de datos que corresponda (art. 50.3).
-- **Genera o manipula imágenes, audio o vídeo que constituyen una ultrasuplantación**: el responsable del despliegue hace público que son artificiales. En una obra o programa manifiestamente creativos, satíricos, artísticos, de ficción o análogos basta con declararlo de forma que no estorbe su exhibición ni su disfrute (art. 50.4, párrafo primero).
+- **Genera o manipula imágenes, audio o vídeo que constituyen una ultrafalsificación**: el responsable del despliegue hace público que son artificiales. En una obra o programa manifiestamente creativos, satíricos, artísticos, de ficción o análogos basta con declararlo de forma que no estorbe su exhibición ni su disfrute (art. 50.4, párrafo primero).
 - **Genera o manipula texto publicado para informar al público sobre asuntos de interés público**: el responsable del despliegue declara que es artificial, salvo que una persona revise el texto o lo controle editorialmente y alguien asuma la responsabilidad editorial (art. 50.4, párrafo segundo).
 
 La información llega a las personas de forma clara y distinguible, a más tardar en la primera interacción o exposición, y cumple los requisitos de accesibilidad aplicables (art. 50.5). El art. 50.6 deja además en pie otras obligaciones de transparencia del Derecho de la Unión o nacional para los responsables del despliegue. Los apartados 1 a 4 traen excepciones para sistemas autorizados por ley para detectar, prevenir, investigar o enjuiciar delitos. Si el proyecto trabaja en ese ámbito, es un hueco: decide la persona responsable.
