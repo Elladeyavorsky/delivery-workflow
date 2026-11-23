@@ -510,6 +510,79 @@ test('avisa del estado incierto si Discord acepta pero falla el registro', async
   assert.equal(messages, 1);
 });
 
+test('publica con un solo revisor cuando el mínimo es uno', async (t) => {
+  const { config, pr } = setup(t);
+  config.minimumReviewers = 1;
+  pr.requested_reviewers = [reviewers[0]];
+  const comments = [];
+  const posts = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/members/search?')) return response([{ user: { username: 'alice', id: aliceId } }]);
+    if (url.includes('/messages')) {
+      posts.push(JSON.parse(options.body));
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body });
+      return response(comments[0], 201);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  assert.equal(await notifyReviewers(config), 'notified');
+  assert.deepEqual(posts[0].allowed_mentions.users, [aliceId]);
+  assert.match(posts[0].content, /alice/);
+  await assert.rejects(notifyReviewers({ ...config, minimumReviewers: 2 }), /distinct reviewers/);
+});
+
+test('vuelve a publicar tras cambios pedidos y no en un push posterior sin otro pedido', async (t) => {
+  const { config, pr } = setup(t);
+  const headA = 'a'.repeat(40);
+  const headB = 'b'.repeat(40);
+  const headC = 'c'.repeat(40);
+  pr.head = { sha: headA };
+  const comments = [];
+  const posts = [];
+  let reviews = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.includes('/pulls/40/reviews')) return response(reviews);
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/members/search?')) {
+      const login = new URL(url).searchParams.get('query');
+      return response([{ user: { username: login, id: login === 'alice' ? aliceId : bobId } }]);
+    }
+    if (url.includes('/messages')) {
+      posts.push(JSON.parse(options.body));
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body, updated_at: new Date().toISOString() });
+      return response(comments[0], 201);
+    }
+    if (url.endsWith('/issues/comments/77') && options.method === 'PATCH') {
+      comments[0].body = JSON.parse(options.body).body;
+      comments[0].updated_at = new Date().toISOString();
+      return response(comments[0]);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  assert.equal(await notifyReviewers(config), 'notified');
+  pr.head.sha = headB;
+  assert.equal(await notifyReviewers(config), 'already-notified');
+  reviews = [{ state: 'CHANGES_REQUESTED', submitted_at: new Date(Date.now() + 60_000).toISOString() }];
+  assert.equal(await notifyReviewers(config), 'notified');
+  assert.match(posts[1].content, /Actualización tras cambios pedidos/);
+  assert.match(posts[1].content, /alice/);
+  assert.match(posts[1].content, /bob/);
+  assert.notEqual(posts[0].nonce, posts[1].nonce);
+  reviews = [{ state: 'CHANGES_REQUESTED', submitted_at: '2020-01-01T00:00:00.000Z' }];
+  pr.head.sha = headC;
+  assert.equal(await notifyReviewers(config), 'already-notified');
+  assert.equal(posts.length, 2);
+});
+
 test('rechaza configuración incompleta antes de consultar GitHub o Discord', async (t) => {
   const { config } = setup(t);
   let requests = 0;

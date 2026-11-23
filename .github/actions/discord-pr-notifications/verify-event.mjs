@@ -1,5 +1,6 @@
 import { appendFileSync, readFileSync, statSync } from 'node:fs';
-import { hasDistinctReviewers } from './reviewers.mjs';
+import { hasDistinctReviewers, minimumReviewers } from './reviewers.mjs';
+import { requiredCheckName, requiredCheckPassed } from './required-check.mjs';
 
 function readPrNumber(filePath) {
   if (statSync(filePath).size > 10) {
@@ -40,9 +41,9 @@ function belongsToTriggerRun(run, pullRequest) {
   return sameHeadRepository && sameHeadBranch && sameCommit;
 }
 
-function validatePullRequest(event, repository, baseBranch, runId, number, pullRequest) {
+function validatePullRequest(event, repository, baseBranch, runId, number, pullRequest, minimum) {
   const run = event.workflow_run;
-  const reviewTrigger = run?.event === 'pull_request' && run.name === 'Discord: capture pull request';
+  const reviewTrigger = run?.event === 'pull_request' && run.name === 'review';
   const confirmationTrigger = run?.event === 'issue_comment' && run.name === 'Discord: capture confirmation' &&
     run.head_repository?.full_name === repository && run.head_branch === baseBranch;
   if (event.repository?.full_name !== repository ||
@@ -52,11 +53,11 @@ function validatePullRequest(event, repository, baseBranch, runId, number, pullR
       run.conclusion !== 'success') {
     throw new Error('The completed run does not belong to this repository and trigger.');
   }
-  if (pullRequest.number !== number ||
-      pullRequest.base?.repo?.full_name !== repository ||
-      pullRequest.base?.ref !== baseBranch) {
+  if (pullRequest.number !== number || pullRequest.base?.repo?.full_name !== repository) {
     throw new Error(`PR #${number} is not an open, ready PR targeting the expected base.`);
   }
+  // Una release hacia main no se anuncia. No es un fallo del emisor.
+  if (pullRequest.base?.ref !== baseBranch) return false;
   // El disparador puede terminar después del merge; una PR ya cerrada se omite sin usar secretos.
   if (pullRequest.state === 'closed') return false;
   if (pullRequest.state !== 'open') {
@@ -72,9 +73,12 @@ function validatePullRequest(event, repository, baseBranch, runId, number, pullR
   }
 
   const reviewers = pullRequest.requested_reviewers;
-  // Las PR con menos de dos revisores se omiten sin consultar Discord.
-  if (Array.isArray(reviewers) && reviewers.length < 2) return false;
-  if (!hasDistinctReviewers(reviewers)) {
+  if (!Array.isArray(reviewers)) {
+    throw new Error(`PR #${number} does not have distinct requested reviewers.`);
+  }
+  // Por debajo del mínimo se omite. Un duplicado sí es un estado inválido.
+  if (reviewers.length < minimum) return false;
+  if (!hasDistinctReviewers(reviewers, minimum)) {
     throw new Error(`PR #${number} does not have distinct requested reviewers.`);
   }
   return true;
@@ -94,9 +98,14 @@ async function main() {
     throw new Error('Notification verification configuration is incomplete.');
   }
 
+  const minimum = minimumReviewers(process.env.MINIMUM_REVIEWERS);
+  const checkName = requiredCheckName(process.env.REQUIRED_CHECK);
   const number = readPrNumber(process.env.PR_NUMBER_FILE);
   const pullRequest = await readPullRequest(repository, number, token);
-  const eligible = validatePullRequest(event, repository, baseBranch, runId, number, pullRequest);
+  let eligible = validatePullRequest(event, repository, baseBranch, runId, number, pullRequest, minimum);
+  if (eligible && !await requiredCheckPassed(repository, pullRequest.head?.sha, checkName, token)) {
+    eligible = false;
+  }
 
   // Las rondas siguientes usan este número solo después de la consulta y validación.
   appendFileSync(process.env.GITHUB_OUTPUT, `eligible=${eligible}\n` +
