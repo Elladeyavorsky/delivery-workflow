@@ -102,6 +102,8 @@ test('reintenta el cálculo de conflictos hasta que GitHub responde', async () =
 test('review corre los tests y la comprobación en staging y en main', () => {
   assert.match(workflow, /^name: review$/m);
   assert.match(workflow, /pull_request:\s*\n\s*branches: \[staging, main\]/);
+  assert.match(workflow, /types: \[opened, synchronize, reopened, ready_for_review\]/);
+  assert.match(workflow, /if: github\.event\.pull_request\.draft == false/);
   assert.match(workflow, /contents: read/);
   assert.match(workflow, /pull-requests: read/);
   assert.match(workflow, /fetch-depth: 0/);
