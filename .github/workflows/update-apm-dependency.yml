@@ -108,8 +108,10 @@ jobs:
             exit 0
           fi
           python3 .github/scripts/self-release.py set "$DEPENDENCY_REPO" "$REF"
+          # --force: el runner no tiene recibos de despliegue y el paquete local
+          # comparte esos ficheros con la dependencia. Sin esto, APM rechaza la escritura.
           for TARGET in claude cursor codex; do
-            apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes
+            apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force
           done
 
       - name: Crear o actualizar la PR

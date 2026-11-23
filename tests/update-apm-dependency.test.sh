@@ -133,7 +133,7 @@ check "el instalador de APM usa el token de Actions" \
 
 apm_update_commands=$(grep -E '^[[:space:]]*apm update ' "$workflow" | sed 's/^[[:space:]]*//')
 check "el workflow actualiza los tres targets sin interacción" \
-  bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes'\''' _ "$apm_update_commands"
+  bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force'\''' _ "$apm_update_commands"
 
 selector=$(awk '
   /tag=\$\(jq -r / { active=1; next }
