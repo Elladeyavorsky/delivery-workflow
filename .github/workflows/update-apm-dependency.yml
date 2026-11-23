@@ -1,39 +1,9 @@
 name: "APM: update dependency"
 
 on:
-  workflow_call:
-    inputs:
-      dependency_repo:
-        description: Repositorio GitHub de la dependencia
-        required: true
-        type: string
-      target:
-        description: Herramienta APM que debe actualizarse
-        required: true
-        type: string
-      base_branch:
-        description: Rama destino de la PR de actualización
-        required: false
-        default: staging
-        type: string
-    secrets:
-      gh_token:
-        required: false
+  schedule:
+    - cron: "17 8 * * *"
   workflow_dispatch:
-    inputs:
-      dependency_repo:
-        description: Repositorio GitHub de la dependencia
-        required: true
-        type: string
-      target:
-        description: Herramienta APM que debe actualizarse
-        required: true
-        type: string
-      base_branch:
-        description: Rama destino de la PR
-        required: false
-        default: staging
-        type: string
 
 permissions:
   contents: write
@@ -42,22 +12,18 @@ permissions:
 jobs:
   update:
     name: Actualizar dependencia APM
+    if: github.repository == 'venturars/delivery-workflow'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Validar las entradas
         env:
-          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
-          TARGET: ${{ inputs.target }}
-          BASE_BRANCH: ${{ inputs.base_branch }}
+          DEPENDENCY_REPO: venturars/delivery-workflow
+          BASE_BRANCH: staging
         run: |
           [[ "$DEPENDENCY_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
             echo "dependency_repo debe tener el formato organizacion/repositorio." >&2
-            exit 1
-          }
-          [[ "$TARGET" == claude || "$TARGET" == cursor || "$TARGET" == codex ]] || {
-            echo "target debe ser claude, cursor o codex." >&2
             exit 1
           }
           git check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 || {
@@ -71,8 +37,8 @@ jobs:
       - name: Obtener la última release estable
         id: release
         env:
-          GH_TOKEN: ${{ secrets.gh_token || github.token }}
-          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_REPO: venturars/delivery-workflow
         run: |
           releases=$(gh api \
             --paginate \
@@ -109,9 +75,8 @@ jobs:
 
       - name: Actualizar la dependencia y regenerar los archivos de APM
         env:
-          DEPENDENCY_REPO: ${{ inputs.dependency_repo }}
+          DEPENDENCY_REPO: venturars/delivery-workflow
           REF: ${{ steps.release.outputs.ref }}
-          TARGET: ${{ inputs.target }}
         run: |
           python3 - "$DEPENDENCY_REPO" "$REF" <<'PY'
           from pathlib import Path
@@ -212,18 +177,20 @@ jobs:
                       pass
                   raise
           PY
-          apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes
+          for TARGET in claude cursor codex; do
+            apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes
+          done
 
-      - name: Crear o actualizar la PR del consumidor
+      - name: Crear o actualizar la PR
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.gh_token || github.token }}
-          branch: chore/update-${{ inputs.dependency_repo }}
-          base: ${{ inputs.base_branch }}
+          token: ${{ github.token }}
+          branch: chore/update-delivery-workflow
+          base: staging
           delete-branch: true
-          commit-message: "chore: update ${{ inputs.dependency_repo }} to ${{ steps.release.outputs.ref }}"
-          title: "chore: update ${{ inputs.dependency_repo }} to ${{ steps.release.outputs.ref }}"
+          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.release.outputs.ref }}"
+          title: "Update delivery-workflow to ${{ steps.release.outputs.ref }}"
           body: |
-            Actualiza `${{ inputs.dependency_repo }}` a `${{ steps.release.outputs.ref }}`.
+            Actualiza `venturars/delivery-workflow` a `${{ steps.release.outputs.ref }}`.
 
             Incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
