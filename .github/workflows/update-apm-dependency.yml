@@ -75,11 +75,34 @@ jobs:
           echo "ref=$tag" >>"$GITHUB_OUTPUT"
           echo "Última release estable: $tag"
 
+      - name: Elegir una release instalable
+        id: compatible
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_REPO: venturars/delivery-workflow
+        run: |
+          releases=$(gh api \
+            --paginate \
+            --slurp \
+            "repos/$DEPENDENCY_REPO/releases?per_page=100")
+          tag=$(python3 .github/scripts/self-release.py select "$DEPENDENCY_REPO" <<<"$releases")
+          [[ -n "$tag" ]] || {
+            echo "Ninguna release estable se puede instalar: su apm.yml depende de $DEPENDENCY_REPO." >&2
+            exit 1
+          }
+          echo "ref=$tag" >>"$GITHUB_OUTPUT"
+          echo "Release instalable: $tag"
+
       - name: Actualizar la dependencia y regenerar los archivos de APM
         env:
           DEPENDENCY_REPO: venturars/delivery-workflow
-          REF: ${{ steps.release.outputs.ref }}
+          REF: ${{ steps.compatible.outputs.ref }}
         run: |
+          actual=$(python3 .github/scripts/self-release.py pin "$DEPENDENCY_REPO")
+          if [[ "$actual" == "${DEPENDENCY_REPO}#${REF}" ]]; then
+            echo "dependencies.apm ya apunta a ${REF}."
+            exit 0
+          fi
           python3 - "$DEPENDENCY_REPO" "$REF" <<'PY'
           from pathlib import Path
           import os
@@ -190,9 +213,9 @@ jobs:
           branch: chore/update-delivery-workflow
           base: staging
           delete-branch: true
-          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.release.outputs.ref }}"
-          title: "Update delivery-workflow to ${{ steps.release.outputs.ref }}"
+          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.compatible.outputs.ref }}"
+          title: "Update delivery-workflow to ${{ steps.compatible.outputs.ref }}"
           body: |
-            Actualiza `venturars/delivery-workflow` a `${{ steps.release.outputs.ref }}`.
+            Actualiza `venturars/delivery-workflow` a `${{ steps.compatible.outputs.ref }}`.
 
             Incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
