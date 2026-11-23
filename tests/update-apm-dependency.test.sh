@@ -122,6 +122,8 @@ check "la pull request va a staging" \
   grep -Fq 'base: staging' "$workflow"
 check "el horario es diario a las 08:17 UTC" \
   grep -Fq 'cron: "17 8 * * *"' "$workflow"
+check "el instalador de APM usa el token de Actions" \
+  grep -Fq 'GITHUB_TOKEN: ${{ github.token }}' "$workflow"
 
 apm_update_commands=$(grep -E '^[[:space:]]*apm update ' "$workflow" | sed 's/^[[:space:]]*//')
 check "el workflow actualiza los tres targets sin interacción" \
