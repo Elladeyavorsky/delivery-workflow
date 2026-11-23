@@ -15,7 +15,7 @@ function validEvent() {
     repository: { full_name: repository },
     workflow_run: {
       id: 987,
-      name: 'Discord: capture pull request',
+      name: 'review',
       repository: { full_name: repository },
       event: 'pull_request',
       conclusion: 'success',
@@ -52,15 +52,24 @@ function runVerifier({ event = validEvent(), pullRequest = validPullRequest(), a
   writeFileSync(outputPath, '', 'utf8');
 
   const fetchStub = `globalThis.fetch = async (url, options) => {
-    if (url !== 'https://api.github.com/repos/owner/repository/pulls/42' ||
-        options.headers.authorization !== 'Bearer test-token') {
+    if (options.headers.authorization !== 'Bearer test-token') {
       throw new Error('Unexpected GitHub API request.');
     }
-    return {
-      ok: ${httpStatus === 200},
-      status: ${httpStatus},
-      json: async () => JSON.parse(process.env.TEST_PULL_REQUEST),
-    };
+    if (url === 'https://api.github.com/repos/owner/repository/pulls/42') {
+      return {
+        ok: ${httpStatus === 200},
+        status: ${httpStatus},
+        json: async () => JSON.parse(process.env.TEST_PULL_REQUEST),
+      };
+    }
+    if (url.startsWith('https://api.github.com/repos/owner/repository/commits/') && url.includes('/check-runs?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => JSON.parse(process.env.TEST_CHECK_RUNS || '{"check_runs":[]}'),
+      };
+    }
+    throw new Error('Unexpected GitHub API request.');
   };`;
   const importUrl = `data:text/javascript,${encodeURIComponent(fetchStub)}`;
 
@@ -123,10 +132,9 @@ test('rechaza una ejecución ajena, fallida o de otro evento', () => {
   }
 });
 
-test('rechaza repositorio, base, ejecución o token mal configurados sin exponer el secreto', () => {
+test('rechaza repositorio, ejecución o token mal configurados sin exponer el secreto', () => {
   for (const envOverrides of [
     { EXPECTED_REPOSITORY: 'other/repository' },
-    { PR_BASE_BRANCH: 'main' },
     { TRIGGER_RUN_ID: '123' },
     { GITHUB_TOKEN: '' },
   ]) {
@@ -153,10 +161,17 @@ test('omite una PR en borrador sin fallar el workflow', () => {
   assert.equal(result.output, 'eligible=false\n');
 });
 
-test('rechaza una PR dirigida a otra base o con estado inválido', () => {
+test('omite una PR cuya base no es staging', () => {
+  const pullRequest = validPullRequest();
+  pullRequest.base.ref = 'main';
+  const result = runVerifier({ pullRequest });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.output, 'eligible=false\n');
+});
+
+test('rechaza una PR dirigida a otro repositorio o con estado inválido', () => {
   for (const change of [
     (pr) => { delete pr.draft; },
-    (pr) => { pr.base.ref = 'main'; },
     (pr) => { pr.base.repo.full_name = 'other/repository'; },
     (pr) => { pr.number = 99; },
   ]) {
@@ -176,6 +191,53 @@ test('omite las PR con menos de dos revisores', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.output, 'eligible=false\n');
   }
+});
+
+test('en este repositorio un revisor pedido basta y cero sigue sin aviso', () => {
+  const one = validPullRequest();
+  one.requested_reviewers = [{ id: 10, login: 'first-reviewer' }];
+  const accepted = runVerifier({ pullRequest: one, envOverrides: { MINIMUM_REVIEWERS: '1' } });
+  assert.equal(accepted.status, 0, accepted.stderr);
+  assert.equal(accepted.output, 'eligible=true\npr_number=42\n');
+
+  const none = validPullRequest();
+  none.requested_reviewers = [];
+  const skipped = runVerifier({ pullRequest: none, envOverrides: { MINIMUM_REVIEWERS: '1' } });
+  assert.equal(skipped.status, 0, skipped.stderr);
+  assert.equal(skipped.output, 'eligible=false\n');
+});
+
+test('exige el check review en verde sobre el SHA actual', () => {
+  const sha = 'a'.repeat(40);
+  const pullRequest = validPullRequest();
+  pullRequest.head.sha = sha;
+  const event = validEvent();
+  event.workflow_run.head_sha = sha;
+  const envOverrides = { REQUIRED_CHECK: 'review' };
+  const missing = runVerifier({ event, pullRequest, envOverrides });
+  assert.equal(missing.status, 0, missing.stderr);
+  assert.equal(missing.output, 'eligible=false\n');
+
+  const passed = runVerifier({
+    event,
+    pullRequest,
+    envOverrides: {
+      ...envOverrides,
+      TEST_CHECK_RUNS: JSON.stringify({ check_runs: [{ name: 'review', conclusion: 'success', head_sha: sha }] }),
+    },
+  });
+  assert.equal(passed.status, 0, passed.stderr);
+  assert.equal(passed.output, 'eligible=true\npr_number=42\n');
+
+  const failed = runVerifier({
+    event,
+    pullRequest,
+    envOverrides: {
+      ...envOverrides,
+      TEST_CHECK_RUNS: JSON.stringify({ check_runs: [{ name: 'review', conclusion: 'failure', head_sha: sha }] }),
+    },
+  });
+  assert.equal(failed.output, 'eligible=false\n');
 });
 
 test('admite tres o más revisores solicitados y distintos', () => {

@@ -3,7 +3,7 @@ name: review
 on:
   pull_request:
     branches: [staging, main]
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, review_requested]
 
 permissions:
   contents: read
@@ -35,3 +35,17 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_ASSIGNEE: ${{ github.event.pull_request.assignee != null && github.event.pull_request.assignee.login || '' }}
         run: node .github/scripts/review-pull-request.mjs
+      # El emisor de Discord solo ve este número si la comprobación ha pasado y la base es staging.
+      - name: Save PR number for Discord
+        if: github.base_ref == 'staging'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p pr-event
+          printf '%s' "$PR_NUMBER" > pr-event/pr-number
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: github.base_ref == 'staging'
+        with:
+          name: discord-pr-number
+          path: pr-event/pr-number
+          retention-days: 1
