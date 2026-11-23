@@ -112,13 +112,19 @@ else
   failures=$((failures + 1))
 fi
 
-check "el workflow reusable no invoca scripts internos del paquete" \
+check "el workflow no es reutilizable ni acepta otro repositorio" \
+  bash -c '! grep -Eq "workflow_call|inputs:" "$1"' _ "$workflow"
+check "el workflow no invoca scripts internos del paquete" \
   bash -c '! grep -Eq "\.github/scripts/|scripts/(release|update-apm)" "$1"' _ "$workflow"
-check "el workflow usa base_branch como base de la PR" \
-  grep -Fq 'base: ${{ inputs.base_branch }}' "$workflow"
+check "el job solo corre en venturars/delivery-workflow" \
+  grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
+check "la pull request va a staging" \
+  grep -Fq 'base: staging' "$workflow"
+check "el horario es diario a las 08:17 UTC" \
+  grep -Fq 'cron: "17 8 * * *"' "$workflow"
 
 apm_update_commands=$(grep -E '^[[:space:]]*apm update ' "$workflow" | sed 's/^[[:space:]]*//')
-check "el workflow limita apm update al repositorio y evita interacción" \
+check "el workflow actualiza los tres targets sin interacción" \
   bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes'\''' _ "$apm_update_commands"
 
 selector=$(awk '
