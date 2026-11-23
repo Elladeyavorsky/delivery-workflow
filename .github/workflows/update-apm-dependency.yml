@@ -18,6 +18,8 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: staging
 
       - name: Validar las entradas
         env:
@@ -34,7 +36,9 @@ jobs:
           }
 
       - name: Instalar APM
-        run: curl -sSL https://aka.ms/apm-unix | sh
+        run: |
+          curl -sSL https://aka.ms/apm-unix | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Obtener la última release estable
         id: release
@@ -103,105 +107,7 @@ jobs:
             echo "dependencies.apm ya apunta a ${REF}."
             exit 0
           fi
-          python3 - "$DEPENDENCY_REPO" "$REF" <<'PY'
-          from pathlib import Path
-          import os
-          import re
-          import stat
-          import sys
-          import tempfile
-
-          repo, ref = sys.argv[1:]
-          if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
-              raise SystemExit("Repositorio no válido.")
-          if not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", ref):
-              raise SystemExit("La release no tiene un tag vX.Y.Z válido.")
-
-          path = Path("apm.yml")
-          if not path.is_file():
-              raise SystemExit("No existe apm.yml en el directorio actual.")
-          original = path.read_bytes()
-          lines = original.decode("utf-8").splitlines(keepends=True)
-
-          key_re = re.compile(r"^(?P<indent>[ \t]*)(?P<key>[A-Za-z0-9_-]+):[ \t]*(?:#.*)?(?:\r?\n)?$")
-          item_re = re.compile(
-              r"^(?P<prefix>[ \t]*-[ \t]*)(?P<quote>['\"]?)"
-              r"(?P<value>[^'\"\s]+)(?P=quote)(?P<suffix>[ \t]*(?:#.*)?)(?P<newline>\r?\n?)$"
-          )
-
-          dependencies = None
-          for index, line in enumerate(lines):
-              match = key_re.match(line)
-              if match and match.group("key") == "dependencies":
-                  dependencies = (index, len(match.group("indent")))
-                  break
-          if dependencies is None:
-              raise SystemExit("apm.yml no contiene dependencies.")
-
-          dependencies_index, dependencies_indent = dependencies
-          apm_index = None
-          apm_indent = None
-          for index in range(dependencies_index + 1, len(lines)):
-              line = lines[index]
-              if not line.strip() or line.lstrip().startswith("#"):
-                  continue
-              indent = len(line) - len(line.lstrip(" \t"))
-              if indent <= dependencies_indent:
-                  break
-              match = key_re.match(line)
-              if match and match.group("key") == "apm":
-                  apm_index = index
-                  apm_indent = len(match.group("indent"))
-                  break
-          if apm_index is None:
-              raise SystemExit("apm.yml no contiene dependencies.apm.")
-
-          matches = []
-          for index in range(apm_index + 1, len(lines)):
-              line = lines[index]
-              if not line.strip() or line.lstrip().startswith("#"):
-                  continue
-              indent = len(line) - len(line.lstrip(" \t"))
-              if indent <= apm_indent:
-                  break
-              match = item_re.match(line)
-              if not match:
-                  continue
-              value = match.group("value")
-              if value == repo or value.startswith(repo + "#"):
-                  matches.append((index, match, value))
-
-          if len(matches) != 1:
-              reason = "no se encontró" if not matches else "hay más de una coincidencia"
-              raise SystemExit(f"apm.yml: {reason} para {repo} en dependencies.apm.")
-          index, match, value = matches[0]
-          if not value.startswith(repo + "#") or not value[len(repo) + 1:]:
-              raise SystemExit(f"apm.yml: la dependencia {repo} no contiene un ref.")
-
-          line = lines[index]
-          lines[index] = (
-              line[:match.start("value")]
-              + f"{repo}#{ref}"
-              + line[match.end("value"):]
-          )
-          updated = "".join(lines).encode("utf-8")
-          if updated != original:
-              mode = stat.S_IMODE(path.stat().st_mode)
-              fd, temporary = tempfile.mkstemp(prefix=".apm.yml.", dir=path.parent)
-              try:
-                  with os.fdopen(fd, "wb") as stream:
-                      stream.write(updated)
-                      stream.flush()
-                      os.fsync(stream.fileno())
-                  os.chmod(temporary, mode)
-                  os.replace(temporary, path)
-              except BaseException:
-                  try:
-                      os.unlink(temporary)
-                  except FileNotFoundError:
-                      pass
-                  raise
-          PY
+          python3 .github/scripts/self-release.py set "$DEPENDENCY_REPO" "$REF"
           for TARGET in claude cursor codex; do
             apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes
           done

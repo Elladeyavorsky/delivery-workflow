@@ -120,6 +120,10 @@ check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \
   grep -Fq 'base: staging' "$workflow"
+check "el checkout es staging" \
+  grep -Fq 'ref: staging' "$workflow"
+check "el instalador publica apm en el PATH de los pasos siguientes" \
+  grep -Fq 'echo "$HOME/.local/bin" >> "$GITHUB_PATH"' "$workflow"
 check "el horario es diario a las 08:17 UTC" \
   grep -Fq 'cron: "17 8 * * *"' "$workflow"
 check "el instalador de APM usa el token de Actions" \
