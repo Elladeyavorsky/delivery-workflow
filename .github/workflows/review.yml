@@ -2,7 +2,7 @@ name: review
 
 on:
   pull_request:
-    branches: [staging, main]
+    branches: [staging]
     types: [opened, synchronize, reopened, ready_for_review, review_requested]
 
 permissions:
