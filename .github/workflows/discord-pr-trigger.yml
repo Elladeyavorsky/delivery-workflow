@@ -1,4 +1,4 @@
-name: Discord PR notification trigger
+name: Discord: capture pull request
 
 on:
   pull_request:
