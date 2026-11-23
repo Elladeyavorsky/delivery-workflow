@@ -1,0 +1,2884 @@
+lockfile_version: '4'
+apm_version: 0.38.1
+manifest_targets:
+- claude
+- codex
+- cursor
+dependencies:
+- repo_url: venturars/delivery-workflow
+  name: delivery-workflow
+  host: github.com
+  resolved_commit: db35bee7f409cf5bbbbc075431a293ebe9ee8180
+  resolved_ref: v1.2.1
+  version: 1.2.1
+  package_type: apm_package
+  deployed_files:
+  - .claude/agents/code-developer.md
+  - .claude/agents/code-tester.md
+  - .claude/agents/concept-developer.md
+  - .claude/agents/concept-tester.md
+  - .claude/agents/legal-advisor.md
+  - .claude/agents/manage-branch.md
+  - .claude/agents/manage-commit.md
+  - .claude/agents/manage-issue.md
+  - .claude/agents/manage-pr.md
+  - .claude/skills/assign-author
+  - .claude/skills/assign-author/LICENSE
+  - .claude/skills/assign-author/SKILL.md
+  - .claude/skills/assign-author/scripts/gh.sh
+  - .claude/skills/assign-reviewers
+  - .claude/skills/assign-reviewers/LICENSE
+  - .claude/skills/assign-reviewers/SKILL.md
+  - .claude/skills/assign-reviewers/scripts/gh.sh
+  - .claude/skills/check-status
+  - .claude/skills/check-status/LICENSE
+  - .claude/skills/check-status/SKILL.md
+  - .claude/skills/check-status/scripts/check-status.sh
+  - .claude/skills/check-status/scripts/gh.sh
+  - .claude/skills/close-issue
+  - .claude/skills/close-issue/LICENSE
+  - .claude/skills/close-issue/SKILL.md
+  - .claude/skills/close-issue/scripts/gh.sh
+  - .claude/skills/commit-changes
+  - .claude/skills/commit-changes/LICENSE
+  - .claude/skills/commit-changes/SKILL.md
+  - .claude/skills/commit-changes/scripts/commit-changes.sh
+  - .claude/skills/configure-models
+  - .claude/skills/configure-models/LICENSE
+  - .claude/skills/configure-models/SKILL.md
+  - .claude/skills/configure-models/assets/agent-profiles.json
+  - .claude/skills/configure-models/scripts/configure-models.mjs
+  - .claude/skills/data-protection-guideline
+  - .claude/skills/data-protection-guideline/LICENSE
+  - .claude/skills/data-protection-guideline/SKILL.md
+  - .claude/skills/data-protection-guideline/assets/checklist.md
+  - .claude/skills/data-protection-guideline/assets/datos-personales.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-11.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-28.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-32.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-5.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-6.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-7.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-9.md
+  - .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-92.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-12.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-13.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-14.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-15.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-16.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-17.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-18.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-19.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-20.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-21.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-22.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-25.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-28.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-32.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-33.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-34.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-35.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-5.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-6.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-7.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-8.md
+  - .claude/skills/data-protection-guideline/assets/rgpd/articulo-9.md
+  - .claude/skills/data-protection-guideline/assets/sources.json
+  - .claude/skills/delivery-workflow
+  - .claude/skills/delivery-workflow/LICENSE
+  - .claude/skills/delivery-workflow/SKILL.md
+  - .claude/skills/docker-best-practices
+  - .claude/skills/docker-best-practices/LICENSE
+  - .claude/skills/docker-best-practices/SKILL.md
+  - .claude/skills/docker-best-practices/assets/Dockerfile.template
+  - .claude/skills/docker-best-practices/assets/docker-compose.template.yml
+  - .claude/skills/docker-best-practices/references/cache-de-capas.md
+  - .claude/skills/docker-best-practices/references/compose-y-volumenes.md
+  - .claude/skills/docker-best-practices/references/devcontainer.md
+  - .claude/skills/docker-best-practices/references/gui-en-contenedores.md
+  - .claude/skills/docker-best-practices/references/versiones-fijas.md
+  - .claude/skills/docker-best-practices/scripts/check-docker.sh
+  - .claude/skills/edit-pull-request
+  - .claude/skills/edit-pull-request/LICENSE
+  - .claude/skills/edit-pull-request/SKILL.md
+  - .claude/skills/edit-pull-request/scripts/gh.sh
+  - .claude/skills/github-cache
+  - .claude/skills/github-cache/LICENSE
+  - .claude/skills/github-cache/SKILL.md
+  - .claude/skills/github-cache/scripts/gh.sh
+  - .claude/skills/github-cache/scripts/github-cache.mjs
+  - .claude/skills/help-me-to-think
+  - .claude/skills/help-me-to-think/LICENSE
+  - .claude/skills/help-me-to-think/SKILL.md
+  - .claude/skills/interview-free
+  - .claude/skills/interview-free/LICENSE
+  - .claude/skills/interview-free/SKILL.md
+  - .claude/skills/interview-with-repo
+  - .claude/skills/interview-with-repo/LICENSE
+  - .claude/skills/interview-with-repo/SKILL.md
+  - .claude/skills/issue-spec
+  - .claude/skills/issue-spec/LICENSE
+  - .claude/skills/issue-spec/SKILL.md
+  - .claude/skills/issue-spec/assets/plan.md
+  - .claude/skills/issue-spec/assets/spec.md
+  - .claude/skills/issue-spec/assets/tasks.md
+  - .claude/skills/issue-spec/scripts/gh.sh
+  - .claude/skills/issue-spec/scripts/issue-spec.mjs
+  - .claude/skills/launch-push
+  - .claude/skills/launch-push/LICENSE
+  - .claude/skills/launch-push/SKILL.md
+  - .claude/skills/launch-push/scripts/launch-push.sh
+  - .claude/skills/link-pr-to-issue
+  - .claude/skills/link-pr-to-issue/LICENSE
+  - .claude/skills/link-pr-to-issue/SKILL.md
+  - .claude/skills/link-pr-to-issue/scripts/gh.sh
+  - .claude/skills/manage-branch
+  - .claude/skills/manage-branch/LICENSE
+  - .claude/skills/manage-branch/SKILL.md
+  - .claude/skills/manage-branch/scripts/manage-branch.sh
+  - .claude/skills/manage-draft
+  - .claude/skills/manage-draft/LICENSE
+  - .claude/skills/manage-draft/SKILL.md
+  - .claude/skills/manage-draft/scripts/gh.sh
+  - .claude/skills/manage-empty-commit
+  - .claude/skills/manage-empty-commit/LICENSE
+  - .claude/skills/manage-empty-commit/SKILL.md
+  - .claude/skills/manage-empty-commit/scripts/manage-empty-commit.sh
+  - .claude/skills/manage-issue
+  - .claude/skills/manage-issue/LICENSE
+  - .claude/skills/manage-issue/SKILL.md
+  - .claude/skills/manage-issue/assets/chore_issue.md
+  - .claude/skills/manage-issue/assets/docs_issue.md
+  - .claude/skills/manage-issue/assets/feat_issue.md
+  - .claude/skills/manage-issue/assets/fix_issue.md
+  - .claude/skills/manage-issue/assets/knowledge_issue.md
+  - .claude/skills/manage-issue/assets/refactor_issue.md
+  - .claude/skills/manage-issue/assets/test_issue.md
+  - .claude/skills/manage-issue/scripts/check-title.sh
+  - .claude/skills/manage-issue/scripts/ensure-label.sh
+  - .claude/skills/manage-issue/scripts/gh.sh
+  - .claude/skills/manage-issue/scripts/manage-issue.sh
+  - .claude/skills/manage-pr-base
+  - .claude/skills/manage-pr-base/LICENSE
+  - .claude/skills/manage-pr-base/SKILL.md
+  - .claude/skills/manage-pr-base/assets/chore-pull-request.md
+  - .claude/skills/manage-pr-base/assets/docs-pull-request.md
+  - .claude/skills/manage-pr-base/assets/feat-pull-request.md
+  - .claude/skills/manage-pr-base/assets/fix-pull-request.md
+  - .claude/skills/manage-pr-base/assets/knowledge-pull-request.md
+  - .claude/skills/manage-pr-base/assets/refactor-pull-request.md
+  - .claude/skills/manage-pr-base/assets/test-pull-request.md
+  - .claude/skills/manage-pr-base/scripts/check-title.sh
+  - .claude/skills/manage-pr-base/scripts/ensure-label.sh
+  - .claude/skills/manage-pr-base/scripts/gh.sh
+  - .claude/skills/manage-pr-base/scripts/manage-pr-base.sh
+  - .claude/skills/pull-changes
+  - .claude/skills/pull-changes/LICENSE
+  - .claude/skills/pull-changes/SKILL.md
+  - .claude/skills/pull-changes/scripts/pull-changes.sh
+  - .claude/skills/ready-pull-request
+  - .claude/skills/ready-pull-request/LICENSE
+  - .claude/skills/ready-pull-request/SKILL.md
+  - .claude/skills/ready-pull-request/scripts/gh.sh
+  - .claude/skills/say-it-straight
+  - .claude/skills/say-it-straight/LICENSE
+  - .claude/skills/say-it-straight/SKILL.md
+  - .claude/skills/setup-compliance
+  - .claude/skills/setup-compliance/LICENSE
+  - .claude/skills/setup-compliance/SKILL.md
+  - .claude/skills/setup-compliance/assets/ai-act-classification.md
+  - .claude/skills/setup-compliance/assets/ai-act.md
+  - .claude/skills/setup-compliance/assets/ai-signals.json
+  - .claude/skills/setup-compliance/assets/data-card.md
+  - .claude/skills/setup-compliance/assets/dpia.md
+  - .claude/skills/setup-compliance/assets/model-card.md
+  - .claude/skills/setup-compliance/assets/reglamento-ia/anexo-III.md
+  - .claude/skills/setup-compliance/assets/reglamento-ia/articulo-5.md
+  - .claude/skills/setup-compliance/assets/reglamento-ia/articulo-50.md
+  - .claude/skills/setup-compliance/assets/reglamento-ia/articulo-6.md
+  - .claude/skills/setup-compliance/assets/security.md
+  - .claude/skills/setup-compliance/assets/system-card.md
+  - .claude/skills/setup-compliance/scripts/setup-compliance.mjs
+  - .claude/skills/setup-context7
+  - .claude/skills/setup-context7/LICENSE
+  - .claude/skills/setup-context7/SKILL.md
+  - .claude/skills/setup-context7/assets/library-profiles.json
+  - .claude/skills/setup-context7/scripts/setup-context7.mjs
+  - .claude/skills/setup-docs-rag
+  - .claude/skills/setup-docs-rag/LICENSE
+  - .claude/skills/setup-docs-rag/SKILL.md
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py
+  - .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml
+  - .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs
+  deployed_file_hashes:
+    .claude/agents/code-developer.md: sha256:3c3d2de6354d3c2f2aaffebada5bdacd8abe8c646d57d7032010b346506a80e5
+    .claude/agents/code-tester.md: sha256:2aac0e380aa06bc5dff511a791a0312351bc1e691310fdd68ca3b62f2f611b88
+    .claude/agents/concept-developer.md: sha256:e683498b344f77948d725a4eb7df1e72cecef1403b6289d7965dc6e90416f41e
+    .claude/agents/concept-tester.md: sha256:4c92e4cf996856dbeb3ca84184914b91ce80c98d5a78ba96be2239c746705a7b
+    .claude/agents/legal-advisor.md: sha256:5bf5f469d146f00155ac95f5ed883a335523c60e554a79cf5129fd1a8525abf9
+    .claude/agents/manage-branch.md: sha256:c3bee876d0e49323d3e68816c2e43816126cf7ce6189518f04be2e45016f98f0
+    .claude/agents/manage-commit.md: sha256:94ad50598cfb7b6be55426f330e97ce63339c7ee1d5139fff05f7e63c1dfd9af
+    .claude/agents/manage-issue.md: sha256:3d49cfa5e7ad77f9baeac0d7e63f09b97a2a59907d7e01f7a02a81f9eea189d7
+    .claude/agents/manage-pr.md: sha256:22543b498abb0eb8625d1b8d782046bbac6ffc35179bc4f681cfc020b32e8ea0
+    .claude/skills/assign-author/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/assign-author/SKILL.md: sha256:086ed9ab41fe6be380396da486cf5e27d17291f75223bbb606ffe0f8079b27f2
+    .claude/skills/assign-author/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/assign-reviewers/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/assign-reviewers/SKILL.md: sha256:67d8b3f6c751327666a29394461b3d0f44bff6ef4af390c721c0e45264ee4979
+    .claude/skills/assign-reviewers/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/check-status/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/check-status/SKILL.md: sha256:b63ca3effba441cd61746b161fdf80f3ac7057ec2f32301180c68838210b8fe8
+    .claude/skills/check-status/scripts/check-status.sh: sha256:d53c567ce43ff52cb839ac639553b826b29ef227dbec2de4375afca3f54e475a
+    .claude/skills/check-status/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/close-issue/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/close-issue/SKILL.md: sha256:3a6b61b284d007d4abf7d28a55977b10ef67cfbc437b65ad60d53dbf00867ccb
+    .claude/skills/close-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/commit-changes/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/commit-changes/SKILL.md: sha256:b44e39af2145d9bdd8bea6e4cf48dcd7e205bd68c98a1bb4f16a5bfc023b22c7
+    .claude/skills/commit-changes/scripts/commit-changes.sh: sha256:edc11a741b10b3e707175550bc0e433ca3e85c07dbaa606ba4b4fd91c3a6be33
+    .claude/skills/configure-models/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/configure-models/SKILL.md: sha256:6e01fdc704de8158849dba6d71f31513d52f1bd7b3f017e0a3e3fcd149691904
+    .claude/skills/configure-models/assets/agent-profiles.json: sha256:40993fcfca081760efc4e66541d6930fb2558de45b2d1bf5350de51e3f6bd82b
+    .claude/skills/configure-models/scripts/configure-models.mjs: sha256:170dea2047b99236248ea0bd2b57d774858a1ddde5fcd1b7e338d0557839a1e4
+    .claude/skills/data-protection-guideline/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/data-protection-guideline/SKILL.md: sha256:68a9aaf00b3e0d65085dff7595b0ecfc3efce434a32e9f1c46dc0d2a2e2b5445
+    .claude/skills/data-protection-guideline/assets/checklist.md: sha256:492ff0e6a5c3ba9150957944e35c99394a0f23049e2676f5b6cc7b707e21e822
+    .claude/skills/data-protection-guideline/assets/datos-personales.md: sha256:7724d30a88ee121785622e60905d8fc414e20beae6fb5f0e82da0b8fcd58a112
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-11.md: sha256:b6b0c4788c3f41bfbce5e3785d34296c73c875b051636bcaae1b8e9470c97fcf
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-28.md: sha256:3b3d7fe5399ea457eb3084c9039ad8f2ba5abce42c968b677ebaac5d5aa5df9d
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-32.md: sha256:eab72a181a0d02e05342d552860482ca23c41ea1f3bb94adbc1b15e19558cb4e
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-5.md: sha256:714647c01d0074dd25c280e16144e6c2689dc645b3205fbc91b6429d080f09f4
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-6.md: sha256:c7c85da3771e18bb5e5d209b879d2d551fd01a391a978f8e4a6958f0447e2e0a
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-7.md: sha256:ab3968d36cff358c46472e3b17fa3a36aec01184aa8b9d1344588b2d396c0620
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-9.md: sha256:42998b9825554709a3de3e9af90c2f7fe8e41f94605b44d5dda0f2690d3d8ce5
+    .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-92.md: sha256:93a5c753b30a7b588beb443ae7fddfcc2059f5dc94883631bb84af1b585529a5
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-12.md: sha256:522af8125a9565fcef7c302e42a0e7237bd60d9caa6a7ed4f4374a0c10b71ec6
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-13.md: sha256:f41ea33b07dd97eb2454db7643672909e60101080b7913a4d408642ee1ff983f
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-14.md: sha256:6b6c849897ff50837b1e3447b67cca568ec268c5a5ea0d6d08560f880a5672f4
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-15.md: sha256:c7a5724c3accdd8dd7d1ff1f7865bae35269675920a30be0350012590360392c
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-16.md: sha256:5f72fb8505b809e40046d0c1a5267af4d700ff20b2b7ce3a84d385ce3ffa47d3
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-17.md: sha256:0ec5728b2eb45b931d8382f716e1fa9152a0bca0c921d05b6646787055379897
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-18.md: sha256:5319ccb1c1e14af0b0e7e173e102c827ed9ee766b04c46ddc90007501a7d9669
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-19.md: sha256:b5561a46843a612ec801b4ab18619deddd01341d4a003816a129fd3ab79ab309
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-20.md: sha256:700613615829c253733858d1f9da32e120af4964c717d205bd19250da2b4ee9c
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-21.md: sha256:66eb54ea0c5863c2a0b863802dbe0e4db61acea646ff993855224debae569f48
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-22.md: sha256:1b744e47f37a526a92e4079dd9723bd4dd8332a70cfa2050dd6dca333d12f925
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-25.md: sha256:ce0f38ba66808b6a280f65b090f8cc42b634ea74acf9b2056697967fd233fa50
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-28.md: sha256:6a41a6eec4352c346b70fba54de4705d3fdcb6df90505c9cee79967f39d5e92a
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-32.md: sha256:ae7d8f71c59042e0bcc2304c0aab428ec8d1d13d2cac2a41058cbbce29c62163
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-33.md: sha256:45ee0b282d9c9128c29eb6e971868eaa531fd5f59c50372b66e18c72e1ce8a77
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-34.md: sha256:4aa199eac6da8fece14ee66a2a67864eef77d27be9176a6c0651fa219ba10dd2
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-35.md: sha256:3f129020809b41091dc21a4c7f812bff4abd038a4315e4d002d6734d8343ec06
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-5.md: sha256:745f15d6c16b6c2201623969df5b7ec4f6fadb7e7bd030deb4c46b6729780910
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-6.md: sha256:2d23a4c694443a450d0409fa03a3a324b9473fdbcbe41454aab3d2d217ca91b3
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-7.md: sha256:7360ec07b49d487fe718dc02ac0ca8cdd72b829d46a0b56e0f6ffec1e38d0f39
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-8.md: sha256:7bdd9133502e490a0d3a74b233991b47b7086d22a29af88d7c4dcf1e98b030cb
+    .claude/skills/data-protection-guideline/assets/rgpd/articulo-9.md: sha256:7319856caa4c7c44bb7d05a87ca9ad61a3ce2f67d1336a10cc9366535af44bcf
+    .claude/skills/data-protection-guideline/assets/sources.json: sha256:81e2e32189db9193b793c21456202155fb8990812c2886f798478f467b43341d
+    .claude/skills/delivery-workflow/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/delivery-workflow/SKILL.md: sha256:78779fd3b3122dc3b3e9bbeee674d8cd4b72fe51d744cb39035d8bb3980a18a9
+    .claude/skills/docker-best-practices/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/docker-best-practices/SKILL.md: sha256:898e811ce93384d797be3da5fbd8aef79be79e179ea080dda73e10c6ad558cde
+    .claude/skills/docker-best-practices/assets/Dockerfile.template: sha256:89598ffef9f0a9e197c8577a2abc3b0a94c2f32cb8967b725f3a5ec5b6378594
+    .claude/skills/docker-best-practices/assets/docker-compose.template.yml: sha256:eb20e3ea483223046a740ae8a83da0348d0a377e5f1cb768d2fb1b28a9dcf856
+    .claude/skills/docker-best-practices/references/cache-de-capas.md: sha256:2c696226e4deadb691303f9fbb1652b749e8075adeb37fb49b80193586a6d1c6
+    .claude/skills/docker-best-practices/references/compose-y-volumenes.md: sha256:6770699ac240509834a3bdb6a97a8bca94bbc1d2187714263ac1364b926aa25d
+    .claude/skills/docker-best-practices/references/devcontainer.md: sha256:f55a66d86798697f123c1b2e94d70cfa04bb0e443f42516499a4301ecce7d78f
+    .claude/skills/docker-best-practices/references/gui-en-contenedores.md: sha256:00a03e3035f2f2dd5d2e4dc5d38e40f2eec22302c68ae5572a6417e7dda0f4ce
+    .claude/skills/docker-best-practices/references/versiones-fijas.md: sha256:1014e72fb868502b9c2a743acb4f8bdbb8ad89a56741a1a44292d8268279f78a
+    .claude/skills/docker-best-practices/scripts/check-docker.sh: sha256:502d57f3941c485e506e542c036c170be1307d95b6929a3ec13331eedec15e30
+    .claude/skills/edit-pull-request/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/edit-pull-request/SKILL.md: sha256:ce32cb947545428c0661a2869538d22942c5aeceb1e4061b029c30d3ae5fb571
+    .claude/skills/edit-pull-request/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/github-cache/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/github-cache/SKILL.md: sha256:d3017c81180fe0cba715093611c6670ef7788378fce7b96045e22c0465182fd1
+    .claude/skills/github-cache/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/github-cache/scripts/github-cache.mjs: sha256:6a6c7cd539a585ef9e34306ed77ec250266fb80190ad55a9105ccdb096b948f4
+    .claude/skills/help-me-to-think/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/help-me-to-think/SKILL.md: sha256:cd396c6482601e0ba86f95c28890c6bb3627b97d9754b516f6aa55e44e7b0e8b
+    .claude/skills/interview-free/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/interview-free/SKILL.md: sha256:2ebfb5fcc8f558c6537c55747c4d575ca3513f10dd563a2f472f2d2876ceeda7
+    .claude/skills/interview-with-repo/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/interview-with-repo/SKILL.md: sha256:717d7a3ec7dd0807ecf9bb27f994f3f6272318e730397acab0e438ee6f3b1a70
+    .claude/skills/issue-spec/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/issue-spec/SKILL.md: sha256:1e90b57c6a6d992efe2242317f365742e96ef10f6a630dcb5d34c665b1d7f14b
+    .claude/skills/issue-spec/assets/plan.md: sha256:6bfca5a9421f278a27092207dc444838690989310e955439327c54c21daff1b1
+    .claude/skills/issue-spec/assets/spec.md: sha256:076733d13a14b96f976980705726c0b181b4f9ebfab6156b76c69c640c6c6e3d
+    .claude/skills/issue-spec/assets/tasks.md: sha256:6e8cebad4a72d925ecb1898ab15a939f4ead69d14f216f8d9338e162b8a08643
+    .claude/skills/issue-spec/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/issue-spec/scripts/issue-spec.mjs: sha256:80dc97d51686a7dbe11185278c7d3350a64af94f5ae9e9bb6bcd026f640a79a1
+    .claude/skills/launch-push/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/launch-push/SKILL.md: sha256:aa2b359804e5e2e5b69aaf72d0db319e456006e071062155aee2d3980952a21c
+    .claude/skills/launch-push/scripts/launch-push.sh: sha256:b0926ff8fe7ceb72f528237d8fa8e6f09562666573515e71edcee717d26d9c3e
+    .claude/skills/link-pr-to-issue/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/link-pr-to-issue/SKILL.md: sha256:de140464858a02fd0e5c824726ea4e54274af1f7358a4aafd5ba95b86865d97f
+    .claude/skills/link-pr-to-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/manage-branch/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/manage-branch/SKILL.md: sha256:baaae5c7ef0cde24b33fc0c9edd04153bd19d815d2c8df05c09f16aa7c5fd214
+    .claude/skills/manage-branch/scripts/manage-branch.sh: sha256:35e8f482079fa11bd46e7335acd2725cd2e03eeda132d56a171540dba66a61ff
+    .claude/skills/manage-draft/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/manage-draft/SKILL.md: sha256:fc5564a71d7544bbcdc68be8dac3e53a451dd6edf8a27f4921ce5b6445e48fac
+    .claude/skills/manage-draft/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/manage-empty-commit/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/manage-empty-commit/SKILL.md: sha256:307a23f3d746977ce63cca7f48689da4fd98cdd342f314ebd4b7d885d6742eec
+    .claude/skills/manage-empty-commit/scripts/manage-empty-commit.sh: sha256:cb2af39132f063abadca245b0d407656065d3f3f9c0fe16e275c052f5bcd82ef
+    .claude/skills/manage-issue/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/manage-issue/SKILL.md: sha256:33fd7ebb1b76bc812452ad953790034f4cd99620395725f9353f7b11574f46cc
+    .claude/skills/manage-issue/assets/chore_issue.md: sha256:e4b4f9b169257d03eb80a93cf09f7f006d6695e1b66fa9b7b5758421ab1d8cf2
+    .claude/skills/manage-issue/assets/docs_issue.md: sha256:916e0089b4c38e4fd7fa5b9e11ab6c4c0cfefd0b1bd9539d51fdd14109181e0f
+    .claude/skills/manage-issue/assets/feat_issue.md: sha256:9733cadfddfe7a193b560b8192a343a0bb689873aef54243192b66c4ab14e129
+    .claude/skills/manage-issue/assets/fix_issue.md: sha256:061060e0552c0410cdb0973b905026399c7e386522e059e0848c9188b882ca02
+    .claude/skills/manage-issue/assets/knowledge_issue.md: sha256:3e3cf68b47ee04aa297b427fdf9d816310d53682a1f7de26c347d43b20b49ca8
+    .claude/skills/manage-issue/assets/refactor_issue.md: sha256:84a9ea124d4254f1d3e3d37554d7441855bd7db2654c43a52bbe2910d6d34332
+    .claude/skills/manage-issue/assets/test_issue.md: sha256:65f6c352588e2728a0e430227f653da85e1ac85799a448573cf4d4c85df09b8a
+    .claude/skills/manage-issue/scripts/check-title.sh: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+    .claude/skills/manage-issue/scripts/ensure-label.sh: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+    .claude/skills/manage-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/manage-issue/scripts/manage-issue.sh: sha256:93fd2967bf6f074cd51f4cca96c101f38b74d7350eaeffec7406d22f2ddd3770
+    .claude/skills/manage-pr-base/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/manage-pr-base/SKILL.md: sha256:b4df581690df35b868ed6ac436c4cfd9505f7a4ce011e878274077e2368ebe1d
+    .claude/skills/manage-pr-base/assets/chore-pull-request.md: sha256:dd5a2cbbcccecdbef470dda5cfbc30168368723e51864addd9191734363887c3
+    .claude/skills/manage-pr-base/assets/docs-pull-request.md: sha256:86ef508a593fbf8d672f27cacd701ba9c0dddd5fa8df96f1aab02c3d6102e90d
+    .claude/skills/manage-pr-base/assets/feat-pull-request.md: sha256:ec974ebfe8afb76f844322820569a990f2cad75d2571ef75867c1cc1722a37a9
+    .claude/skills/manage-pr-base/assets/fix-pull-request.md: sha256:38e86dcfe3e054e6687aa391eebbb729f0afa4691ab8e462fb782bee5588440c
+    .claude/skills/manage-pr-base/assets/knowledge-pull-request.md: sha256:8aaa460563afe0c1a1c2288ae732f69f2b7e83410e01adb3f907882e875fca08
+    .claude/skills/manage-pr-base/assets/refactor-pull-request.md: sha256:35ed529ea97cbaf73b599ffcfab16199a29921f99914a75249960adc61425a4c
+    .claude/skills/manage-pr-base/assets/test-pull-request.md: sha256:84822e45e59d08a66db665724ac9522ade623bc6c3b0a90f449f746a71a9260c
+    .claude/skills/manage-pr-base/scripts/check-title.sh: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+    .claude/skills/manage-pr-base/scripts/ensure-label.sh: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+    .claude/skills/manage-pr-base/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/manage-pr-base/scripts/manage-pr-base.sh: sha256:af232301a4e31b935115dcb68b7572d7b69566ee7fa4c89b6ef92513238f8bd6
+    .claude/skills/pull-changes/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/pull-changes/SKILL.md: sha256:03a6602f8fc9f8d9c8af878e79b2f47a7a2d4686bc2eac85b021f1964c57007b
+    .claude/skills/pull-changes/scripts/pull-changes.sh: sha256:e2a439fb3aef028417bc2dacc65141d69b0ccfe5894002a92e716a9a7d8c2baa
+    .claude/skills/ready-pull-request/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/ready-pull-request/SKILL.md: sha256:3f4492121f86d41c6e215cbba39fd667fe7b286d3bbafe0678fb14019c7f7720
+    .claude/skills/ready-pull-request/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+    .claude/skills/say-it-straight/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/say-it-straight/SKILL.md: sha256:35b9f038bcfc79e72fc16b9d7df1d704a0903ca36485db086d69e7ba8ec813f0
+    .claude/skills/setup-compliance/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/setup-compliance/SKILL.md: sha256:9488d13769a94255e283d7cc1aaf4ffe576b6f512c6478f2064783540e491822
+    .claude/skills/setup-compliance/assets/ai-act-classification.md: sha256:ccaa579ed6f9076a3a81f592f3f9f329bb8712329f8b0c0d759ce6e17e213d54
+    .claude/skills/setup-compliance/assets/ai-act.md: sha256:a61f73650c7ec92dcd5467ab1e60d3bccf7a03a2dc43b36138404f73aabbffab
+    .claude/skills/setup-compliance/assets/ai-signals.json: sha256:7de5a5f16a55ed11f435582d7f4d36b3dc4704caadf58e04f4ff71bda01c719e
+    .claude/skills/setup-compliance/assets/data-card.md: sha256:9bb1e6a5a4cf07c1b6da7e9d7766388aff5ee8803494961dcd6e8b8ebff380a0
+    .claude/skills/setup-compliance/assets/dpia.md: sha256:a5d44380cb7ed3589ae63173a7f120ede1afd9241e996f00b76361f7b52b838d
+    .claude/skills/setup-compliance/assets/model-card.md: sha256:a44c7ff97492ee8e7121a6de32d30fa8479c0488bfff8d670f60eb5be160543d
+    .claude/skills/setup-compliance/assets/reglamento-ia/anexo-III.md: sha256:e34b49afc3bddc141ca19c0d8a00e80d65afc718b7998053a7b363b48b5d871a
+    .claude/skills/setup-compliance/assets/reglamento-ia/articulo-5.md: sha256:f690038483a95a7a2cefd53d130caa1dfd1dd01b4460ff45fcf7c5ec4a3ad050
+    .claude/skills/setup-compliance/assets/reglamento-ia/articulo-50.md: sha256:faeda03b49e6ad3ad61221c5fa9bc3a853a82be8c8227a43f8c23795249bb066
+    .claude/skills/setup-compliance/assets/reglamento-ia/articulo-6.md: sha256:280704ccc4affec89734b6e8e8cdf554593396ada3b5187a6d44fae794a92419
+    .claude/skills/setup-compliance/assets/security.md: sha256:dc39a0830308da5b0b3e8c826f93d316c4b764bb8030ff6dfe9f77b9a3040e1a
+    .claude/skills/setup-compliance/assets/system-card.md: sha256:b70b99e680f180a23d0cdbc56c0e3c05da1d139fd1b5ede0c92a227149e28d40
+    .claude/skills/setup-compliance/scripts/setup-compliance.mjs: sha256:f550de42e211d343ce01d47b3b953059055229db4b8ac9a9d31cdd234244f6a1
+    .claude/skills/setup-context7/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/setup-context7/SKILL.md: sha256:31b5c84598e3432b773fe1aeea3d20914667f4387ef210422ee0226a24e66c4d
+    .claude/skills/setup-context7/assets/library-profiles.json: sha256:bcfa9f501d23197fdba0e72951951fed082a5285cd1a1ed61f1c416a3fbec692
+    .claude/skills/setup-context7/scripts/setup-context7.mjs: sha256:3e7c87892ea8b56fb08618f1ed57551e714a2e274ab3b88c264b70bb1a50c353
+    .claude/skills/setup-docs-rag/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    .claude/skills/setup-docs-rag/SKILL.md: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py: sha256:50df771813ce51173e8be701be127b54107cdbf36a7a610ff488a49e719c17cb
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py: sha256:5a3b83ca78b55d3d3f40c7e434ff31d911434a14878d8f2e098b15b7c2297437
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py: sha256:c1472cf03fa6dce3f473a3f4a702c8f0999dc277df8c80506e087dc0f3e015b6
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py: sha256:2a0c4e7590808eb4c8e7c51657011cdfce0c49420d811eb48a4539d570bf2bbb
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py: sha256:03cb2a4a34f8de67d1b6df4f6e275d0d48a787fab20fa5f4ab01e846a7d9cee8
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py: sha256:a35e644a06fe21394c50ea08487f708c4cf584603adec0ca5956afbe63e1b980
+    .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+    .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs: sha256:554a72ca874749d0f3bbb9e43c363d3bdf4eda5a41f9b3e79209d343ab6de77d
+  content_hash: sha256:a33e720dff3ed0396f16bb0a808483095b4d0c4754b6854825631397fbfc8fff
+  package_targets:
+  - claude
+  - codex
+  - cursor
+  carried_licenses:
+  - path: .apm/skills/assign-author/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/assign-reviewers/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/check-status/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/close-issue/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/commit-changes/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/configure-models/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/data-protection-guideline/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/delivery-workflow/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/docker-best-practices/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/edit-pull-request/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/github-cache/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/help-me-to-think/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/interview-free/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/interview-with-repo/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/issue-spec/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/launch-push/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/link-pr-to-issue/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/manage-branch/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/manage-draft/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/manage-empty-commit/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/manage-issue/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/manage-pr-base/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/pull-changes/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/ready-pull-request/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/say-it-straight/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/setup-compliance/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/setup-context7/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  - path: .apm/skills/setup-docs-rag/LICENSE
+    source: LICENSE
+    hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/agents/code-developer.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3c3d2de6354d3c2f2aaffebada5bdacd8abe8c646d57d7032010b346506a80e5
+- kind: project-relative
+  target: claude
+  value: .claude/agents/code-tester.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2aac0e380aa06bc5dff511a791a0312351bc1e691310fdd68ca3b62f2f611b88
+- kind: project-relative
+  target: claude
+  value: .claude/agents/concept-developer.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e683498b344f77948d725a4eb7df1e72cecef1403b6289d7965dc6e90416f41e
+- kind: project-relative
+  target: claude
+  value: .claude/agents/concept-tester.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:4c92e4cf996856dbeb3ca84184914b91ce80c98d5a78ba96be2239c746705a7b
+- kind: project-relative
+  target: claude
+  value: .claude/agents/legal-advisor.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:5bf5f469d146f00155ac95f5ed883a335523c60e554a79cf5129fd1a8525abf9
+- kind: project-relative
+  target: claude
+  value: .claude/agents/manage-branch.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:c3bee876d0e49323d3e68816c2e43816126cf7ce6189518f04be2e45016f98f0
+- kind: project-relative
+  target: claude
+  value: .claude/agents/manage-commit.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:94ad50598cfb7b6be55426f330e97ce63339c7ee1d5139fff05f7e63c1dfd9af
+- kind: project-relative
+  target: claude
+  value: .claude/agents/manage-issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3d49cfa5e7ad77f9baeac0d7e63f09b97a2a59907d7e01f7a02a81f9eea189d7
+- kind: project-relative
+  target: claude
+  value: .claude/agents/manage-pr.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:22543b498abb0eb8625d1b8d782046bbac6ffc35179bc4f681cfc020b32e8ea0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-author
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-author/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-author/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:086ed9ab41fe6be380396da486cf5e27d17291f75223bbb606ffe0f8079b27f2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-author/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-reviewers
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-reviewers/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-reviewers/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:67d8b3f6c751327666a29394461b3d0f44bff6ef4af390c721c0e45264ee4979
+- kind: project-relative
+  target: claude
+  value: .claude/skills/assign-reviewers/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/check-status
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/check-status/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/check-status/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b63ca3effba441cd61746b161fdf80f3ac7057ec2f32301180c68838210b8fe8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/check-status/scripts/check-status.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:d53c567ce43ff52cb839ac639553b826b29ef227dbec2de4375afca3f54e475a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/check-status/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/close-issue
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/close-issue/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/close-issue/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3a6b61b284d007d4abf7d28a55977b10ef67cfbc437b65ad60d53dbf00867ccb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/close-issue/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit-changes
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit-changes/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit-changes/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b44e39af2145d9bdd8bea6e4cf48dcd7e205bd68c98a1bb4f16a5bfc023b22c7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/commit-changes/scripts/commit-changes.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:edc11a741b10b3e707175550bc0e433ca3e85c07dbaa606ba4b4fd91c3a6be33
+- kind: project-relative
+  target: claude
+  value: .claude/skills/configure-models
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/configure-models/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/configure-models/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6e01fdc704de8158849dba6d71f31513d52f1bd7b3f017e0a3e3fcd149691904
+- kind: project-relative
+  target: claude
+  value: .claude/skills/configure-models/assets/agent-profiles.json
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:40993fcfca081760efc4e66541d6930fb2558de45b2d1bf5350de51e3f6bd82b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/configure-models/scripts/configure-models.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:170dea2047b99236248ea0bd2b57d774858a1ddde5fcd1b7e338d0557839a1e4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:68a9aaf00b3e0d65085dff7595b0ecfc3efce434a32e9f1c46dc0d2a2e2b5445
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/checklist.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:492ff0e6a5c3ba9150957944e35c99394a0f23049e2676f5b6cc7b707e21e822
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/datos-personales.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:7724d30a88ee121785622e60905d8fc414e20beae6fb5f0e82da0b8fcd58a112
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-11.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b6b0c4788c3f41bfbce5e3785d34296c73c875b051636bcaae1b8e9470c97fcf
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-28.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3b3d7fe5399ea457eb3084c9039ad8f2ba5abce42c968b677ebaac5d5aa5df9d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-32.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:eab72a181a0d02e05342d552860482ca23c41ea1f3bb94adbc1b15e19558cb4e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-5.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:714647c01d0074dd25c280e16144e6c2689dc645b3205fbc91b6429d080f09f4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-6.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:c7c85da3771e18bb5e5d209b879d2d551fd01a391a978f8e4a6958f0447e2e0a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-7.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ab3968d36cff358c46472e3b17fa3a36aec01184aa8b9d1344588b2d396c0620
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-9.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:42998b9825554709a3de3e9af90c2f7fe8e41f94605b44d5dda0f2690d3d8ce5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-92.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:93a5c753b30a7b588beb443ae7fddfcc2059f5dc94883631bb84af1b585529a5
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-12.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:522af8125a9565fcef7c302e42a0e7237bd60d9caa6a7ed4f4374a0c10b71ec6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-13.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:f41ea33b07dd97eb2454db7643672909e60101080b7913a4d408642ee1ff983f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-14.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6b6c849897ff50837b1e3447b67cca568ec268c5a5ea0d6d08560f880a5672f4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-15.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:c7a5724c3accdd8dd7d1ff1f7865bae35269675920a30be0350012590360392c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-16.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:5f72fb8505b809e40046d0c1a5267af4d700ff20b2b7ce3a84d385ce3ffa47d3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-17.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:0ec5728b2eb45b931d8382f716e1fa9152a0bca0c921d05b6646787055379897
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-18.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:5319ccb1c1e14af0b0e7e173e102c827ed9ee766b04c46ddc90007501a7d9669
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-19.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b5561a46843a612ec801b4ab18619deddd01341d4a003816a129fd3ab79ab309
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-20.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:700613615829c253733858d1f9da32e120af4964c717d205bd19250da2b4ee9c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-21.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:66eb54ea0c5863c2a0b863802dbe0e4db61acea646ff993855224debae569f48
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-22.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:1b744e47f37a526a92e4079dd9723bd4dd8332a70cfa2050dd6dca333d12f925
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-25.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ce0f38ba66808b6a280f65b090f8cc42b634ea74acf9b2056697967fd233fa50
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-28.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6a41a6eec4352c346b70fba54de4705d3fdcb6df90505c9cee79967f39d5e92a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-32.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ae7d8f71c59042e0bcc2304c0aab428ec8d1d13d2cac2a41058cbbce29c62163
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-33.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:45ee0b282d9c9128c29eb6e971868eaa531fd5f59c50372b66e18c72e1ce8a77
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-34.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:4aa199eac6da8fece14ee66a2a67864eef77d27be9176a6c0651fa219ba10dd2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-35.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3f129020809b41091dc21a4c7f812bff4abd038a4315e4d002d6734d8343ec06
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-5.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:745f15d6c16b6c2201623969df5b7ec4f6fadb7e7bd030deb4c46b6729780910
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-6.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2d23a4c694443a450d0409fa03a3a324b9473fdbcbe41454aab3d2d217ca91b3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-7.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:7360ec07b49d487fe718dc02ac0ca8cdd72b829d46a0b56e0f6ffec1e38d0f39
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-8.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:7bdd9133502e490a0d3a74b233991b47b7086d22a29af88d7c4dcf1e98b030cb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/rgpd/articulo-9.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:7319856caa4c7c44bb7d05a87ca9ad61a3ce2f67d1336a10cc9366535af44bcf
+- kind: project-relative
+  target: claude
+  value: .claude/skills/data-protection-guideline/assets/sources.json
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:81e2e32189db9193b793c21456202155fb8990812c2886f798478f467b43341d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/delivery-workflow
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/delivery-workflow/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/delivery-workflow/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:78779fd3b3122dc3b3e9bbeee674d8cd4b72fe51d744cb39035d8bb3980a18a9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:898e811ce93384d797be3da5fbd8aef79be79e179ea080dda73e10c6ad558cde
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/assets/Dockerfile.template
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:89598ffef9f0a9e197c8577a2abc3b0a94c2f32cb8967b725f3a5ec5b6378594
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/assets/docker-compose.template.yml
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:eb20e3ea483223046a740ae8a83da0348d0a377e5f1cb768d2fb1b28a9dcf856
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/references/cache-de-capas.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2c696226e4deadb691303f9fbb1652b749e8075adeb37fb49b80193586a6d1c6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/references/compose-y-volumenes.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6770699ac240509834a3bdb6a97a8bca94bbc1d2187714263ac1364b926aa25d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/references/devcontainer.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:f55a66d86798697f123c1b2e94d70cfa04bb0e443f42516499a4301ecce7d78f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/references/gui-en-contenedores.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:00a03e3035f2f2dd5d2e4dc5d38e40f2eec22302c68ae5572a6417e7dda0f4ce
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/references/versiones-fijas.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:1014e72fb868502b9c2a743acb4f8bdbb8ad89a56741a1a44292d8268279f78a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/docker-best-practices/scripts/check-docker.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:502d57f3941c485e506e542c036c170be1307d95b6929a3ec13331eedec15e30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/edit-pull-request
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/edit-pull-request/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/edit-pull-request/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ce32cb947545428c0661a2869538d22942c5aeceb1e4061b029c30d3ae5fb571
+- kind: project-relative
+  target: claude
+  value: .claude/skills/edit-pull-request/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/github-cache
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/github-cache/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/github-cache/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:d3017c81180fe0cba715093611c6670ef7788378fce7b96045e22c0465182fd1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/github-cache/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/github-cache/scripts/github-cache.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6a6c7cd539a585ef9e34306ed77ec250266fb80190ad55a9105ccdb096b948f4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/help-me-to-think
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/help-me-to-think/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/help-me-to-think/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cd396c6482601e0ba86f95c28890c6bb3627b97d9754b516f6aa55e44e7b0e8b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-free
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-free/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-free/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2ebfb5fcc8f558c6537c55747c4d575ca3513f10dd563a2f472f2d2876ceeda7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-with-repo
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-with-repo/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/interview-with-repo/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:717d7a3ec7dd0807ecf9bb27f994f3f6272318e730397acab0e438ee6f3b1a70
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:1e90b57c6a6d992efe2242317f365742e96ef10f6a630dcb5d34c665b1d7f14b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/assets/plan.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6bfca5a9421f278a27092207dc444838690989310e955439327c54c21daff1b1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/assets/spec.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:076733d13a14b96f976980705726c0b181b4f9ebfab6156b76c69c640c6c6e3d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/assets/tasks.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:6e8cebad4a72d925ecb1898ab15a939f4ead69d14f216f8d9338e162b8a08643
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/issue-spec/scripts/issue-spec.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:80dc97d51686a7dbe11185278c7d3350a64af94f5ae9e9bb6bcd026f640a79a1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/launch-push
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/launch-push/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/launch-push/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:aa2b359804e5e2e5b69aaf72d0db319e456006e071062155aee2d3980952a21c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/launch-push/scripts/launch-push.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b0926ff8fe7ceb72f528237d8fa8e6f09562666573515e71edcee717d26d9c3e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/link-pr-to-issue
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/link-pr-to-issue/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/link-pr-to-issue/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:de140464858a02fd0e5c824726ea4e54274af1f7358a4aafd5ba95b86865d97f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/link-pr-to-issue/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-branch
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-branch/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-branch/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:baaae5c7ef0cde24b33fc0c9edd04153bd19d815d2c8df05c09f16aa7c5fd214
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-branch/scripts/manage-branch.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:35e8f482079fa11bd46e7335acd2725cd2e03eeda132d56a171540dba66a61ff
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-draft
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-draft/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-draft/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:fc5564a71d7544bbcdc68be8dac3e53a451dd6edf8a27f4921ce5b6445e48fac
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-draft/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-empty-commit
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-empty-commit/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-empty-commit/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:307a23f3d746977ce63cca7f48689da4fd98cdd342f314ebd4b7d885d6742eec
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-empty-commit/scripts/manage-empty-commit.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cb2af39132f063abadca245b0d407656065d3f3f9c0fe16e275c052f5bcd82ef
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:33fd7ebb1b76bc812452ad953790034f4cd99620395725f9353f7b11574f46cc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/chore_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e4b4f9b169257d03eb80a93cf09f7f006d6695e1b66fa9b7b5758421ab1d8cf2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/docs_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:916e0089b4c38e4fd7fa5b9e11ab6c4c0cfefd0b1bd9539d51fdd14109181e0f
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/feat_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:9733cadfddfe7a193b560b8192a343a0bb689873aef54243192b66c4ab14e129
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/fix_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:061060e0552c0410cdb0973b905026399c7e386522e059e0848c9188b882ca02
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/knowledge_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3e3cf68b47ee04aa297b427fdf9d816310d53682a1f7de26c347d43b20b49ca8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/refactor_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:84a9ea124d4254f1d3e3d37554d7441855bd7db2654c43a52bbe2910d6d34332
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/assets/test_issue.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:65f6c352588e2728a0e430227f653da85e1ac85799a448573cf4d4c85df09b8a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/scripts/check-title.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/scripts/ensure-label.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-issue/scripts/manage-issue.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:93fd2967bf6f074cd51f4cca96c101f38b74d7350eaeffec7406d22f2ddd3770
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b4df581690df35b868ed6ac436c4cfd9505f7a4ce011e878274077e2368ebe1d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/chore-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:dd5a2cbbcccecdbef470dda5cfbc30168368723e51864addd9191734363887c3
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/docs-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:86ef508a593fbf8d672f27cacd701ba9c0dddd5fa8df96f1aab02c3d6102e90d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/feat-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ec974ebfe8afb76f844322820569a990f2cad75d2571ef75867c1cc1722a37a9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/fix-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:38e86dcfe3e054e6687aa391eebbb729f0afa4691ab8e462fb782bee5588440c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/knowledge-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:8aaa460563afe0c1a1c2288ae732f69f2b7e83410e01adb3f907882e875fca08
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/refactor-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:35ed529ea97cbaf73b599ffcfab16199a29921f99914a75249960adc61425a4c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/assets/test-pull-request.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:84822e45e59d08a66db665724ac9522ade623bc6c3b0a90f449f746a71a9260c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/scripts/check-title.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/scripts/ensure-label.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/manage-pr-base/scripts/manage-pr-base.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:af232301a4e31b935115dcb68b7572d7b69566ee7fa4c89b6ef92513238f8bd6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/pull-changes
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/pull-changes/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/pull-changes/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:03a6602f8fc9f8d9c8af878e79b2f47a7a2d4686bc2eac85b021f1964c57007b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/pull-changes/scripts/pull-changes.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e2a439fb3aef028417bc2dacc65141d69b0ccfe5894002a92e716a9a7d8c2baa
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ready-pull-request
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ready-pull-request/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ready-pull-request/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3f4492121f86d41c6e215cbba39fd667fe7b286d3bbafe0678fb14019c7f7720
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ready-pull-request/scripts/gh.sh
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/say-it-straight
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/say-it-straight/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/say-it-straight/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:35b9f038bcfc79e72fc16b9d7df1d704a0903ca36485db086d69e7ba8ec813f0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:9488d13769a94255e283d7cc1aaf4ffe576b6f512c6478f2064783540e491822
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/ai-act-classification.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ccaa579ed6f9076a3a81f592f3f9f329bb8712329f8b0c0d759ce6e17e213d54
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/ai-act.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:a61f73650c7ec92dcd5467ab1e60d3bccf7a03a2dc43b36138404f73aabbffab
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/ai-signals.json
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:7de5a5f16a55ed11f435582d7f4d36b3dc4704caadf58e04f4ff71bda01c719e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/data-card.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:9bb1e6a5a4cf07c1b6da7e9d7766388aff5ee8803494961dcd6e8b8ebff380a0
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/dpia.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:a5d44380cb7ed3589ae63173a7f120ede1afd9241e996f00b76361f7b52b838d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/model-card.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:a44c7ff97492ee8e7121a6de32d30fa8479c0488bfff8d670f60eb5be160543d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/reglamento-ia/anexo-III.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:e34b49afc3bddc141ca19c0d8a00e80d65afc718b7998053a7b363b48b5d871a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/reglamento-ia/articulo-5.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:f690038483a95a7a2cefd53d130caa1dfd1dd01b4460ff45fcf7c5ec4a3ad050
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/reglamento-ia/articulo-50.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:faeda03b49e6ad3ad61221c5fa9bc3a853a82be8c8227a43f8c23795249bb066
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/reglamento-ia/articulo-6.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:280704ccc4affec89734b6e8e8cdf554593396ada3b5187a6d44fae794a92419
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/security.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:dc39a0830308da5b0b3e8c826f93d316c4b764bb8030ff6dfe9f77b9a3040e1a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/assets/system-card.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:b70b99e680f180a23d0cdbc56c0e3c05da1d139fd1b5ede0c92a227149e28d40
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-compliance/scripts/setup-compliance.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:f550de42e211d343ce01d47b3b953059055229db4b8ac9a9d31cdd234244f6a1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-context7
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-context7/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-context7/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:31b5c84598e3432b773fe1aeea3d20914667f4387ef210422ee0226a24e66c4d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-context7/assets/library-profiles.json
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:bcfa9f501d23197fdba0e72951951fed082a5285cd1a1ed61f1c416a3fbec692
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-context7/scripts/setup-context7.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:3e7c87892ea8b56fb08618f1ed57551e714a2e274ab3b88c264b70bb1a50c353
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/LICENSE
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:50df771813ce51173e8be701be127b54107cdbf36a7a610ff488a49e719c17cb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:5a3b83ca78b55d3d3f40c7e434ff31d911434a14878d8f2e098b15b7c2297437
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:c1472cf03fa6dce3f473a3f4a702c8f0999dc277df8c80506e087dc0f3e015b6
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:2a0c4e7590808eb4c8e7c51657011cdfce0c49420d811eb48a4539d570bf2bbb
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:03cb2a4a34f8de67d1b6df4f6e275d0d48a787fab20fa5f4ab01e846a7d9cee8
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:a35e644a06fe21394c50ea08487f708c4cf584603adec0ca5956afbe63e1b980
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs
+  runtime: null
+  scope: project
+  owners:
+  - venturars/delivery-workflow
+  - .
+  active_owner: venturars/delivery-workflow
+  content_hash: sha256:554a72ca874749d0f3bbb9e43c363d3bdf4eda5a41f9b3e79209d343ab6de77d
+- kind: uri
+  target: mcp
+  value: eur-lex
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:36f5bfdf326a3dc13988339b1f9ed59feea3673b52120cbb1bc81dd5b318d3ae
+- kind: uri
+  target: mcp
+  value: eur-lex
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:f39fe97b21c2d74de4ce28bdb20e05eb744b7d86f1cc48bcf3b4f3d6a64847d8
+- kind: uri
+  target: mcp
+  value: eur-lex
+  runtime: cursor
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:36f5bfdf326a3dc13988339b1f9ed59feea3673b52120cbb1bc81dd5b318d3ae
+mcp_servers:
+- eur-lex
+mcp_configs:
+  eur-lex:
+    name: eur-lex
+    transport: stdio
+    args:
+    - -y
+    - '@cyanheads/eur-lex-mcp-server@0.21.0'
+    registry: false
+    command: npx
+mcp_target_servers:
+  claude:
+  - eur-lex
+  codex:
+  - eur-lex
+  cursor:
+  - eur-lex
+local_deployed_files:
+- .claude/agents/code-developer.md
+- .claude/agents/code-tester.md
+- .claude/agents/concept-developer.md
+- .claude/agents/concept-tester.md
+- .claude/agents/legal-advisor.md
+- .claude/agents/manage-branch.md
+- .claude/agents/manage-commit.md
+- .claude/agents/manage-issue.md
+- .claude/agents/manage-pr.md
+- .claude/skills/assign-author
+- .claude/skills/assign-author/SKILL.md
+- .claude/skills/assign-author/scripts/gh.sh
+- .claude/skills/assign-reviewers
+- .claude/skills/assign-reviewers/SKILL.md
+- .claude/skills/assign-reviewers/scripts/gh.sh
+- .claude/skills/check-status
+- .claude/skills/check-status/SKILL.md
+- .claude/skills/check-status/scripts/check-status.sh
+- .claude/skills/check-status/scripts/gh.sh
+- .claude/skills/close-issue
+- .claude/skills/close-issue/SKILL.md
+- .claude/skills/close-issue/scripts/gh.sh
+- .claude/skills/commit-changes
+- .claude/skills/commit-changes/SKILL.md
+- .claude/skills/commit-changes/scripts/commit-changes.sh
+- .claude/skills/configure-models
+- .claude/skills/configure-models/SKILL.md
+- .claude/skills/configure-models/assets/agent-profiles.json
+- .claude/skills/configure-models/scripts/configure-models.mjs
+- .claude/skills/data-protection-guideline
+- .claude/skills/data-protection-guideline/SKILL.md
+- .claude/skills/data-protection-guideline/assets/checklist.md
+- .claude/skills/data-protection-guideline/assets/datos-personales.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-11.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-28.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-32.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-5.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-6.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-7.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-9.md
+- .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-92.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-12.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-13.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-14.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-15.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-16.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-17.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-18.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-19.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-20.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-21.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-22.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-25.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-28.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-32.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-33.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-34.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-35.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-5.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-6.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-7.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-8.md
+- .claude/skills/data-protection-guideline/assets/rgpd/articulo-9.md
+- .claude/skills/data-protection-guideline/assets/sources.json
+- .claude/skills/delivery-workflow
+- .claude/skills/delivery-workflow/SKILL.md
+- .claude/skills/docker-best-practices
+- .claude/skills/docker-best-practices/SKILL.md
+- .claude/skills/docker-best-practices/assets/Dockerfile.template
+- .claude/skills/docker-best-practices/assets/docker-compose.template.yml
+- .claude/skills/docker-best-practices/references/cache-de-capas.md
+- .claude/skills/docker-best-practices/references/compose-y-volumenes.md
+- .claude/skills/docker-best-practices/references/devcontainer.md
+- .claude/skills/docker-best-practices/references/gui-en-contenedores.md
+- .claude/skills/docker-best-practices/references/versiones-fijas.md
+- .claude/skills/docker-best-practices/scripts/check-docker.sh
+- .claude/skills/edit-pull-request
+- .claude/skills/edit-pull-request/SKILL.md
+- .claude/skills/edit-pull-request/scripts/gh.sh
+- .claude/skills/github-cache
+- .claude/skills/github-cache/SKILL.md
+- .claude/skills/github-cache/scripts/gh.sh
+- .claude/skills/github-cache/scripts/github-cache.mjs
+- .claude/skills/help-me-to-think
+- .claude/skills/help-me-to-think/SKILL.md
+- .claude/skills/interview-free
+- .claude/skills/interview-free/SKILL.md
+- .claude/skills/interview-with-repo
+- .claude/skills/interview-with-repo/SKILL.md
+- .claude/skills/issue-spec
+- .claude/skills/issue-spec/SKILL.md
+- .claude/skills/issue-spec/assets/plan.md
+- .claude/skills/issue-spec/assets/spec.md
+- .claude/skills/issue-spec/assets/tasks.md
+- .claude/skills/issue-spec/scripts/gh.sh
+- .claude/skills/issue-spec/scripts/issue-spec.mjs
+- .claude/skills/launch-push
+- .claude/skills/launch-push/SKILL.md
+- .claude/skills/launch-push/scripts/launch-push.sh
+- .claude/skills/link-pr-to-issue
+- .claude/skills/link-pr-to-issue/SKILL.md
+- .claude/skills/link-pr-to-issue/scripts/gh.sh
+- .claude/skills/manage-branch
+- .claude/skills/manage-branch/SKILL.md
+- .claude/skills/manage-branch/scripts/manage-branch.sh
+- .claude/skills/manage-draft
+- .claude/skills/manage-draft/SKILL.md
+- .claude/skills/manage-draft/scripts/gh.sh
+- .claude/skills/manage-empty-commit
+- .claude/skills/manage-empty-commit/SKILL.md
+- .claude/skills/manage-empty-commit/scripts/manage-empty-commit.sh
+- .claude/skills/manage-issue
+- .claude/skills/manage-issue/SKILL.md
+- .claude/skills/manage-issue/assets/chore_issue.md
+- .claude/skills/manage-issue/assets/docs_issue.md
+- .claude/skills/manage-issue/assets/feat_issue.md
+- .claude/skills/manage-issue/assets/fix_issue.md
+- .claude/skills/manage-issue/assets/knowledge_issue.md
+- .claude/skills/manage-issue/assets/refactor_issue.md
+- .claude/skills/manage-issue/assets/test_issue.md
+- .claude/skills/manage-issue/scripts/check-title.sh
+- .claude/skills/manage-issue/scripts/ensure-label.sh
+- .claude/skills/manage-issue/scripts/gh.sh
+- .claude/skills/manage-issue/scripts/manage-issue.sh
+- .claude/skills/manage-pr-base
+- .claude/skills/manage-pr-base/SKILL.md
+- .claude/skills/manage-pr-base/assets/chore-pull-request.md
+- .claude/skills/manage-pr-base/assets/docs-pull-request.md
+- .claude/skills/manage-pr-base/assets/feat-pull-request.md
+- .claude/skills/manage-pr-base/assets/fix-pull-request.md
+- .claude/skills/manage-pr-base/assets/knowledge-pull-request.md
+- .claude/skills/manage-pr-base/assets/refactor-pull-request.md
+- .claude/skills/manage-pr-base/assets/test-pull-request.md
+- .claude/skills/manage-pr-base/scripts/check-title.sh
+- .claude/skills/manage-pr-base/scripts/ensure-label.sh
+- .claude/skills/manage-pr-base/scripts/gh.sh
+- .claude/skills/manage-pr-base/scripts/manage-pr-base.sh
+- .claude/skills/pull-changes
+- .claude/skills/pull-changes/SKILL.md
+- .claude/skills/pull-changes/scripts/pull-changes.sh
+- .claude/skills/ready-pull-request
+- .claude/skills/ready-pull-request/SKILL.md
+- .claude/skills/ready-pull-request/scripts/gh.sh
+- .claude/skills/say-it-straight
+- .claude/skills/say-it-straight/SKILL.md
+- .claude/skills/setup-compliance
+- .claude/skills/setup-compliance/SKILL.md
+- .claude/skills/setup-compliance/assets/ai-act-classification.md
+- .claude/skills/setup-compliance/assets/ai-act.md
+- .claude/skills/setup-compliance/assets/ai-signals.json
+- .claude/skills/setup-compliance/assets/data-card.md
+- .claude/skills/setup-compliance/assets/dpia.md
+- .claude/skills/setup-compliance/assets/model-card.md
+- .claude/skills/setup-compliance/assets/reglamento-ia/anexo-III.md
+- .claude/skills/setup-compliance/assets/reglamento-ia/articulo-5.md
+- .claude/skills/setup-compliance/assets/reglamento-ia/articulo-50.md
+- .claude/skills/setup-compliance/assets/reglamento-ia/articulo-6.md
+- .claude/skills/setup-compliance/assets/security.md
+- .claude/skills/setup-compliance/assets/system-card.md
+- .claude/skills/setup-compliance/scripts/setup-compliance.mjs
+- .claude/skills/setup-context7
+- .claude/skills/setup-context7/SKILL.md
+- .claude/skills/setup-context7/assets/library-profiles.json
+- .claude/skills/setup-context7/scripts/setup-context7.mjs
+- .claude/skills/setup-docs-rag
+- .claude/skills/setup-docs-rag/SKILL.md
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml
+- .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs
+local_deployed_file_hashes:
+  .claude/agents/code-developer.md: sha256:3c3d2de6354d3c2f2aaffebada5bdacd8abe8c646d57d7032010b346506a80e5
+  .claude/agents/code-tester.md: sha256:2aac0e380aa06bc5dff511a791a0312351bc1e691310fdd68ca3b62f2f611b88
+  .claude/agents/concept-developer.md: sha256:e683498b344f77948d725a4eb7df1e72cecef1403b6289d7965dc6e90416f41e
+  .claude/agents/concept-tester.md: sha256:4c92e4cf996856dbeb3ca84184914b91ce80c98d5a78ba96be2239c746705a7b
+  .claude/agents/legal-advisor.md: sha256:5bf5f469d146f00155ac95f5ed883a335523c60e554a79cf5129fd1a8525abf9
+  .claude/agents/manage-branch.md: sha256:c3bee876d0e49323d3e68816c2e43816126cf7ce6189518f04be2e45016f98f0
+  .claude/agents/manage-commit.md: sha256:94ad50598cfb7b6be55426f330e97ce63339c7ee1d5139fff05f7e63c1dfd9af
+  .claude/agents/manage-issue.md: sha256:3d49cfa5e7ad77f9baeac0d7e63f09b97a2a59907d7e01f7a02a81f9eea189d7
+  .claude/agents/manage-pr.md: sha256:22543b498abb0eb8625d1b8d782046bbac6ffc35179bc4f681cfc020b32e8ea0
+  .claude/skills/assign-author/SKILL.md: sha256:086ed9ab41fe6be380396da486cf5e27d17291f75223bbb606ffe0f8079b27f2
+  .claude/skills/assign-author/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/assign-reviewers/SKILL.md: sha256:67d8b3f6c751327666a29394461b3d0f44bff6ef4af390c721c0e45264ee4979
+  .claude/skills/assign-reviewers/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/check-status/SKILL.md: sha256:b63ca3effba441cd61746b161fdf80f3ac7057ec2f32301180c68838210b8fe8
+  .claude/skills/check-status/scripts/check-status.sh: sha256:d53c567ce43ff52cb839ac639553b826b29ef227dbec2de4375afca3f54e475a
+  .claude/skills/check-status/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/close-issue/SKILL.md: sha256:3a6b61b284d007d4abf7d28a55977b10ef67cfbc437b65ad60d53dbf00867ccb
+  .claude/skills/close-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/commit-changes/SKILL.md: sha256:b44e39af2145d9bdd8bea6e4cf48dcd7e205bd68c98a1bb4f16a5bfc023b22c7
+  .claude/skills/commit-changes/scripts/commit-changes.sh: sha256:edc11a741b10b3e707175550bc0e433ca3e85c07dbaa606ba4b4fd91c3a6be33
+  .claude/skills/configure-models/SKILL.md: sha256:6e01fdc704de8158849dba6d71f31513d52f1bd7b3f017e0a3e3fcd149691904
+  .claude/skills/configure-models/assets/agent-profiles.json: sha256:40993fcfca081760efc4e66541d6930fb2558de45b2d1bf5350de51e3f6bd82b
+  .claude/skills/configure-models/scripts/configure-models.mjs: sha256:170dea2047b99236248ea0bd2b57d774858a1ddde5fcd1b7e338d0557839a1e4
+  .claude/skills/data-protection-guideline/SKILL.md: sha256:68a9aaf00b3e0d65085dff7595b0ecfc3efce434a32e9f1c46dc0d2a2e2b5445
+  .claude/skills/data-protection-guideline/assets/checklist.md: sha256:492ff0e6a5c3ba9150957944e35c99394a0f23049e2676f5b6cc7b707e21e822
+  .claude/skills/data-protection-guideline/assets/datos-personales.md: sha256:7724d30a88ee121785622e60905d8fc414e20beae6fb5f0e82da0b8fcd58a112
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-11.md: sha256:b6b0c4788c3f41bfbce5e3785d34296c73c875b051636bcaae1b8e9470c97fcf
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-28.md: sha256:3b3d7fe5399ea457eb3084c9039ad8f2ba5abce42c968b677ebaac5d5aa5df9d
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-32.md: sha256:eab72a181a0d02e05342d552860482ca23c41ea1f3bb94adbc1b15e19558cb4e
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-5.md: sha256:714647c01d0074dd25c280e16144e6c2689dc645b3205fbc91b6429d080f09f4
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-6.md: sha256:c7c85da3771e18bb5e5d209b879d2d551fd01a391a978f8e4a6958f0447e2e0a
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-7.md: sha256:ab3968d36cff358c46472e3b17fa3a36aec01184aa8b9d1344588b2d396c0620
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-9.md: sha256:42998b9825554709a3de3e9af90c2f7fe8e41f94605b44d5dda0f2690d3d8ce5
+  .claude/skills/data-protection-guideline/assets/lopdgdd/articulo-92.md: sha256:93a5c753b30a7b588beb443ae7fddfcc2059f5dc94883631bb84af1b585529a5
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-12.md: sha256:522af8125a9565fcef7c302e42a0e7237bd60d9caa6a7ed4f4374a0c10b71ec6
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-13.md: sha256:f41ea33b07dd97eb2454db7643672909e60101080b7913a4d408642ee1ff983f
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-14.md: sha256:6b6c849897ff50837b1e3447b67cca568ec268c5a5ea0d6d08560f880a5672f4
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-15.md: sha256:c7a5724c3accdd8dd7d1ff1f7865bae35269675920a30be0350012590360392c
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-16.md: sha256:5f72fb8505b809e40046d0c1a5267af4d700ff20b2b7ce3a84d385ce3ffa47d3
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-17.md: sha256:0ec5728b2eb45b931d8382f716e1fa9152a0bca0c921d05b6646787055379897
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-18.md: sha256:5319ccb1c1e14af0b0e7e173e102c827ed9ee766b04c46ddc90007501a7d9669
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-19.md: sha256:b5561a46843a612ec801b4ab18619deddd01341d4a003816a129fd3ab79ab309
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-20.md: sha256:700613615829c253733858d1f9da32e120af4964c717d205bd19250da2b4ee9c
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-21.md: sha256:66eb54ea0c5863c2a0b863802dbe0e4db61acea646ff993855224debae569f48
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-22.md: sha256:1b744e47f37a526a92e4079dd9723bd4dd8332a70cfa2050dd6dca333d12f925
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-25.md: sha256:ce0f38ba66808b6a280f65b090f8cc42b634ea74acf9b2056697967fd233fa50
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-28.md: sha256:6a41a6eec4352c346b70fba54de4705d3fdcb6df90505c9cee79967f39d5e92a
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-32.md: sha256:ae7d8f71c59042e0bcc2304c0aab428ec8d1d13d2cac2a41058cbbce29c62163
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-33.md: sha256:45ee0b282d9c9128c29eb6e971868eaa531fd5f59c50372b66e18c72e1ce8a77
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-34.md: sha256:4aa199eac6da8fece14ee66a2a67864eef77d27be9176a6c0651fa219ba10dd2
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-35.md: sha256:3f129020809b41091dc21a4c7f812bff4abd038a4315e4d002d6734d8343ec06
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-5.md: sha256:745f15d6c16b6c2201623969df5b7ec4f6fadb7e7bd030deb4c46b6729780910
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-6.md: sha256:2d23a4c694443a450d0409fa03a3a324b9473fdbcbe41454aab3d2d217ca91b3
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-7.md: sha256:7360ec07b49d487fe718dc02ac0ca8cdd72b829d46a0b56e0f6ffec1e38d0f39
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-8.md: sha256:7bdd9133502e490a0d3a74b233991b47b7086d22a29af88d7c4dcf1e98b030cb
+  .claude/skills/data-protection-guideline/assets/rgpd/articulo-9.md: sha256:7319856caa4c7c44bb7d05a87ca9ad61a3ce2f67d1336a10cc9366535af44bcf
+  .claude/skills/data-protection-guideline/assets/sources.json: sha256:81e2e32189db9193b793c21456202155fb8990812c2886f798478f467b43341d
+  .claude/skills/delivery-workflow/SKILL.md: sha256:78779fd3b3122dc3b3e9bbeee674d8cd4b72fe51d744cb39035d8bb3980a18a9
+  .claude/skills/docker-best-practices/SKILL.md: sha256:898e811ce93384d797be3da5fbd8aef79be79e179ea080dda73e10c6ad558cde
+  .claude/skills/docker-best-practices/assets/Dockerfile.template: sha256:89598ffef9f0a9e197c8577a2abc3b0a94c2f32cb8967b725f3a5ec5b6378594
+  .claude/skills/docker-best-practices/assets/docker-compose.template.yml: sha256:eb20e3ea483223046a740ae8a83da0348d0a377e5f1cb768d2fb1b28a9dcf856
+  .claude/skills/docker-best-practices/references/cache-de-capas.md: sha256:2c696226e4deadb691303f9fbb1652b749e8075adeb37fb49b80193586a6d1c6
+  .claude/skills/docker-best-practices/references/compose-y-volumenes.md: sha256:6770699ac240509834a3bdb6a97a8bca94bbc1d2187714263ac1364b926aa25d
+  .claude/skills/docker-best-practices/references/devcontainer.md: sha256:f55a66d86798697f123c1b2e94d70cfa04bb0e443f42516499a4301ecce7d78f
+  .claude/skills/docker-best-practices/references/gui-en-contenedores.md: sha256:00a03e3035f2f2dd5d2e4dc5d38e40f2eec22302c68ae5572a6417e7dda0f4ce
+  .claude/skills/docker-best-practices/references/versiones-fijas.md: sha256:1014e72fb868502b9c2a743acb4f8bdbb8ad89a56741a1a44292d8268279f78a
+  .claude/skills/docker-best-practices/scripts/check-docker.sh: sha256:502d57f3941c485e506e542c036c170be1307d95b6929a3ec13331eedec15e30
+  .claude/skills/edit-pull-request/SKILL.md: sha256:ce32cb947545428c0661a2869538d22942c5aeceb1e4061b029c30d3ae5fb571
+  .claude/skills/edit-pull-request/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/github-cache/SKILL.md: sha256:d3017c81180fe0cba715093611c6670ef7788378fce7b96045e22c0465182fd1
+  .claude/skills/github-cache/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/github-cache/scripts/github-cache.mjs: sha256:6a6c7cd539a585ef9e34306ed77ec250266fb80190ad55a9105ccdb096b948f4
+  .claude/skills/help-me-to-think/SKILL.md: sha256:cd396c6482601e0ba86f95c28890c6bb3627b97d9754b516f6aa55e44e7b0e8b
+  .claude/skills/interview-free/SKILL.md: sha256:2ebfb5fcc8f558c6537c55747c4d575ca3513f10dd563a2f472f2d2876ceeda7
+  .claude/skills/interview-with-repo/SKILL.md: sha256:717d7a3ec7dd0807ecf9bb27f994f3f6272318e730397acab0e438ee6f3b1a70
+  .claude/skills/issue-spec/SKILL.md: sha256:1e90b57c6a6d992efe2242317f365742e96ef10f6a630dcb5d34c665b1d7f14b
+  .claude/skills/issue-spec/assets/plan.md: sha256:6bfca5a9421f278a27092207dc444838690989310e955439327c54c21daff1b1
+  .claude/skills/issue-spec/assets/spec.md: sha256:076733d13a14b96f976980705726c0b181b4f9ebfab6156b76c69c640c6c6e3d
+  .claude/skills/issue-spec/assets/tasks.md: sha256:6e8cebad4a72d925ecb1898ab15a939f4ead69d14f216f8d9338e162b8a08643
+  .claude/skills/issue-spec/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/issue-spec/scripts/issue-spec.mjs: sha256:80dc97d51686a7dbe11185278c7d3350a64af94f5ae9e9bb6bcd026f640a79a1
+  .claude/skills/launch-push/SKILL.md: sha256:aa2b359804e5e2e5b69aaf72d0db319e456006e071062155aee2d3980952a21c
+  .claude/skills/launch-push/scripts/launch-push.sh: sha256:b0926ff8fe7ceb72f528237d8fa8e6f09562666573515e71edcee717d26d9c3e
+  .claude/skills/link-pr-to-issue/SKILL.md: sha256:de140464858a02fd0e5c824726ea4e54274af1f7358a4aafd5ba95b86865d97f
+  .claude/skills/link-pr-to-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/manage-branch/SKILL.md: sha256:baaae5c7ef0cde24b33fc0c9edd04153bd19d815d2c8df05c09f16aa7c5fd214
+  .claude/skills/manage-branch/scripts/manage-branch.sh: sha256:35e8f482079fa11bd46e7335acd2725cd2e03eeda132d56a171540dba66a61ff
+  .claude/skills/manage-draft/SKILL.md: sha256:fc5564a71d7544bbcdc68be8dac3e53a451dd6edf8a27f4921ce5b6445e48fac
+  .claude/skills/manage-draft/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/manage-empty-commit/SKILL.md: sha256:307a23f3d746977ce63cca7f48689da4fd98cdd342f314ebd4b7d885d6742eec
+  .claude/skills/manage-empty-commit/scripts/manage-empty-commit.sh: sha256:cb2af39132f063abadca245b0d407656065d3f3f9c0fe16e275c052f5bcd82ef
+  .claude/skills/manage-issue/SKILL.md: sha256:33fd7ebb1b76bc812452ad953790034f4cd99620395725f9353f7b11574f46cc
+  .claude/skills/manage-issue/assets/chore_issue.md: sha256:e4b4f9b169257d03eb80a93cf09f7f006d6695e1b66fa9b7b5758421ab1d8cf2
+  .claude/skills/manage-issue/assets/docs_issue.md: sha256:916e0089b4c38e4fd7fa5b9e11ab6c4c0cfefd0b1bd9539d51fdd14109181e0f
+  .claude/skills/manage-issue/assets/feat_issue.md: sha256:9733cadfddfe7a193b560b8192a343a0bb689873aef54243192b66c4ab14e129
+  .claude/skills/manage-issue/assets/fix_issue.md: sha256:061060e0552c0410cdb0973b905026399c7e386522e059e0848c9188b882ca02
+  .claude/skills/manage-issue/assets/knowledge_issue.md: sha256:3e3cf68b47ee04aa297b427fdf9d816310d53682a1f7de26c347d43b20b49ca8
+  .claude/skills/manage-issue/assets/refactor_issue.md: sha256:84a9ea124d4254f1d3e3d37554d7441855bd7db2654c43a52bbe2910d6d34332
+  .claude/skills/manage-issue/assets/test_issue.md: sha256:65f6c352588e2728a0e430227f653da85e1ac85799a448573cf4d4c85df09b8a
+  .claude/skills/manage-issue/scripts/check-title.sh: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+  .claude/skills/manage-issue/scripts/ensure-label.sh: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+  .claude/skills/manage-issue/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/manage-issue/scripts/manage-issue.sh: sha256:93fd2967bf6f074cd51f4cca96c101f38b74d7350eaeffec7406d22f2ddd3770
+  .claude/skills/manage-pr-base/SKILL.md: sha256:b4df581690df35b868ed6ac436c4cfd9505f7a4ce011e878274077e2368ebe1d
+  .claude/skills/manage-pr-base/assets/chore-pull-request.md: sha256:dd5a2cbbcccecdbef470dda5cfbc30168368723e51864addd9191734363887c3
+  .claude/skills/manage-pr-base/assets/docs-pull-request.md: sha256:86ef508a593fbf8d672f27cacd701ba9c0dddd5fa8df96f1aab02c3d6102e90d
+  .claude/skills/manage-pr-base/assets/feat-pull-request.md: sha256:ec974ebfe8afb76f844322820569a990f2cad75d2571ef75867c1cc1722a37a9
+  .claude/skills/manage-pr-base/assets/fix-pull-request.md: sha256:38e86dcfe3e054e6687aa391eebbb729f0afa4691ab8e462fb782bee5588440c
+  .claude/skills/manage-pr-base/assets/knowledge-pull-request.md: sha256:8aaa460563afe0c1a1c2288ae732f69f2b7e83410e01adb3f907882e875fca08
+  .claude/skills/manage-pr-base/assets/refactor-pull-request.md: sha256:35ed529ea97cbaf73b599ffcfab16199a29921f99914a75249960adc61425a4c
+  .claude/skills/manage-pr-base/assets/test-pull-request.md: sha256:84822e45e59d08a66db665724ac9522ade623bc6c3b0a90f449f746a71a9260c
+  .claude/skills/manage-pr-base/scripts/check-title.sh: sha256:2c6cb8587300479b96a17fc8b15f1a508e0124ec420fcaef1e735ddbbde6dd80
+  .claude/skills/manage-pr-base/scripts/ensure-label.sh: sha256:33d9d232ba32b478368ca8c43d1bfdb07c4d5d49e9fb113e784c47dd6cab8e18
+  .claude/skills/manage-pr-base/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/manage-pr-base/scripts/manage-pr-base.sh: sha256:af232301a4e31b935115dcb68b7572d7b69566ee7fa4c89b6ef92513238f8bd6
+  .claude/skills/pull-changes/SKILL.md: sha256:03a6602f8fc9f8d9c8af878e79b2f47a7a2d4686bc2eac85b021f1964c57007b
+  .claude/skills/pull-changes/scripts/pull-changes.sh: sha256:e2a439fb3aef028417bc2dacc65141d69b0ccfe5894002a92e716a9a7d8c2baa
+  .claude/skills/ready-pull-request/SKILL.md: sha256:3f4492121f86d41c6e215cbba39fd667fe7b286d3bbafe0678fb14019c7f7720
+  .claude/skills/ready-pull-request/scripts/gh.sh: sha256:e932a31f01873bc5b3aa94603a66568bb5a965ff138426a2c91dce6b2af46f4a
+  .claude/skills/say-it-straight/SKILL.md: sha256:35b9f038bcfc79e72fc16b9d7df1d704a0903ca36485db086d69e7ba8ec813f0
+  .claude/skills/setup-compliance/SKILL.md: sha256:9488d13769a94255e283d7cc1aaf4ffe576b6f512c6478f2064783540e491822
+  .claude/skills/setup-compliance/assets/ai-act-classification.md: sha256:ccaa579ed6f9076a3a81f592f3f9f329bb8712329f8b0c0d759ce6e17e213d54
+  .claude/skills/setup-compliance/assets/ai-act.md: sha256:a61f73650c7ec92dcd5467ab1e60d3bccf7a03a2dc43b36138404f73aabbffab
+  .claude/skills/setup-compliance/assets/ai-signals.json: sha256:7de5a5f16a55ed11f435582d7f4d36b3dc4704caadf58e04f4ff71bda01c719e
+  .claude/skills/setup-compliance/assets/data-card.md: sha256:9bb1e6a5a4cf07c1b6da7e9d7766388aff5ee8803494961dcd6e8b8ebff380a0
+  .claude/skills/setup-compliance/assets/dpia.md: sha256:a5d44380cb7ed3589ae63173a7f120ede1afd9241e996f00b76361f7b52b838d
+  .claude/skills/setup-compliance/assets/model-card.md: sha256:a44c7ff97492ee8e7121a6de32d30fa8479c0488bfff8d670f60eb5be160543d
+  .claude/skills/setup-compliance/assets/reglamento-ia/anexo-III.md: sha256:e34b49afc3bddc141ca19c0d8a00e80d65afc718b7998053a7b363b48b5d871a
+  .claude/skills/setup-compliance/assets/reglamento-ia/articulo-5.md: sha256:f690038483a95a7a2cefd53d130caa1dfd1dd01b4460ff45fcf7c5ec4a3ad050
+  .claude/skills/setup-compliance/assets/reglamento-ia/articulo-50.md: sha256:faeda03b49e6ad3ad61221c5fa9bc3a853a82be8c8227a43f8c23795249bb066
+  .claude/skills/setup-compliance/assets/reglamento-ia/articulo-6.md: sha256:280704ccc4affec89734b6e8e8cdf554593396ada3b5187a6d44fae794a92419
+  .claude/skills/setup-compliance/assets/security.md: sha256:dc39a0830308da5b0b3e8c826f93d316c4b764bb8030ff6dfe9f77b9a3040e1a
+  .claude/skills/setup-compliance/assets/system-card.md: sha256:b70b99e680f180a23d0cdbc56c0e3c05da1d139fd1b5ede0c92a227149e28d40
+  .claude/skills/setup-compliance/scripts/setup-compliance.mjs: sha256:f550de42e211d343ce01d47b3b953059055229db4b8ac9a9d31cdd234244f6a1
+  .claude/skills/setup-context7/SKILL.md: sha256:31b5c84598e3432b773fe1aeea3d20914667f4387ef210422ee0226a24e66c4d
+  .claude/skills/setup-context7/assets/library-profiles.json: sha256:bcfa9f501d23197fdba0e72951951fed082a5285cd1a1ed61f1c416a3fbec692
+  .claude/skills/setup-context7/scripts/setup-context7.mjs: sha256:3e7c87892ea8b56fb08618f1ed57551e714a2e274ab3b88c264b70bb1a50c353
+  .claude/skills/setup-docs-rag/SKILL.md: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py: sha256:50df771813ce51173e8be701be127b54107cdbf36a7a610ff488a49e719c17cb
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py: sha256:5a3b83ca78b55d3d3f40c7e434ff31d911434a14878d8f2e098b15b7c2297437
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py: sha256:c1472cf03fa6dce3f473a3f4a702c8f0999dc277df8c80506e087dc0f3e015b6
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py: sha256:2a0c4e7590808eb4c8e7c51657011cdfce0c49420d811eb48a4539d570bf2bbb
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py: sha256:03cb2a4a34f8de67d1b6df4f6e275d0d48a787fab20fa5f4ab01e846a7d9cee8
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py: sha256:a35e644a06fe21394c50ea08487f708c4cf584603adec0ca5956afbe63e1b980
+  .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+  .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs: sha256:554a72ca874749d0f3bbb9e43c363d3bdf4eda5a41f9b3e79209d343ab6de77d

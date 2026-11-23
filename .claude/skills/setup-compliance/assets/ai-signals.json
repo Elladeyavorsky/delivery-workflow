@@ -1,0 +1,18 @@
+{
+  "inference": [
+    "openai", "@anthropic-ai/sdk", "anthropic", "@google/generative-ai", "@google/genai", "google-generativeai", "google-genai",
+    "@mistralai/mistralai", "mistralai", "cohere-ai", "cohere", "ollama", "langchain", "@langchain/core", "langchain-core", "langchain-openai",
+    "langchain-anthropic", "llamaindex", "llama-index", "ai", "@ai-sdk/openai", "@ai-sdk/anthropic", "litellm", "groq", "groq-sdk",
+    "replicate", "together", "huggingface-hub", "@huggingface/inference", "@xenova/transformers", "@huggingface/transformers",
+    "onnxruntime", "onnxruntime-node", "llama-cpp-python", "vllm",
+    "github.com/sashabaranov/go-openai", "github.com/ollama/ollama", "github.com/tmc/langchaingo",
+    "async-openai", "rig-core", "ollama-rs"
+  ],
+  "training": [
+    "torch", "pytorch-lightning", "lightning", "tensorflow", "keras", "jax", "flax", "scikit-learn", "xgboost", "lightgbm", "catboost",
+    "transformers", "peft", "trl", "datasets", "@tensorflow/tfjs", "@tensorflow/tfjs-node", "brain.js",
+    "gorgonia.org/gorgonia", "burn", "candle-core", "tch", "linfa"
+  ],
+  "modelExtensions": [".safetensors", ".onnx", ".pt", ".pth", ".gguf", ".h5", ".joblib", ".pkl"],
+  "datasetGlobs": ["train.csv", "train.json", "train.jsonl", "train.parquet", "training*.csv", "training*.jsonl", "*.parquet", "*.tfrecord", "*.arrow"]
+}

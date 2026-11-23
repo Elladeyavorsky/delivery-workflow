@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "eur-lex": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cyanheads/eur-lex-mcp-server@0.21.0"
+      ]
+    }
+  }
+}
