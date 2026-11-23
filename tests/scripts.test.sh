@@ -385,6 +385,26 @@ for agent in concept-developer concept-tester; do
 done
 check "delivery-workflow nombra legal-advisor en herramientas" grep -qF '**Subagente `legal-advisor`:**' "$dw"
 
+# setup-compliance: skill instalable con sus plantillas.
+sc="${skills}/setup-compliance"
+check "setup-compliance declara su name" grep -qx "name: setup-compliance" "${sc}/SKILL.md"
+check "setup-compliance trae una description en español" bash -c "$(declare -f frontmatter); frontmatter '${sc}/SKILL.md' | grep -qE '^description: .*(Genera|documentación|Úsala)'"
+check "setup-compliance nombra detect y write" bash -c "grep -q 'detect' '${sc}/SKILL.md' && grep -q 'write' '${sc}/SKILL.md'"
+for t in ai-act dpia model-card data-card system-card security; do
+  check "plantilla ${t} termina con la línea orientativa" bash -c "[[ \"\$(grep -v '^[[:space:]]*\$' '${sc}/assets/${t}.md' | tail -n 1)\" == 'Documento orientativo: no certifica cumplimiento ni es asesoramiento jurídico.' ]]"
+  check "plantilla ${t} trae Fuente: y hueco y no dice cumple" bash -c "grep -q '^Fuente:' '${sc}/assets/${t}.md' && grep -qF '> **Hueco:**' '${sc}/assets/${t}.md' && ! grep -qi 'cumple' '${sc}/assets/${t}.md'"
+done
+check "setup-compliance trae la lista de señales de IA" test -f "${sc}/assets/ai-signals.json"
+check "la guía del AI Act cita el CELEX 32024R1689" grep -qF "32024R1689" "${sc}/assets/ai-act-classification.md"
+for n in 5 6 50; do
+  check "el artículo ${n} del Reglamento de IA está guardado con su CELEX" bash -c "grep -qF 'Artículo ${n}' '${sc}/assets/reglamento-ia/articulo-${n}.md' && grep -qF '32024R1689' '${sc}/assets/reglamento-ia/articulo-${n}.md'"
+done
+check "el paso del art. 50 cita los apartados 1 a 6 y los dos roles" bash -c "step=\$(sed -n '/^### 5\\. Transparencia/,/^### 6\\./p' '${sc}/assets/ai-act-classification.md'); for a in 50.1 50.2 50.3 50.4 50.5 50.6; do grep -qF \"art. \$a\" <<<\"\$step\" || grep -qF \"\$a)\" <<<\"\$step\" || exit 1; done; grep -qF 'proveedor' <<<\"\$step\" && grep -qF 'responsable del despliegue' <<<\"\$step\""
+check "el anexo III del Reglamento de IA está guardado con su CELEX" bash -c "grep -qF 'Anexo III' '${sc}/assets/reglamento-ia/anexo-III.md' && grep -qF '32024R1689' '${sc}/assets/reglamento-ia/anexo-III.md'"
+check "el paso 1 recorre las letras a) a h) del art. 5.1 con sus excepciones" bash -c "step=\$(sed -n '/^### 1\\. Prácticas/,/^### 2\\./p' '${sc}/assets/ai-act-classification.md'); for l in a b c d e f g h; do grep -qF -- \"- **\$l)**\" <<<\"\$step\" || exit 1; done; grep -qF 'motivos médicos o de seguridad' <<<\"\$step\" && grep -qF 'hechos objetivos y verificables' <<<\"\$step\""
+check "el paso 4 recorre las condiciones a) a d) del art. 6.3 y el registro del 6.4" bash -c "step=\$(sed -n '/^### 4\\. Excepciones/,/^### 5\\./p' '${sc}/assets/ai-act-classification.md'); for l in a b c d; do grep -qF -- \"- **\$l)**\" <<<\"\$step\" || exit 1; done; grep -qF 'art. 49.2' <<<\"\$step\" && grep -qF 'puesta en servicio' <<<\"\$step\" || grep -qF 'ponerlo en servicio' <<<\"\$step\""
+check "el paso del art. 50 no se salta en alto riesgo" bash -c "grep -qF 'El paso 5 se evalúa además' '${sc}/assets/ai-act-classification.md' && ! grep -qF 'pasos en este orden y para en el primero' '${sc}/assets/ai-act-classification.md'"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."
