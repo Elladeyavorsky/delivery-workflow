@@ -114,8 +114,8 @@ fi
 
 check "el workflow no es reutilizable ni acepta otro repositorio" \
   bash -c '! grep -Eq "workflow_call|inputs:" "$1"' _ "$workflow"
-check "el workflow no invoca scripts internos del paquete" \
-  bash -c '! grep -Eq "\.github/scripts/|scripts/(release|update-apm)" "$1"' _ "$workflow"
+check "el workflow usa self-release.py y no el actualizador antiguo" \
+  bash -c 'grep -Fq ".github/scripts/self-release.py" "$1" && ! grep -Eq "update-apm-dependency\.sh|scripts/release-" "$1"' _ "$workflow"
 check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \

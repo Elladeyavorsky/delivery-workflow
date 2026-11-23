@@ -1,7 +1,8 @@
 # Cada pull request a main y cada push a main calcula la versión solo con los commits
 # desde la última etiqueta estable: ruptura -> major, feat -> minor, resto -> patch.
 # Si apm.yml no contiene esa versión, el workflow la fija con un commit chore: release X.Y.Z.
-# En una PR de fork, la persona autora debe subir ese mismo número manualmente.
+# Ese commit también quita la dependencia de este repositorio: la etiqueta no puede pedir otro commit del mismo paquete.
+# En una PR de fork, la persona autora debe subir ese mismo número y quitar esa dependencia a mano.
 # El push del workflow usa GITHUB_TOKEN y no dispara otra ejecución: la release sale aquí.
 name: "Release: publish"
 
@@ -42,9 +43,11 @@ jobs:
           ES_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
           RAMA: ${{ github.head_ref }}
           RAMA_MAIN: ${{ github.ref_name }}
+          REPOSITORIO: ${{ github.repository }}
         run: |
           actual=$(sed -nE 's/^version:[[:space:]]*["'\'']?([0-9]+\.[0-9]+\.[0-9]+)["'\'']?[[:space:]]*$/\1/p' apm.yml | head -n 1)
           cambiado=no
+          quito=no
           if [[ "$actual" != "$VERSION" ]]; then
             if [[ "$EVENTO" == pull_request && "$ES_FORK" == true ]]; then
               echo "Esta pull request viene de un fork. Sube version: \"$VERSION\" en apm.yml." >&2
@@ -56,7 +59,23 @@ jobs:
 
           # Falla si el tag ya existe o si la versión no supera la última estable.
           bash .github/scripts/release-version.sh >/dev/null
+
+          pin=$(python3 .github/scripts/self-release.py align --check "$REPOSITORIO")
+          if [[ "$pin" == changed ]]; then
+            if [[ "$EVENTO" == pull_request && "$ES_FORK" == true ]]; then
+              echo "Esta pull request viene de un fork. Quita ${REPOSITORIO} de dependencies.apm en apm.yml." >&2
+              exit 1
+            fi
+            python3 .github/scripts/self-release.py align "$REPOSITORIO" >/dev/null
+            cambiado=si
+            quito=si
+          elif [[ "$pin" != absent ]]; then
+            echo "No se pudo revisar la autodependencia de apm.yml." >&2
+            exit 1
+          fi
+
           echo "cambiado=$cambiado" >>"$GITHUB_OUTPUT"
+          echo "quito=$quito" >>"$GITHUB_OUTPUT"
 
           if [[ "$cambiado" == no ]]; then
             echo "apm.yml ya contiene la versión determinista v${VERSION}."
@@ -79,6 +98,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           VERSION: ${{ steps.calcular.outputs.version }}
+          QUITO: ${{ steps.reconciliar.outputs.quito }}
+          REPOSITORIO: ${{ github.repository }}
         run: |
           {
             echo "El workflow ha calculado **v${VERSION}** de forma determinista."
@@ -86,6 +107,10 @@ jobs:
             echo "**Regla:** $(cat ia-tipo.txt) — $(cat ia-motivo.txt)"
             echo
             echo "He actualizado \`version\` en \`apm.yml\` con \`chore: release ${VERSION}\`."
+            if [[ "$QUITO" == si ]]; then
+              echo
+              echo "He quitado \`${REPOSITORIO}\` de \`dependencies.apm\` para que la etiqueta no pida otro commit del mismo paquete."
+            fi
           } >comentario.md
           gh pr comment "$PR_NUMBER" --body-file comentario.md
 
