@@ -1,5 +1,5 @@
 import { readRelations, saveRelation, writeRelations, notificationStatus, markNotified, messageNonce } from './state.mjs';
-import { hasDistinctReviewers } from './reviewers.mjs';
+import { hasDistinctReviewers, minimumReviewers } from './reviewers.mjs';
 import { readConfirmedMappings } from './confirmed-relations.mjs';
 import { parseUserMap } from './user-map.mjs';
 import { fileURLToPath } from 'node:url';
@@ -104,23 +104,44 @@ export function buildMessage(repository, pr, reviewers, update = false) {
   const names = reviewers.map(({ login, discordId }) =>
     `${discordId ? `<@${discordId}>` : plainText(login, 39)} ` +
     `(${discordId ? `GitHub: ${plainText(login, 39)}` : 'sin mención de Discord'})`).join(', ');
-  const label = update ? 'Nuevos revisores o menciones' : 'Revisores';
+  const label = update === 'rereview' ? 'Actualización tras cambios pedidos' :
+    update ? 'Nuevos revisores o menciones' : 'Revisores';
   // La línea inicial separa los avisos consecutivos en el mismo canal.
   return `-----\n📦 **Repositorio:** ${repository}\n📝 **PR para revisar:** ${title || `#${pr.number}`}\n` +
     `👥 **${label}:** ${names}\n🔗 **Enlace a la PR:** ${link}`;
 }
 
-async function currentPullRequest(repository, baseBranch, number, token) {
+async function currentPullRequest(repository, baseBranch, number, token, minimum) {
   const pr = await requestJson(`https://api.github.com/repos/${repository}/pulls/${number}`, {
     headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json' },
   });
   const reviewers = pr.requested_reviewers;
   if (pr.number !== number || pr.state !== 'open' || pr.draft ||
       pr.base?.ref !== baseBranch || pr.base?.repo?.full_name !== repository ||
-      !hasDistinctReviewers(reviewers)) {
+      !hasDistinctReviewers(reviewers, minimum)) {
     throw new Error(`PR #${number} is no longer ready with distinct reviewers.`);
   }
   return pr;
+}
+
+function headShaOf(pullRequest) {
+  return /^[0-9a-f]{40}$/.test(pullRequest.head?.sha ?? '') ? pullRequest.head.sha : null;
+}
+
+// Un push solo reabre el aviso si alguien pidió cambios después del último mensaje.
+async function changesRequestedAfter(repository, number, announcedAt, token) {
+  if (!Number.isSafeInteger(announcedAt)) return false;
+  for (let page = 1; page <= 10; page += 1) {
+    const reviews = await requestJson(
+      `https://api.github.com/repos/${repository}/pulls/${number}/reviews?per_page=100&page=${page}`,
+      { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json' } },
+    );
+    if (!Array.isArray(reviews)) throw new Error('GitHub reviews were incomplete.');
+    if (reviews.some((review) => review?.state === 'CHANGES_REQUESTED' &&
+        Date.parse(review.submitted_at) > announcedAt)) return true;
+    if (reviews.length < 100) return false;
+  }
+  throw new Error('GitHub reviews were incomplete.');
 }
 
 export async function notifyReviewers(config) {
@@ -133,8 +154,9 @@ export async function notifyReviewers(config) {
       !/^[0-9]{17,20}$/.test(guildId ?? '') || !/^[0-9]{17,20}$/.test(channelId ?? '')) {
     throw new Error('Notification configuration is incomplete.');
   }
+  const minimum = minimumReviewers(config.minimumReviewers);
   const userMap = parseUserMap(userMapInput);
-  const pr = await currentPullRequest(repository, baseBranch, number, githubToken);
+  const pr = await currentPullRequest(repository, baseBranch, number, githubToken, minimum);
   const reviewers = pr.requested_reviewers;
   const relations = readRelations(relationsFile, cacheKey);
   const confirmations = await readConfirmedMappings(repository, pr, githubToken);
@@ -146,24 +168,31 @@ export async function notifyReviewers(config) {
   const resolvedIds = result.resolvedReviewers.map((reviewer) => reviewer.id);
   // El primer aviso sale con cero menciones si hace falta; las confirmaciones posteriores son actualizaciones.
   const status = await notificationStatus(repository, number, requestedIds, resolvedIds, githubToken, cacheKey);
+  const headSha = headShaOf(pr);
+  const shaChanged = Boolean(status.announced && headSha && status.announcedHeadSha !== headSha);
+  const rereview = shaChanged &&
+    await changesRequestedAfter(repository, number, status.announcedAt, githubToken);
   const affectedIds = new Set([...status.newRequestedIds, ...status.newMentionIds]);
-  if (status.announced && affectedIds.size === 0) {
+  if (status.announced && affectedIds.size === 0 && !rereview) {
     console.log(`PR #${number} and its reviewers were already notified.`);
     return 'already-notified';
   }
-  const mentionedIds = status.announced ? status.newMentionIds : resolvedIds;
+  const mentionedIds = !status.announced || rereview ? resolvedIds : status.newMentionIds;
   const mentionsById = new Map(result.resolvedReviewers
     .filter((reviewer) => mentionedIds.includes(reviewer.id))
     .map((reviewer) => [reviewer.id, reviewer.discordId]));
-  const messageReviewers = reviewers.filter((reviewer) => !status.announced || affectedIds.has(reviewer.id))
+  const messageReviewers = reviewers
+    .filter((reviewer) => rereview || !status.announced || affectedIds.has(reviewer.id))
     .map((reviewer) => ({ ...reviewer, discordId: mentionsById.get(reviewer.id) }));
   const discordIds = messageReviewers.map((reviewer) => reviewer.discordId).filter(Boolean);
   if (discordIds.length > 100) throw new Error(`PR #${number} exceeds Discord's 100-user mention limit.`);
 
-  const content = buildMessage(repository, pr, messageReviewers, status.announced);
+  const content = buildMessage(repository, pr, messageReviewers, rereview ? 'rereview' : status.announced);
   if (content.length > 2000) {
     throw new Error(`PR #${number} exceeds Discord's 2000-character message limit.`);
   }
+  const phase = rereview ? 'rereview' :
+    status.announced ? (mentionedIds.length ? 'update-mention' : 'update-plain') : 'initial';
   // allowed_mentions limita las etiquetas a los revisores nuevos ya verificados.
   await requestJson(`${DISCORD_API}/channels/${channelId}/messages`, {
     method: 'POST',
@@ -171,14 +200,14 @@ export async function notifyReviewers(config) {
     body: JSON.stringify({
       content,
       allowed_mentions: { parse: [], users: discordIds },
-      nonce: messageNonce(repository, number,
-        status.announced ? (mentionedIds.length ? 'update-mention' : 'update-plain') : 'initial',
-        status.announced ? [...affectedIds] : []),
+      nonce: messageNonce(repository, number, phase,
+        rereview || !status.announced ? requestedIds : [...affectedIds],
+        rereview ? headSha : ''),
       enforce_nonce: true,
     }),
   });
   try {
-    await markNotified(repository, number, requestedIds, githubToken, cacheKey, mentionedIds);
+    await markNotified(repository, number, requestedIds, githubToken, cacheKey, mentionedIds, headSha);
   } catch (error) {
     // Muestra solo el código HTTP; nunca devuelve el token ni el registro cifrado.
     const status = /^GitHub state request failed \(HTTP (\d{3})\)\.$/.exec(error?.message ?? '');
@@ -201,6 +230,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     channelId: process.env.DISCORD_GIT_CHANNEL_ID,
     relationsFile: process.env.RELATIONS_FILE,
     userMap: process.env.DISCORD_USER_MAP,
+    minimumReviewers: process.env.MINIMUM_REVIEWERS,
   }).catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const action = readFileSync(new URL('../../.github/actions/discord-pr-notifications/action.yml', import.meta.url), 'utf8');
-const packageTrigger = readFileSync(new URL('../../.github/workflows/discord-pr-trigger.yml', import.meta.url), 'utf8');
+const reviewWorkflow = readFileSync(new URL('../../.github/workflows/review.yml', import.meta.url), 'utf8');
 const confirmationTrigger = readFileSync(new URL('../../.github/workflows/discord-pr-confirmation-trigger.yml', import.meta.url), 'utf8');
 const packagePublisher = readFileSync(new URL('../../.github/workflows/discord-pr-publish.yml', import.meta.url), 'utf8');
 const docs = readFileSync(new URL('../../docs/DISCORD-PR-NOTIFICATIONS.md', import.meta.url), 'utf8');
@@ -16,13 +16,18 @@ test('los agentes no incluyen el aviso optativo de Discord en la revisión', () 
 test('la acción declara todos los inputs y solo ejecuta módulos del paquete', () => {
   assert.match(action, /using: composite/);
   for (const input of ['github-token', 'bot-token', 'cache-key', 'guild-id', 'channel-id',
-    'user-map', 'expected-repository', 'base-branch', 'trigger-run-id', 'pr-number', 'trusted-branch']) {
+    'user-map', 'expected-repository', 'base-branch', 'minimum-reviewers', 'required-check',
+    'trigger-run-id', 'pr-number', 'trusted-branch']) {
     assert.match(action, new RegExp(`^  ${input}:`, 'm'));
   }
   assert.match(action, /run-id: \$\{\{ inputs\.trigger-run-id \}\}/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/verify-event\.mjs"/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/verify-direct\.mjs"/);
   assert.match(action, /if: \$\{\{ inputs\.trigger-run-id != '' \}\}/);
+  assert.match(action, /steps\.download\.outcome == 'success'/);
+  assert.match(action, /continue-on-error: true/);
+  assert.match(action, /MINIMUM_REVIEWERS: \$\{\{ inputs\.minimum-reviewers \}\}/);
+  assert.match(action, /REQUIRED_CHECK: \$\{\{ inputs\.required-check \}\}/);
   assert.match(action, /if: \$\{\{ inputs\.trigger-run-id == '' \}\}/);
   assert.match(action, /PR_NUMBER: \$\{\{ steps\.verify\.outputs\.pr_number \|\| steps\.verify-direct\.outputs\.pr_number \}\}/);
   assert.match(action, /node "\$GITHUB_ACTION_PATH\/state\.mjs" prepare/);
@@ -34,7 +39,7 @@ test('la acción declara todos los inputs y solo ejecuta módulos del paquete', 
   assert.match(action, /retention-days: 2/);
   assert.doesNotMatch(action, /actions\/checkout|pull_request_target/);
   // Los IDs reales y los secretos no deben estar en el paquete.
-  assert.doesNotMatch(action + packageTrigger + confirmationTrigger + packagePublisher + docs, /\b[0-9]{17,20}\b/);
+  assert.doesNotMatch(action + reviewWorkflow + confirmationTrigger + packagePublisher + docs, /\b[0-9]{17,20}\b/);
 });
 
 test('el disparador de confirmación solo transporta el número de una PR comentada', () => {
@@ -46,19 +51,19 @@ test('el disparador de confirmación solo transporta el número de una PR coment
   assert.doesNotMatch(confirmationTrigger, /actions\/checkout|secrets\.|pull_request_target/);
 });
 
-test('el disparador recoge cualquier PR a staging sin secretos', () => {
-  for (const workflow of [packageTrigger]) {
-    assert.match(workflow, /pull_request:\s*\n\s*branches: \[staging\]/);
-    assert.match(workflow, /types: \[opened, review_requested, ready_for_review\]/);
-    assert.match(workflow, /permissions: \{\}/);
-    assert.match(workflow, /PR_NUMBER: \$\{\{ github\.event\.pull_request\.number \}\}/);
-    assert.match(workflow, /retention-days: 1/);
-    assert.doesNotMatch(workflow, /actions\/checkout|secrets\.|pull_request_target/);
-  }
+test('review entrega el número de PR a Discord solo cuando la base es staging', () => {
+  assert.match(reviewWorkflow, /name: discord-pr-number/);
+  assert.match(reviewWorkflow, /if: github\.base_ref == 'staging'/);
+  assert.match(reviewWorkflow, /PR_NUMBER: \$\{\{ github\.event\.pull_request\.number \}\}/);
+  assert.match(reviewWorkflow, /retention-days: 1/);
+  assert.doesNotMatch(reviewWorkflow, /secrets\.|pull_request_target/);
 });
 
 test('delivery-workflow publica desde su staging con la acción local confiable', () => {
-  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \["Discord: capture pull request", "Discord: capture confirmation"\]/);
+  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \["review", "Discord: capture confirmation"\]/);
+  assert.match(packagePublisher, /minimum-reviewers: 1/);
+  assert.match(packagePublisher, /required-check: review/);
+  assert.match(packagePublisher, /steps\.gate\.outputs\.proceed == 'true'/);
   assert.match(packagePublisher, /github\.ref == 'refs\/heads\/staging'/);
   assert.match(packagePublisher, /workflow_run\.conclusion == 'success'/);
   assert.match(packagePublisher, /workflow_run\.event == 'pull_request'/);

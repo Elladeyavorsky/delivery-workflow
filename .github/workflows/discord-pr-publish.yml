@@ -2,7 +2,7 @@ name: "Discord: publish notice"
 
 on:
   workflow_run:
-    workflows: ["Discord: capture pull request", "Discord: capture confirmation"]
+    workflows: ["review", "Discord: capture confirmation"]
     types: [completed]
 
 jobs:
@@ -25,12 +25,34 @@ jobs:
       # El ledger comenta la PR; GITHUB_TOKEN necesita permiso de escritura sobre PR.
       pull-requests: write
     steps:
+      # Un review en draft deja el job skipped y la ejecución en success: no hay aviso.
+      - name: Confirm the triggering job can publish
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          if [ "$RUN_NAME" != "review" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          conclusion=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs" \
+            --jq '[.jobs[] | select(.name == "review") | .conclusion][0] // ""')
+          if [ "$conclusion" = "success" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "The review job did not succeed; Discord notice skipped."
+          fi
       # workflow_run apunta al commit confiable de la rama predeterminada.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        if: steps.gate.outputs.proceed == 'true'
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
       - uses: ./.github/actions/discord-pr-notifications
+        if: steps.gate.outputs.proceed == 'true'
         with:
           github-token: ${{ github.token }}
           bot-token: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -40,4 +62,6 @@ jobs:
           user-map: ${{ vars.DISCORD_USER_MAP }}
           expected-repository: venturars/delivery-workflow
           base-branch: staging
+          minimum-reviewers: 1
+          required-check: review
           trigger-run-id: ${{ github.event.workflow_run.id }}

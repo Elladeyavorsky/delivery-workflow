@@ -42,15 +42,24 @@ function runVerifier({ event = validEvent(), pr = validPr(), name = 'pull_reques
   writeFileSync(eventPath, JSON.stringify(event), 'utf8');
   writeFileSync(outputPath, '', 'utf8');
   const fetchStub = `globalThis.fetch = async (url, options) => {
-    if (url !== 'https://api.github.com/repos/owner/repository/pulls/42' ||
-        options.headers.authorization !== 'Bearer test-token') {
+    if (options.headers.authorization !== 'Bearer test-token') {
       throw new Error('Unexpected GitHub API request.');
     }
-    return {
-      ok: ${httpStatus === 200},
-      status: ${httpStatus},
-      json: async () => JSON.parse(process.env.TEST_PULL_REQUEST),
-    };
+    if (url === 'https://api.github.com/repos/owner/repository/pulls/42') {
+      return {
+        ok: ${httpStatus === 200},
+        status: ${httpStatus},
+        json: async () => JSON.parse(process.env.TEST_PULL_REQUEST),
+      };
+    }
+    if (url.startsWith('https://api.github.com/repos/owner/repository/commits/') && url.includes('/check-runs?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => JSON.parse(process.env.TEST_CHECK_RUNS || '{"check_runs":[]}'),
+      };
+    }
+    throw new Error('Unexpected GitHub API request.');
   };`;
   const importUrl = `data:text/javascript,${encodeURIComponent(fetchStub)}`;
   try {
@@ -94,6 +103,32 @@ test('admite un comentario de asociación de una PR', () => {
   const result = runVerifier({ event, name: 'issue_comment' });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.output, 'eligible=true\npr_number=42\n');
+});
+
+test('un revisor basta cuando el mínimo es uno y el check pedido tiene que estar en verde', () => {
+  const pr = validPr();
+  pr.requested_reviewers = [{ id: 10, login: 'first-reviewer' }];
+  const accepted = runVerifier({ pr, envOverrides: { MINIMUM_REVIEWERS: '1' } });
+  assert.equal(accepted.status, 0, accepted.stderr);
+  assert.equal(accepted.output, 'eligible=true\npr_number=42\n');
+
+  pr.requested_reviewers = [];
+  const skipped = runVerifier({ pr, envOverrides: { MINIMUM_REVIEWERS: '1' } });
+  assert.equal(skipped.output, 'eligible=false\n');
+
+  const sha = 'b'.repeat(40);
+  const ready = validPr();
+  ready.head = { sha };
+  const missing = runVerifier({ pr: ready, envOverrides: { REQUIRED_CHECK: 'review' } });
+  assert.equal(missing.output, 'eligible=false\n');
+  const passed = runVerifier({
+    pr: ready,
+    envOverrides: {
+      REQUIRED_CHECK: 'review',
+      TEST_CHECK_RUNS: JSON.stringify({ check_runs: [{ name: 'review', conclusion: 'success', head_sha: sha }] }),
+    },
+  });
+  assert.equal(passed.output, 'eligible=true\npr_number=42\n');
 });
 
 test('omite PR cerradas, borradores y PR con menos de dos revisores', () => {

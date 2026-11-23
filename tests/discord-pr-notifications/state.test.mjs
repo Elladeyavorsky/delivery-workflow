@@ -123,6 +123,8 @@ test('la clave de aviso usa el conjunto de revisores sin depender del orden', ()
   assert.notEqual(threeReviewers, key);
   assert.throws(() => notificationKey(repository, 40, [101, 101]), /invalid/);
   assert.throws(() => notificationKey(repository, 40, [101, 202, 101]), /invalid/);
+  assert.match(notificationKey(repository, 40, [101]), /^[A-Za-z0-9_-]{24}$/);
+  assert.throws(() => notificationKey(repository, 40, []), /invalid/);
 });
 
 test('el nonce distingue el aviso inicial sin menciones de una mención posterior', () => {
@@ -131,6 +133,11 @@ test('el nonce distingue el aviso inicial sin menciones de una mención posterio
   assert.notEqual(initial, later);
   assert.equal(messageNonce(repository, 40, 'update-mention', [101]), later);
   assert.notEqual(messageNonce(repository, 40, 'update-plain', [101]), later);
+  const sha = 'a'.repeat(40);
+  const again = messageNonce(repository, 40, 'rereview', reviewerIds, sha);
+  assert.notEqual(again, initial);
+  assert.equal(messageNonce(repository, 40, 'rereview', reviewerIds, sha), again);
+  assert.notEqual(messageNonce(repository, 40, 'rereview', reviewerIds, 'b'.repeat(40)), again);
 });
 
 test('el registro distingue la PR anunciada de los revisores ya mencionados', async (t) => {
@@ -147,14 +154,19 @@ test('el registro distingue la PR anunciada de los revisores ya mencionados', as
     }
     throw new Error(`Unexpected request: ${url}`);
   });
-  await markNotified(repository, 40, reviewerIds, 'test-token', secret, []);
+  const sha = 'c'.repeat(40);
+  await markNotified(repository, 40, reviewerIds, 'test-token', secret, [], sha, 1_700_000_000_000);
   assert.deepEqual(await notificationStatus(repository, 40, reviewerIds, [101], 'test-token', secret), {
     announced: true, newRequestedIds: [], newMentionIds: [101],
+    announcedHeadSha: sha, announcedAt: 1_700_000_000_000,
   });
   await markNotified(repository, 40, reviewerIds, 'test-token', secret, [101]);
-  assert.deepEqual(await notificationStatus(repository, 40, [101, 202, 303], [101], 'test-token', secret), {
-    announced: true, newRequestedIds: [303], newMentionIds: [],
-  });
+  const afterMention = await notificationStatus(repository, 40, [101, 202, 303], [101], 'test-token', secret);
+  assert.equal(afterMention.announced, true);
+  assert.deepEqual(afterMention.newRequestedIds, [303]);
+  assert.deepEqual(afterMention.newMentionIds, []);
+  assert.equal(afterMention.announcedHeadSha, sha);
+  assert.ok(afterMention.announcedAt >= 1_700_000_000_000);
 });
 
 test('el registro cifrado por PR sobrevive a eventos repetidos', async (t) => {
@@ -220,6 +232,26 @@ test('registra los revisores nuevos sin volver a mencionar a los anteriores', as
   assert.equal(await wasNotified(repository, 40, [101, 202], 'test-token', secret), true);
   assert.equal(await wasNotified(repository, 40, [101, 202, 303], 'test-token', secret), true);
   assert.deepEqual(methods.filter((method) => method !== 'GET'), ['POST', 'PATCH']);
+});
+
+test('un ledger antiguo sin fecha usa la del comentario', async (t) => {
+  const encrypted = encryptState({
+    version: 1,
+    repository,
+    prNumber: 40,
+    keys: [notificationKey(repository, 40, reviewerIds)],
+    announcedReviewerIds: reviewerIds,
+    notifiedReviewerIds: reviewerIds,
+  }, secret);
+  t.mock.method(globalThis, 'fetch', async () => jsonResponse([{
+    id: 77,
+    updated_at: '2024-01-02T03:04:05.000Z',
+    body: `<!-- discord-pr-notifications-ledger:v1 -->\n${encrypted}`,
+  }]));
+  const status = await notificationStatus(repository, 40, reviewerIds, reviewerIds, 'test-token', secret);
+  assert.equal(status.announced, true);
+  assert.equal(status.announcedHeadSha, null);
+  assert.equal(status.announcedAt, Date.parse('2024-01-02T03:04:05.000Z'));
 });
 
 test('un fallo al escribir el registro no se interpreta como aviso registrado', async (t) => {

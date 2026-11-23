@@ -100,7 +100,7 @@ export function saveRelation(relations, login, discordId, now = Date.now()) {
 export function notificationKey(repository, prNumber, reviewerIds) {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
       !Number.isSafeInteger(prNumber) || prNumber < 1 ||
-      !Array.isArray(reviewerIds) || reviewerIds.length < 2 ||
+      !Array.isArray(reviewerIds) || reviewerIds.length < 1 ||
       !reviewerIds.every((id) => Number.isSafeInteger(id) && id > 0) ||
       new Set(reviewerIds).size !== reviewerIds.length) {
     throw new Error('The notification identity is invalid.');
@@ -113,16 +113,19 @@ export function notificationKey(repository, prNumber, reviewerIds) {
     .slice(0, 24);
 }
 
-export function messageNonce(repository, prNumber, phase, reviewerIds) {
+export function messageNonce(repository, prNumber, phase, reviewerIds, headSha = '') {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
       !Number.isSafeInteger(prNumber) || prNumber < 1 ||
-      !['initial', 'update-plain', 'update-mention'].includes(phase) || !Array.isArray(reviewerIds) ||
+      !['initial', 'update-plain', 'update-mention', 'rereview'].includes(phase) || !Array.isArray(reviewerIds) ||
       !reviewerIds.every((id) => Number.isSafeInteger(id) && id > 0) ||
-      new Set(reviewerIds).size !== reviewerIds.length) {
+      new Set(reviewerIds).size !== reviewerIds.length ||
+      (phase === 'rereview' && !/^[0-9a-f]{40}$/.test(headSha))) {
     throw new Error('The notification nonce is invalid.');
   }
+  const identity = [repository, prNumber, phase, [...reviewerIds].sort((a, b) => a - b)];
+  if (phase === 'rereview') identity.push(headSha);
   return createHash('sha256')
-    .update(JSON.stringify([repository, prNumber, phase, [...reviewerIds].sort((a, b) => a - b)]))
+    .update(JSON.stringify(identity))
     .digest('base64url')
     .slice(0, 24);
 }
@@ -227,15 +230,23 @@ async function readLedger(repository, prNumber, token, secret) {
           (data.notifiedReviewerIds !== undefined &&
             (!Array.isArray(data.notifiedReviewerIds) ||
               !data.notifiedReviewerIds.every((id) => Number.isSafeInteger(id) && id > 0) ||
-              new Set(data.notifiedReviewerIds).size !== data.notifiedReviewerIds.length))) {
+              new Set(data.notifiedReviewerIds).size !== data.notifiedReviewerIds.length)) ||
+          (data.announcedHeadSha !== undefined && data.announcedHeadSha !== null &&
+            !/^[0-9a-f]{40}$/.test(data.announcedHeadSha)) ||
+          (data.announcedAt !== undefined && data.announcedAt !== null &&
+            (!Number.isSafeInteger(data.announcedAt) || data.announcedAt < 0))) {
         throw new Error('The notification ledger is invalid.');
       }
+      const commentUpdatedAt = Date.parse(comment.updated_at ?? '');
       ledger = { id: comment.id, keys: data.keys,
         announcedReviewerIds: data.announcedReviewerIds ?? null,
-        notifiedReviewerIds: data.notifiedReviewerIds ?? null };
+        notifiedReviewerIds: data.notifiedReviewerIds ?? null,
+        announcedHeadSha: data.announcedHeadSha ?? null,
+        announcedAt: data.announcedAt ?? (Number.isFinite(commentUpdatedAt) ? commentUpdatedAt : null) };
     }
     if (comments.length < 100) return ledger ?? {
       id: null, keys: [], announcedReviewerIds: [], notifiedReviewerIds: [],
+      announcedHeadSha: null, announcedAt: null,
     };
   }
   throw new Error('The notification ledger could not be fully read.');
@@ -274,6 +285,8 @@ export async function notificationStatus(repository, prNumber, requestedIds, res
     announced: ledger.keys.length > 0,
     newRequestedIds: requestedIds.filter((id) => !announced.has(id)),
     newMentionIds: resolvedIds.filter((id) => !notified.has(id)),
+    announcedHeadSha: ledger.announcedHeadSha,
+    announcedAt: ledger.announcedAt,
   };
 }
 
@@ -288,19 +301,23 @@ export async function unnotifiedReviewerIds(repository, prNumber, reviewerIds, t
 }
 
 export async function markNotified(repository, prNumber, reviewerIds, token, secret,
-  mentionedReviewerIds = reviewerIds) {
+  mentionedReviewerIds = reviewerIds, headSha = null, announcedAt = Date.now()) {
   const key = notificationKey(repository, prNumber, reviewerIds);
   if (!Array.isArray(mentionedReviewerIds) ||
       mentionedReviewerIds.some((id) => !reviewerIds.includes(id)) ||
-      new Set(mentionedReviewerIds).size !== mentionedReviewerIds.length) {
+      new Set(mentionedReviewerIds).size !== mentionedReviewerIds.length ||
+      (headSha !== null && !/^[0-9a-f]{40}$/.test(headSha)) ||
+      !Number.isSafeInteger(announcedAt) || announcedAt < 0) {
     throw new Error('The notification identity is invalid.');
   }
   const ledger = await readLedger(repository, prNumber, token, secret);
   const legacy = legacyNotifiedIds(repository, prNumber, ledger, reviewerIds);
   const announced = new Set(ledger.announcedReviewerIds ?? legacy);
   const notified = new Set(ledger.notifiedReviewerIds ?? legacy);
+  const nextHead = headSha ?? ledger.announcedHeadSha;
   if (ledger.keys.includes(key) && reviewerIds.every((id) => announced.has(id)) &&
-      mentionedReviewerIds.every((id) => notified.has(id))) return;
+      mentionedReviewerIds.every((id) => notified.has(id)) &&
+      ledger.announcedHeadSha === nextHead) return;
 
   // Se llama solo después de que Discord confirme el envío.
   const encrypted = encryptState({
@@ -310,6 +327,8 @@ export async function markNotified(repository, prNumber, reviewerIds, token, sec
     keys: [...new Set([...ledger.keys, key])],
     announcedReviewerIds: [...new Set([...announced, ...reviewerIds])],
     notifiedReviewerIds: [...new Set([...notified, ...mentionedReviewerIds])],
+    announcedHeadSha: nextHead,
+    announcedAt,
   }, secret);
   const body = JSON.stringify({ body: `${LEDGER_MARKER}\n${encrypted}` });
   if (ledger.id === null) {

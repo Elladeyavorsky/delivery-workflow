@@ -25,6 +25,14 @@ inputs:
   base-branch:
     description: PR base branch allowed to publish notifications.
     required: true
+  minimum-reviewers:
+    description: Minimum number of distinct requested reviewers. Defaults to 2.
+    required: false
+    default: '2'
+  required-check:
+    description: Check run that must have succeeded on the current PR head. Empty skips the check.
+    required: false
+    default: ''
   trigger-run-id:
     description: Completed unprivileged trigger workflow run ID.
     required: false
@@ -38,7 +46,9 @@ runs:
   using: composite
   steps:
     - name: Download PR number
+      id: download
       if: ${{ inputs.trigger-run-id != '' }}
+      continue-on-error: true
       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
       with:
         name: discord-pr-number
@@ -47,13 +57,15 @@ runs:
         github-token: ${{ inputs.github-token }}
     - name: Verify trigger and current PR
       id: verify
-      if: ${{ inputs.trigger-run-id != '' }}
+      if: ${{ inputs.trigger-run-id != '' && steps.download.outcome == 'success' }}
       shell: bash
       env:
         GITHUB_ACTION_PATH: ${{ github.action_path }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         EXPECTED_REPOSITORY: ${{ inputs.expected-repository }}
         PR_BASE_BRANCH: ${{ inputs.base-branch }}
+        MINIMUM_REVIEWERS: ${{ inputs.minimum-reviewers }}
+        REQUIRED_CHECK: ${{ inputs.required-check }}
         TRIGGER_RUN_ID: ${{ inputs.trigger-run-id }}
         PR_NUMBER_FILE: ${{ runner.temp }}/discord-pr-number/pr-number
       run: node "$GITHUB_ACTION_PATH/verify-event.mjs"
@@ -66,6 +78,8 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         EXPECTED_REPOSITORY: ${{ inputs.expected-repository }}
         PR_BASE_BRANCH: ${{ inputs.base-branch }}
+        MINIMUM_REVIEWERS: ${{ inputs.minimum-reviewers }}
+        REQUIRED_CHECK: ${{ inputs.required-check }}
         TRUSTED_BRANCH: ${{ inputs.trusted-branch }}
         PR_NUMBER: ${{ inputs.pr-number }}
       run: node "$GITHUB_ACTION_PATH/verify-direct.mjs"
@@ -94,6 +108,7 @@ runs:
         DISCORD_GUILD_ID: ${{ inputs.guild-id }}
         DISCORD_GIT_CHANNEL_ID: ${{ inputs.channel-id }}
         DISCORD_USER_MAP: ${{ inputs.user-map }}
+        MINIMUM_REVIEWERS: ${{ inputs.minimum-reviewers }}
         RELATIONS_FILE: ${{ runner.temp }}/discord-pr-relations/relations.enc.json
       run: node "$GITHUB_ACTION_PATH/notify.mjs"
     - name: Save encrypted reviewer relations
