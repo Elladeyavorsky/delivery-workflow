@@ -93,6 +93,84 @@ test('si todas las releases se dependen de sí mismas no elige ninguna', () => {
   assert.match(selected.stderr, /Se omite v1\.1\.4/);
 });
 
+test('set escribe la autodependencia cuando el release la quitó', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'self-release-set-'));
+  const file = join(dir, 'apm.yml');
+  writeFileSync(file, withoutSelf);
+
+  const inserted = run(['set', '--file', file, repo, 'v1.1.5']);
+  assert.equal(inserted.status, 0);
+  assert.equal(inserted.stdout, 'inserted\n');
+  assert.equal(readFileSync(file, 'utf8'), `name: delivery-workflow
+version: "1.1.2"
+dependencies:
+  apm:
+    - venturars/delivery-workflow#v1.1.5
+  mcp:
+    - name: eur-lex
+      registry: false
+`);
+
+  const updated = run(['set', '--file', file, repo, 'v1.1.6']);
+  assert.equal(updated.status, 0);
+  assert.equal(updated.stdout, 'updated\n');
+  assert.match(readFileSync(file, 'utf8'), /venturars\/delivery-workflow#v1\.1\.6/);
+  assert.match(readFileSync(file, 'utf8'), /^ {2}mcp:$/m);
+
+  const same = run(['set', '--file', file, repo, 'v1.1.6']);
+  assert.equal(same.status, 0);
+  assert.equal(same.stdout, 'unchanged\n');
+});
+
+test('set conserva el comentario y rechaza ref, ausencia y duplicado sin escribir', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'self-release-set-guard-'));
+  const commented = join(dir, 'commented.yml');
+  writeFileSync(commented, `dependencies:
+  apm:
+    - "venturars/delivery-workflow#v1.1.2" # pin
+  mcp:
+    - name: eur-lex
+`);
+  const commentedResult = run(['set', '--file', commented, repo, 'v1.1.5']);
+  assert.equal(commentedResult.status, 0);
+  assert.equal(commentedResult.stdout, 'updated\n');
+  assert.equal(
+    readFileSync(commented, 'utf8'),
+    `dependencies:
+  apm:
+    - "venturars/delivery-workflow#v1.1.5" # pin
+  mcp:
+    - name: eur-lex
+`,
+  );
+
+  const invalid = join(dir, 'invalid.yml');
+  writeFileSync(invalid, withoutSelf);
+  const beforeInvalid = readFileSync(invalid, 'utf8');
+  const rejected = run(['set', '--file', invalid, repo, 'staging']);
+  assert.notEqual(rejected.status, 0);
+  assert.equal(readFileSync(invalid, 'utf8'), beforeInvalid);
+
+  const missing = join(dir, 'missing.yml');
+  writeFileSync(missing, 'name: delivery-workflow\n');
+  const beforeMissing = readFileSync(missing, 'utf8');
+  const noDependencies = run(['set', '--file', missing, repo, 'v1.1.5']);
+  assert.notEqual(noDependencies.status, 0);
+  assert.match(noDependencies.stderr, /no contiene dependencies/);
+  assert.equal(readFileSync(missing, 'utf8'), beforeMissing);
+
+  const duplicate = join(dir, 'duplicate.yml');
+  writeFileSync(duplicate, `dependencies:
+  apm:
+    - venturars/delivery-workflow#v1.1.2
+    - venturars/delivery-workflow#v1.1.4
+`);
+  const beforeDuplicate = readFileSync(duplicate, 'utf8');
+  const ambiguous = run(['set', '--file', duplicate, repo, 'v1.1.5']);
+  assert.notEqual(ambiguous.status, 0);
+  assert.equal(readFileSync(duplicate, 'utf8'), beforeDuplicate);
+});
+
 test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () => {
   const dir = mkdtempSync(join(tmpdir(), 'self-release-pin-'));
   const file = join(dir, 'apm.yml');
@@ -105,6 +183,7 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.match(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
   assert.match(workflow, /steps\.compatible\.outputs\.ref/);
   assert.match(workflow, /dependencies\.apm ya apunta a \$\{REF\}/);
+  assert.match(workflow, /self-release\.py set "\$DEPENDENCY_REPO" "\$REF"/);
   assert.doesNotMatch(workflow, /steps\.release\.outputs\.ref/);
 
   const release = readFileSync(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
