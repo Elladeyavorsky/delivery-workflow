@@ -1,8 +1,8 @@
-name: Discord PR notification publisher
+name: Discord: publish notice
 
 on:
   workflow_run:
-    workflows: [Discord PR notification trigger, Discord PR confirmation trigger]
+    workflows: [Discord: capture pull request, Discord: capture confirmation]
     types: [completed]
 
 jobs:

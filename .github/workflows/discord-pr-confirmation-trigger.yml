@@ -1,4 +1,4 @@
-name: Discord PR confirmation trigger
+name: Discord: capture confirmation
 
 on:
   issue_comment:
