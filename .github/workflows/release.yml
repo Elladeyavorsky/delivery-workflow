@@ -3,7 +3,7 @@
 # Si apm.yml no contiene esa versión, el workflow la fija con un commit chore: release X.Y.Z.
 # En una PR de fork, la persona autora debe subir ese mismo número manualmente.
 # El push del workflow usa GITHUB_TOKEN y no dispara otra ejecución: la release sale aquí.
-name: Release: publish
+name: "Release: publish"
 
 on:
   pull_request:

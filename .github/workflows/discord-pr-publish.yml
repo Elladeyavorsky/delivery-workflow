@@ -1,8 +1,8 @@
-name: Discord: publish notice
+name: "Discord: publish notice"
 
 on:
   workflow_run:
-    workflows: [Discord: capture pull request, Discord: capture confirmation]
+    workflows: ["Discord: capture pull request", "Discord: capture confirmation"]
     types: [completed]
 
 jobs:
