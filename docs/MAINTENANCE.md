@@ -96,7 +96,7 @@ Revisa el diff antes de hacer commit: un cambio en el texto de un artículo pued
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
 1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: `release.yml` calcula el siguiente `major`, `minor` o `patch` a partir de los commits desde la última etiqueta estable cuando recibe el push a `main`.
-2. El workflow `Open release PR` abre automáticamente la pull request de `staging` a `main` con `GITHUB_TOKEN`. GitHub no inicia `release.yml` en respuesta a esa PR creada con el token; no cuentes con una ejecución de validación mientras la PR está abierta. En una PR desde un fork, si el workflow se ejecuta y `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada.
+2. Quien mantiene el paquete abre la pull request de `staging` a `main`. GitHub no inicia `release.yml` en respuesta a una PR creada con `GITHUB_TOKEN`; no cuentes con una ejecución de validación mientras la PR está abierta. En una PR desde un fork, si el workflow se ejecuta y `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada.
 3. Al hacer merge, el push a `main` dispara `release.yml`. Ese workflow calcula y valida la versión en el push; si hace falta, la fija en un commit `chore: release X.Y.Z` y continúa con la publicación en la misma ejecución. Si la versión no supera la última estable o la etiqueta ya existe, termina sin crear la etiqueta ni la release. Si la validación pasa, crea la etiqueta `vX.Y.Z` y la release. No hace falta etiquetar a mano.
 
 Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.

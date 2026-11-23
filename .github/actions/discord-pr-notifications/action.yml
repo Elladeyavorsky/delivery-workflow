@@ -1,4 +1,4 @@
-name: Discord PR reviewer notification
+name: Discord: notify reviewers
 description: Announce a trusted PR and mention only verified Discord reviewers without repeats.
 inputs:
   github-token:

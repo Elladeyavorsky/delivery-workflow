@@ -15,7 +15,7 @@ function validEvent() {
     repository: { full_name: repository },
     workflow_run: {
       id: 987,
-      name: 'Discord PR notification trigger',
+      name: 'Discord: capture pull request',
       repository: { full_name: repository },
       event: 'pull_request',
       conclusion: 'success',
@@ -215,7 +215,7 @@ test('vincula la PR al run por asociación o por rama, repositorio y commit', ()
 
 test('admite una confirmación desde el workflow confiable y omite la PR borrador', () => {
   const event = validEvent();
-  event.workflow_run.name = 'Discord PR confirmation trigger';
+  event.workflow_run.name = 'Discord: capture confirmation';
   event.workflow_run.event = 'issue_comment';
   event.workflow_run.pull_requests = [];
   event.workflow_run.head_branch = 'staging';
