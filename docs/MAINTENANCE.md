@@ -113,35 +113,8 @@ termina sin mover, borrar ni recrear la etiqueta.
 
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
 
-## Actualizar automáticamente los proyectos consumidores
+## Mantener este repositorio con su propia release
 
-Añade este workflow en cada repositorio consumidor para que abra una PR semanal con
-la última release estable:
+El workflow `APM: update dependency` solo corre en este repositorio y abre la pull request contra `staging`. Cada día a las 08:17 UTC, y también a mano, busca la última release estable `vX.Y.Z` de `venturars/delivery-workflow`. Si el manifiesto apunta a una anterior, escribe la referencia nueva en `dependencies.apm` y ejecuta `apm update` para `claude`, `cursor` y `codex`. La pull request queda en la rama `chore/update-delivery-workflow` e incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
 
-```yaml
-name: Update delivery-workflow
-
-on:
-  schedule:
-    - cron: '17 8 * * 1'
-  workflow_dispatch:
-
-jobs:
-  update:
-    uses: venturars/delivery-workflow/.github/workflows/update-apm-dependency.yml@main
-    with:
-      dependency_repo: venturars/delivery-workflow
-      target: codex # claude, cursor o codex
-      base_branch: staging
-    permissions:
-      contents: write
-      pull-requests: write
-```
-
-El workflow selecciona la mayor versión SemVer estable con etiqueta `vX.Y.Z`,
-sin ordenar por fecha de publicación. Actualiza la referencia en `apm.yml` y
-ejecuta `apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes`, pasando el
-repositorio de paquete y el target indicados en las entradas. Después abre una
-PR que incluye `apm.yml`, `apm.lock.yaml` y todos los archivos APM generados. La
-PR debe pasar los tests del proyecto antes de fusionarse. Si el repositorio
-necesita permisos adicionales, pasa un secreto llamado `gh_token`.
+No es un workflow reutilizable: otro repositorio no puede llamarlo. Tampoco se engancha al evento `release`, porque esa release la crea `GITHUB_TOKEN` y GitHub no arrancaría el workflow. La pull request la abre el mismo token, así que no dispara `review`.
