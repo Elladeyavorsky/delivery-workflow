@@ -120,6 +120,8 @@ check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \
   grep -Fq 'base: staging' "$workflow"
+check "la pull request se abre en draft" \
+  grep -Fq 'draft: true' "$workflow"
 check "el checkout es staging" \
   grep -Fq 'ref: staging' "$workflow"
 check "el instalador publica apm en el PATH de los pasos siguientes" \

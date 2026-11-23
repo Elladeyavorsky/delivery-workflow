@@ -118,6 +118,7 @@ jobs:
           token: ${{ github.token }}
           branch: chore/update-delivery-workflow
           base: staging
+          draft: true
           delete-branch: true
           commit-message: "chore: update venturars/delivery-workflow to ${{ steps.compatible.outputs.ref }}"
           title: "Update delivery-workflow to ${{ steps.compatible.outputs.ref }}"
