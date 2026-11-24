@@ -35,7 +35,9 @@ case "$1 $2" in
   "issue create") echo "https://github.com/owner/repo/issues/7"; exit 0 ;;
   "issue view") echo '{"body":"hola"}'; exit 0 ;;
   "pr create") echo "https://github.com/owner/repo/pull/9"; exit 0 ;;
-  "api user") [[ "$*" == *--include* ]] && printf 'HTTP/2.0 200 OK\netag: "u"\n\n{"login":"ada"}\n' || echo ada; exit 0 ;;
+  "api user") [[ -n "${FAKE_GH_USER_ERROR:-}" ]] && { printf '%s' "$FAKE_GH_USER_ERROR" >&2; exit 1; }
+    [[ "${FAKE_GH_USER_FAIL_SILENT:-}" == 1 ]] && exit 1
+    [[ "$*" == *--include* ]] && printf 'HTTP/2.0 200 OK\netag: "u"\n\n{"login":"ada"}\n' || echo ada; exit 0 ;;
   "api repos/owner/repo/collaborators?per_page=100&page=1") printf 'HTTP/2.0 200 OK\netag: "c"\n\n[{"login":"ada"}]\n'; exit 0 ;;
 esac
 exit 0
@@ -192,6 +194,41 @@ check "check-status lee el token del .env" grep -q "^Token de GitHub: GITHUB_TOK
 check "check-status dice la cuenta del token" grep -q "^GitHub CLI: cuenta ada" <<<"$status"
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
 check "check-status informa de la pull request" grep -q "^Pull request: #9 CHANGES_REQUESTED issue #1" <<<"$status"
+
+# check-status: la línea GitHub CLI distingue token rechazado, fallo de conexión y otro error.
+status=$(FAKE_GH_USER_ERROR="Post \"https://api.github.com/user\": proxyconnect tcp: dial tcp 127.0.0.1:9: connect: connection refused" "${skills}/check-status/scripts/check-status.sh")
+check "check-status distingue un fallo de conexión" grep -q "^GitHub CLI: no se pudo conectar con GitHub. Comprueba la red o el sandbox" <<<"$status"
+check "check-status no culpa al token en un fallo de conexión" bash -c '! grep -qE "rechaza el token|Crea otro" <<<"$1"' _ "$status"
+status=$(FAKE_GH_USER_ERROR="gh: Bad credentials (HTTP 401)" "${skills}/check-status/scripts/check-status.sh")
+check "check-status dice que GitHub rechaza el token" grep -qx "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo." <<<"$status"
+status=$(FAKE_GH_USER_ERROR="gh: Internal Server Error (HTTP 500)" "${skills}/check-status/scripts/check-status.sh")
+check "check-status muestra otro error sin culpar al token" grep -q "^GitHub CLI: error al consultar la cuenta: gh: Internal Server Error (HTTP 500)" <<<"$status"
+check "check-status no dice rechaza el token en otro error" bash -c '! grep -q "rechaza el token" <<<"$1"' _ "$status"
+status=$(FAKE_GH_USER_ERROR="gh: Forbidden (HTTP 403)" "${skills}/check-status/scripts/check-status.sh")
+check "check-status trata un 403 como otro error" grep -q "^GitHub CLI: error al consultar la cuenta: gh: Forbidden (HTTP 403)" <<<"$status"
+status=$(FAKE_GH_USER_FAIL_SILENT=1 "${skills}/check-status/scripts/check-status.sh")
+check "check-status sin texto de error dice sin detalle" grep -qx "GitHub CLI: error al consultar la cuenta: sin detalle" <<<"$status"
+status=$(FAKE_GH_USER_ERROR="dial tcp: token rejected: Bad credentials (HTTP 401)" "${skills}/check-status/scripts/check-status.sh")
+check "check-status con 401 y marca de conexión manda el token rechazado" grep -qx "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo." <<<"$status"
+status=$(FAKE_GH_USER_ERROR="token: error connecting to api.github.com" "${skills}/check-status/scripts/check-status.sh")
+check "check-status con la palabra token y una conexión caída manda la conexión" grep -q "^GitHub CLI: no se pudo conectar con GitHub" <<<"$status"
+check "check-status sigue entero tras un fallo de gh" grep -q "^Node:" <<<"$status"
+check "check-status no escribe el token del .env" bash -c '! grep -q token-del-env <<<"$1"' _ "$status"
+check "SKILL.md de check-status manda repetir fuera del sandbox" grep -qi "fuera del sandbox" "${skills}/check-status/SKILL.md"
+check "check-status: .apm y .claude son iguales salvo el LICENSE" bash -c 'diff -r -x LICENSE "$1/.apm/skills/check-status" "$1/.claude/skills/check-status"' _ "$package"
+check "check-status: el LICENSE solo existe en .claude" bash -c '[[ $(diff -r "$1/.apm/skills/check-status" "$1/.claude/skills/check-status" | grep -c "^Only in") -le 1 ]]' _ "$package"
+
+# check-status: sin token en el .env o sin gh, las líneas de siempre no cambian.
+mv .env env.bak
+status=$("${skills}/check-status/scripts/check-status.sh")
+check "check-status sin token dice instalado, sin token" grep -qx "GitHub CLI: instalado, sin token" <<<"$status"
+mv env.bak .env
+mkdir -p "${work}/nogh"
+for tool in git node mktemp cat head dirname rm grep sed awk date; do
+  ln -sf "$(command -v "$tool")" "${work}/nogh/${tool}"
+done
+status=$(PATH="${work}/nogh" "$(command -v bash)" "${skills}/check-status/scripts/check-status.sh")
+check "check-status sin gh dice no instalado" grep -q "^GitHub CLI: no instalado" <<<"$status"
 
 # check-status: la línea de modelos nunca para el script y pasa por sus tres estados.
 check "check-status avisa de que no hay agentes de Cursor" grep -q "^Modelos: sin configurar" <<<"$status"

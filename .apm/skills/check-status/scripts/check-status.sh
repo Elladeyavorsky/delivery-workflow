@@ -78,7 +78,8 @@ fi
 source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
 token=no
 token_error=$(mktemp)
-trap 'rm -f "$token_error"' EXIT
+gh_error=$(mktemp)
+trap 'rm -f "$token_error" "$gh_error"' EXIT
 if load_github_token 2>"$token_error"; then
   token=yes
   echo "Token de GitHub: GITHUB_TOKEN en .env"
@@ -90,10 +91,19 @@ if ! command -v gh >/dev/null 2>&1; then
   echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
 elif [[ "$token" == no ]]; then
   echo "GitHub CLI: instalado, sin token"
-elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
+elif login=$(gh api user --jq .login 2>"$gh_error") && [[ -n "$login" ]]; then
   echo "GitHub CLI: cuenta ${login}"
 else
-  echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+  # Un 401 manda sobre las marcas de conexión; lo no reconocido no se atribuye al token.
+  gh_message=$(cat "$gh_error")
+  if [[ "$gh_message" == *"HTTP 401"* || "$gh_message" == *"Bad credentials"* ]]; then
+    echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+  elif [[ "$gh_message" =~ (error\ connecting\ to|dial\ tcp|proxyconnect|no\ such\ host|i/o\ timeout|connection\ refused|network\ is\ unreachable|TLS\ handshake\ timeout) ]]; then
+    echo "GitHub CLI: no se pudo conectar con GitHub. Comprueba la red o el sandbox; el token no se ha cuestionado."
+  else
+    gh_first_line=$(printf '%s\n' "$gh_message" | head -n 1)
+    echo "GitHub CLI: error al consultar la cuenta: ${gh_first_line:-sin detalle}"
+  fi
 fi
 
 if ! command -v node >/dev/null 2>&1; then
