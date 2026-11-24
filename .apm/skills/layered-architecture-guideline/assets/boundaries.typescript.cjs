@@ -51,9 +51,22 @@ if (domain.length > 0) {
   if (domainToLayers.length > 0) {
     forbidden.push(rule("R-DOM-01", { path: domain }, { path: domainToLayers }));
   }
-  const npmTo = { dependencyTypes: ["core", "npm"] };
+  const npmTo = {
+    dependencyTypes: [
+      "core",
+      "npm",
+      "npm-dev",
+      "npm-peer",
+      "npm-optional",
+      "npm-bundled",
+      "npm-no-pkg",
+      "npm-unknown",
+    ],
+  };
   if (allowed.length > 0) {
-    npmTo.pathNot = allowed.map(escapeRegex);
+    npmTo.pathNot = allowed.map(
+      (pkg) => "node_modules/" + escapeRegex(pkg) + "/"
+    );
   }
   forbidden.push(rule("R-DOM-01", { path: domain }, npmTo));
 }
@@ -116,4 +129,14 @@ if (platform.length > 0) {
   }
 }
 
-module.exports = { forbidden };
+module.exports = {
+  forbidden,
+  options: {
+    doNotFollow: { path: "node_modules" },
+    enhancedResolveOptions: {
+      extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+      exportsFields: ["exports"],
+      conditionNames: ["import", "require", "node", "default"],
+    },
+  },
+};
