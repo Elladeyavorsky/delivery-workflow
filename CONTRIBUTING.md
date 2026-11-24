@@ -2,7 +2,7 @@
 
 Esta guía lleva un cambio desde la issue hasta la pull request. La leen agentes y personas. Quien revisa solo lee la issue y la pull request: lo que necesite saber tiene que quedar escrito ahí.
 
-Todas las contribuciones entran por un fork. Sin permiso de escritura en el repositorio original no puedes subir ramas, asignar ni etiquetar: [Contribuir desde un fork](#contribuir-desde-un-fork) explica el flujo.
+Quien tiene permiso de escritura en el repositorio sube su rama a `origin`. Las personas ajenas al repositorio contribuyen desde un fork y no pueden subir ramas, asignar ni etiquetar: [Contribuir desde un fork](#contribuir-desde-un-fork) explica ese flujo.
 
 ## Contexto
 
@@ -21,7 +21,7 @@ Antes de tocar nada, lee:
 
 ## Requisitos
 
-- Un fork del repositorio, clonado, con tu fork como remoto `origin`.
+- Permiso de escritura en el repositorio o, si no lo tienes, un fork clonado con tu fork como remoto `origin`.
 - `git`, [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. Para los tests de Python, [uv](https://docs.astral.sh/uv/).
 - Un `.env` en la raíz con tu token de GitHub ([El token de GitHub](README.md#el-token-de-github)). `.env` está en `.gitignore`.
 - El paquete instalado con APM para tu herramienta, como explica [Trabajar en este repositorio](README.md#trabajar-en-este-repositorio).
@@ -30,7 +30,7 @@ Antes de tocar nada, lee:
 
 ### Las que comprueba el CI
 
-`PR: check rules` y `Code: check` corren en las pull requests hacia `staging` que no están en draft. Si una regla falla, la pull request no pasa.
+`PR: check rules` y `Code: check` corren en las pull requests hacia `staging` que no están en draft. Si una regla falla, la pull request no pasa. La fuente de `PR: check rules` es [`review-pull-request.mjs`](.github/scripts/review-pull-request.mjs).
 
 | Regla | Detalle |
 | --- | --- |
@@ -38,12 +38,12 @@ Antes de tocar nada, lee:
 | Rama | `número-tipo-descripcion`, por ejemplo `44-fix-setup-context7-subfolders`. |
 | Título | Los de [Formatos](#formatos). |
 | Cierre de la issue | El cuerpo tiene una línea propia `Closes #N`, sin más texto en esa línea. |
-| Persona asignada | La pull request tiene una persona asignada. |
+| Persona asignada | La pull request tiene una persona asignada. Desde un fork, [intenta asignar a Ventura](#contribuir-desde-un-fork). |
 | Commits | Cada commit de la pull request cumple el formato de [Formatos](#formatos). Un commit con `!` lleva `BREAKING CHANGE:` en el cuerpo. |
 | `.env` | El diff no añade ni modifica ningún `.env`. |
 | Versión | `version` en `apm.yml` no cambia: la versión sale de la etiqueta que crea el workflow de release. |
 | Conflictos | La pull request no tiene conflictos con `staging`. |
-| Tests | Pasan `node --test tests/*.mjs tests/discord-pr-notifications/*.test.mjs` y `bash tests/scripts.test.sh`. |
+| Tests | Pasan los tests de Node y de scripts que ejecuta [`code-check.yml`](.github/workflows/code-check.yml). |
 
 ### Las que no comprueba el CI
 
@@ -63,7 +63,7 @@ Antes de tocar nada, lee:
 | Cuerpo de issue y de pull request, y documentación | Con la skill [say-it-straight](.apm/skills/say-it-straight/SKILL.md). | Español |
 | Rama | `número-tipo-descripcion`. La descripción lleva minúsculas, dígitos y guiones. | Inglés |
 | Commit | `tipo: qué hace el cambio`, o `tipo(ámbito): …`. Imperativo, la descripción empieza en minúscula, solo ASCII y sin punto final. Un cambio que rompe algo que ya funcionaba lleva `!` tras el tipo y `BREAKING CHANGE:` en el cuerpo. | Inglés |
-| Etiqueta de la issue | El tipo del cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. | — |
+| Etiqueta de la issue | El tipo del cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. Sin permiso para etiquetar, déjala: quien mantiene la pone. | — |
 
 Tipos de commit, con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/):
 
@@ -98,7 +98,7 @@ Cualquier otro cambio necesita una issue aprobada antes de empezar. Eso incluye 
 
 ## Contribuir desde un fork
 
-Un fork no te da permisos en el repositorio original. Esto cambia cinco pasos del flujo.
+Esta sección es para quien no tiene permiso de escritura en el repositorio original. Un fork no da esos permisos, y eso cambia cinco pasos del flujo.
 
 1. **Prepara el fork.** Clona tu fork como `origin`, añade el original como `upstream` y sincroniza `staging` antes de crear la rama:
 
@@ -108,7 +108,7 @@ Un fork no te da permisos en el repositorio original. Esto cambia cinco pasos de
    git checkout staging && git merge --ff-only upstream/staging && git push origin staging
    ```
 
-2. **Crea la issue en el repositorio original.** Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issues) si ya existe una parecida. Sin permiso de triage no puedes poner la etiqueta ni asignar: escribe el tipo del cambio al principio de la descripción y quien mantiene pone la etiqueta.
+2. **Crea la issue en el repositorio original.** Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issues) si ya existe una parecida. Sin permiso de triage no puedes poner la etiqueta ni asignar. No hace falta: quien mantiene pone la etiqueta.
 3. **Escribe la spec, el plan y las tasks donde puedas.** Si eres la autora de la issue, edita su cuerpo. Si no, publícalos como un comentario con las secciones `## Spec`, `## Plan` y `## Tasks`.
 4. **Sube la rama a tu fork y abre la pull request contra el original:**
 
@@ -118,9 +118,9 @@ Un fork no te da permisos en el repositorio original. Esto cambia cinco pasos de
      --head TU_USUARIO:44-fix-setup-context7-subfolders --draft
    ```
 
-5. **No puedes asignar la pull request.** `PR: check rules` falla por la asignación hasta que quien mantiene la asigne. Dilo en la descripción de la pull request.
+5. **Asigna la pull request a Ventura (`venturars`).** Si GitHub no te deja asignarla, déjala sin asignar y dilo en la descripción: la regla de la asignación se relaja en un fork.
 
-Si `/delivery-workflow` falla al etiquetar o asignar por falta de permisos, no lo reintentes: sigue con el resto y deja constancia en la pull request.
+`/delivery-workflow` no está probado en un fork. Puede fallar al etiquetar, asignar o subir la rama: haz a mano el paso que falle, con los comandos de esta sección, y deja constancia en la pull request.
 
 ## Flujo de trabajo
 
@@ -138,17 +138,9 @@ Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` 
 
 ## Comprobaciones antes de pedir revisión
 
-Desde la raíz del repositorio:
+Los comandos están en [Tests del paquete](docs/MAINTENANCE.md#tests-del-paquete): ejecútalos desde la raíz del repositorio.
 
-```bash
-node --test tests/*.mjs
-node --test tests/discord-pr-notifications/*.test.mjs
-bash tests/scripts.test.sh
-uv run --no-project --python 3.15 --with pytest --with markdownify --with beautifulsoup4 python -m pytest -p no:cacheprovider tests/docs_rag
-bash tests/apm-audit.test.sh
-```
-
-El CI ejecuta solo las tres primeras. Las dos últimas corren solo en local. Qué cubre cada una: [Tests del paquete](docs/MAINTENANCE.md#tests-del-paquete).
+El CI ejecuta solo los tests de Node y de scripts. Los de Python y `apm-audit` corren solo en local.
 
 Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MAINTENANCE.md#probar-el-paquete).
 
@@ -158,7 +150,7 @@ En la descripción de la pull request escribe qué comprobaciones ejecutaste y e
 
 - Falta un dato o dos documentos se contradicen: no decidas. Pregunta a la persona que te encargó el cambio y deja la pregunta en un comentario de la issue.
 - El cambio no está en [Qué cambios se aceptan](#qué-cambios-se-aceptan): para hasta que la issue esté aprobada.
-- Una regla del CI no se puede cumplir, como la asignación en un fork: dilo en la pull request y sigue con el resto.
+- Una regla del CI no se puede cumplir: dilo en la pull request y sigue con el resto.
 
 ## Si dudas de cómo escribir el código
 
