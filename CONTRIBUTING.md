@@ -15,8 +15,8 @@ Antes de tocar nada, lee:
 
 1. [README.md](README.md): qué hace el paquete, cómo se instala y cómo se usa.
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
-3. [AGENTS.md](AGENTS.md): formato de la issue en este repositorio (sección `## Decisión`).
-4. La issue del cambio: qué se decide, por qué y qué alternativas se descartaron.
+3. [AGENTS.md](AGENTS.md): cómo se contribuye a este repositorio.
+4. La issue del cambio: qué cambia y por qué.
 
 ## Reglas del proyecto
 
@@ -30,7 +30,7 @@ Haz:
 
 Para no romper nada:
 
-- Un cambio de diseño del paquete (orquestador, dónde vive la spec, el token, los modelos, una skill o un agente nuevos) pide una issue aprobada antes. Esa issue deja escrita la decisión, el motivo y las alternativas descartadas.
+- Un cambio de diseño del paquete (orquestador, dónde vive la spec, el token, los modelos, una skill o un agente nuevos) pide una issue aprobada antes. Esa issue deja escrito qué cambia y por qué.
 - El `.env` y tu token de GitHub quedan fuera de los commits: dan acceso a tu cuenta.
 - La línea `model` de los agentes también queda fuera de los commits: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
 - `apm_modules/` y `apm.lock.yaml` los genera `apm`: cámbialos a través de `apm`, no a mano.
@@ -54,7 +54,8 @@ Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issue
 - **Título** en inglés, empezando por un verbo. Ejemplo: `Fix the manifest search in setup-context7`.
 - **Etiqueta** con el tipo de cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`.
 - **Descripción** en español. Si usas `/delivery-workflow`, la skill `manage-issue` la escribe con la plantilla del tipo.
-- **Decisión** en el cuerpo: qué se decide, por qué, y qué alternativas se descartaron. Quien revise la pull request solo lee la issue: el motivo del cambio tiene que estar ahí.
+
+Quien revise la pull request solo lee la issue: el motivo del cambio tiene que estar ahí.
 
 Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MAINTENANCE.md#probar-el-paquete), anota también la herramienta y el paso.
 
@@ -121,7 +122,7 @@ Sigue los documentos del repositorio. Mandan sobre cualquier otra costumbre:
 - [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.
 - [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba manual y release.
-- La issue del cambio: la decisión, el motivo y las alternativas descartadas.
+- La issue del cambio: la spec, el plan y las tasks.
 
 Si dos documentos se contradicen, o ninguno cubre tu caso, pregunta en la issue antes de decidir.
 
