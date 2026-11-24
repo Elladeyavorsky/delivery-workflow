@@ -10,6 +10,7 @@ dependencies = [
   "mcp>=1.2,<2",
   "markdownify>=0.13",
   "beautifulsoup4>=4.12",
+  "docutils>=0.21",
 ]
 
 [build-system]
