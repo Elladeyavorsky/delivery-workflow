@@ -31,7 +31,7 @@ export function reviewPullRequest(facts) {
     if (!/^Closes #[1-9][0-9]*$/m.test(facts.body ?? '')) {
       errors.push('El cuerpo tiene que incluir una línea Closes #N.');
     }
-    if (!String(facts.assignee ?? '').trim()) {
+    if (!facts.fork && !String(facts.assignee ?? '').trim()) {
       errors.push('La pull request tiene que tener una persona asignada.');
     }
     if ((facts.versionBefore ?? null) !== (facts.versionAfter ?? null)) {
@@ -154,6 +154,7 @@ async function factsFromGit() {
     title: process.env.PR_TITLE ?? '',
     body: process.env.PR_BODY ?? '',
     assignee: process.env.PR_ASSIGNEE ?? '',
+    fork: process.env.PR_FROM_FORK === 'true',
     mergeable,
     paths,
     versionBefore: versionAt(baseSha),

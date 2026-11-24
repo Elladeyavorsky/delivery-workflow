@@ -68,6 +68,19 @@ test('nombra cada regla incumplida en una pull request a staging', () => {
   assert.ok(errors.some((error) => error.includes('version en apm.yml')));
 });
 
+test('no exige persona asignada si la pull request viene de un fork', () => {
+  assert.deepEqual(reviewPullRequest(validFacts({ assignee: '', fork: true })), []);
+});
+
+test('exige persona asignada si la rama es del propio repositorio', () => {
+  const errors = reviewPullRequest(validFacts({ assignee: '', fork: false }));
+  assert.deepEqual(errors, ['La pull request tiene que tener una persona asignada.']);
+});
+
+test('el workflow pasa si la pull request viene de un fork', () => {
+  assert.match(workflow, /PR_FROM_FORK: \$\{\{ github\.event\.pull_request\.head\.repo\.full_name != github\.repository \}\}/);
+});
+
 test('falla si los conflictos no están calculados', () => {
   const errors = reviewPullRequest(validFacts({ mergeable: null }));
   assert.deepEqual(errors, ['GitHub aún no ha calculado los conflictos.']);
