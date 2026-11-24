@@ -70,9 +70,11 @@ catch (e) {
 }
 ```
 
+`LOG_LEVEL` y `HTTP_STATUS` son tablas `kind` → valor, tomadas de la taxonomía.
+
 ```typescript
 // [presentación] traduce y registra (R-ERR-08); platform solo lo registra
 const e = error instanceof AppError ? error : new UnexpectedError(error);
-logger[e.kind === "unexpected" ? "error" : "info"]("request_failed", { requestId: req.id, kind: e.kind, code: e.code });
-return { status, body: { code: e.code, requestId: req.id } };
+logger[LOG_LEVEL[e.kind]]("request_failed", { requestId: req.id, kind: e.kind, code: e.code });
+return { status: HTTP_STATUS[e.kind], body: { code: e.code, requestId: req.id } };
 ```
