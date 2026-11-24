@@ -1,0 +1,398 @@
+> Extra de último recurso (v1.3). Primero: `SKILL.md` y `references/`. No abras este fichero de entrada.
+
+# Arquitectura en capas · Guía (v1.3)
+
+92 reglas. Plantillas en las references; mapa en `ARCHITECTURE.template.md`.
+
+**Núcleo (INV).** Cuatro capas, dependencias hacia dentro, dominio sin E/S, puertos, presentación sin negocio, mapeo, raíz de composición. Sin eso, no es esta skill.
+
+**Normas de código (DEF y CONV).** RORO, `Result` u otra política, nombres, tests, frameworks, detalle de errores y de flujo. El proyecto las pisa en `docs/ARCHITECTURE.md` o `docs/STYLE.md` sin tocar el núcleo.
+
+## Cómo leer
+
+**DEBE:** obligatorio. **DEBERÍA:** desviación documentada en `docs/ARCHITECTURE.md`. **PUEDE:** opcional. Cada regla tiene un ID y etiqueta INV, DEF o CONV. TypeScript es notación. Prioridad: petición > mapa > framework > `SKILL.md` > esta guía. Si la petición obliga a incumplir un DEBE, R-AGT-05.
+
+---
+
+
+
+## 1. Protocolo de ejecución
+
+Orden: mapa → vecinos → clasificar (2.3) → ubicar → de dentro hacia fuera (9.1) → checklist de `SKILL.md` → DEBERÍA desviados.
+
+- **R-AGT-01 (INV)** — Antes de crear o modificar archivos, el agente DEBE leer el mapa de capas del proyecto. Si no existe, DEBE inferirlo del árbol existente (sección 3.2), dejar constancia de la inferencia y, si el flujo es interactivo, confirmarla antes de generar código.
+- **R-AGT-02 (INV)** — El agente NO DEBE mover, renombrar ni reorganizar archivos o carpetas existentes, ni crear una estructura paralela a la del proyecto, salvo que se le pida de forma explícita.
+- **R-AGT-03 (DEF)** — Todo archivo nuevo DEBE ubicarse donde el mapa de capas indique para su capa y DEBE imitar a los archivos vecinos de esa capa: convención de nombres, mayúsculas y minúsculas, extensión, forma de exportar y ubicación de las pruebas.
+- **R-AGT-04 (DEF)** — El agente NO DEBE añadir frameworks ni librerías nuevos para cumplir esta guía cuando el proyecto ya cubre esa necesidad (validación, inyección de dependencias, acceso a datos, logs). Si falta una capacidad, DEBE proponerla antes de añadirla.
+- **R-AGT-05 (INV)** — Si una petición obliga a incumplir una regla DEBE, el agente DEBE señalarlo y proponer una alternativa antes de generar el código.
+- **R-AGT-06 (CONV)** — Al revisar código, el agente DEBE citar las reglas incumplidas por su identificador.
+- **R-AGT-07 (INV)** — Cuando el framework imponga la ubicación o la forma de un archivo, el agente DEBE respetar esa imposición y aplicar la regla R-EST-08.
+
+---
+
+
+
+## 2. Modelo
+
+
+
+### 2.1 Capas
+
+Núcleo. Invertida: `presentación → aplicación → dominio ← infraestructura`. Shared es transversal. La raíz de composición conecta; no es capa. Traducción de errores en presentación; platform solo registra el manejador.
+
+
+| Capa            | Responsabilidad                                                               | No contiene                          |
+| --------------- | ----------------------------------------------------------------------------- | ------------------------------------ |
+| Presentación    | Recibir, validar forma, mapear, invocar un caso de uso, traducir al protocolo | Negocio, datos, transacciones        |
+| Aplicación      | Orquestar, transacción, autorización                                          | Negocio, persistencia, protocolo     |
+| Dominio         | Conceptos y reglas del negocio                                                | E/S, frameworks, reloj, azar         |
+| Infraestructura | Implementar puertos                                                           | Negocio, orquestación                |
+| Shared          | Piezas genéricas sin negocio                                                  | Negocio, E/S, imports de otras capas |
+| Platform        | Infraestructura técnica común                                                 | Negocio                              |
+
+
+
+
+### 2.2 Matriz de imports permitidos
+
+Fila = quien importa. Entre módulos, solo la API pública (R-EST-02).
+
+
+| Desde \ Hacia       | Presentación | Aplicación   | Dominio                    | Infraestructura          | Shared | Platform |
+| ------------------- | ------------ | ------------ | -------------------------- | ------------------------ | ------ | -------- |
+| Presentación        | —            | Sí           | Tipos de lectura expuestos | **No**                   | Sí     | Sí       |
+| Aplicación          | **No**       | —            | Sí                         | **No** (solo interfaces) | Sí     | **No**   |
+| Dominio             | **No**       | **No**       | —                          | **No**                   | Sí     | **No**   |
+| Infraestructura     | **No**       | Sí (puertos) | Sí                         | —                        | Sí     | Sí       |
+| Shared              | **No**       | **No**       | **No**                     | **No**                   | —      | **No**   |
+| Platform            | **No**       | Sí (puertos) | **No**                     | **No**                   | Sí     | —        |
+| Raíz de composición | Sí           | Sí           | Sí                         | Sí                       | Sí     | Sí       |
+
+
+- **R-GEN-01 (INV)** — Las capas de presentación, aplicación, dominio e infraestructura DEBEN ser cerradas. La única excepción permitida es la de las consultas de solo lectura descritas en R-FLU-07.
+- **R-GEN-02 (INV)** — El código común (shared) es la única capa abierta: cualquier capa PUEDE usarlo.
+- **R-GEN-04 (INV)** — Las dependencias NO DEBEN formar ciclos, ni entre capas ni entre módulos.
+- **R-FLU-01 (INV)** — El flujo de llamadas DEBE ser presentación → aplicación → dominio. La aplicación llama a la infraestructura solo a través de interfaces.
+- **R-FLU-02 (INV)** — Una capa interior NO DEBE conocer el tipo concreto de una capa exterior. Los `import` solo DEBEN apuntar a las capas permitidas por la matriz de la sección 2.2.
+- **R-FLU-08 (INV)** — Las dependencias concretas DEBEN crearse y conectarse solo en la raíz de composición (o en el contenedor de inyección del framework). Las capas NO DEBEN instanciar sus propias dependencias.
+
+
+
+### 2.3 Tabla de decisión de capa
+
+La primera afirmativa decide. El mapa da la ruta.
+
+
+| #   | ¿El código…?                                             | Capa                |
+| --- | -------------------------------------------------------- | ------------------- |
+| 1   | …recibe el exterior o produce la salida del cliente?     | Presentación        |
+| 2   | …habla con algo externo para leer o escribir?            | Infraestructura     |
+| 3   | …es una regla de negocio cierta sin ordenador?           | Dominio             |
+| 4   | …coordina pasos o define una transacción?                | Aplicación          |
+| 5   | …es genérico, puro, sin negocio, útil en varios módulos? | Shared              |
+| 6   | …crea y conecta instancias concretas?                    | Raíz de composición |
+
+
+Equivalencias: `references/frameworks.md`.
+
+### 2.4 Variante e intensidad
+
+1. ¿Vivirá meses o lo mantendrá más de una persona? Si no → no uses capas formales.
+2. ¿El núcleo son reglas sobre entidades? Si no → esta guía no aplica (ETL, eventos, juegos, prototipos).
+3. ¿Reglas no triviales o más de una integración? Completa. Si no → ligera.
+4. ¿Varios subdominios? Módulos y, dentro, capas, sobre lo existente.
+
+
+| Aspecto                   | Ligera                                                          | Completa                            |
+| ------------------------- | --------------------------------------------------------------- | ----------------------------------- |
+| Capas                     | Presentación, servicios (aplicación + dominio), infraestructura | Las cuatro                          |
+| Interfaces de repositorio | Opcionales                                                      | Obligatorias                        |
+| Modelo                    | Datos + funciones                                               | Entidades, value objects, agregados |
+| DTO                       | Solo frontera exterior                                          | Todas las fronteras                 |
+
+
+Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas, tocar todas las capas de todos los módulos.
+
+- **R-GEN-03 (DEF)** — Un proyecto nuevo DEBERÍA usar la variante invertida. Si usa la clásica (dominio → persistencia), DEBE documentarlo y aplicar el resto de reglas sustituyendo «interfaz de repositorio» por «repositorio concreto».
+- **R-GEN-05 (INV)** — La variante ligera DEBE mantener separadas, al menos, la presentación y la infraestructura, y DEBE aplicar íntegro el manejo de errores de la sección 5. El paso de la variante ligera a la completa PUEDE hacerse módulo a módulo.
+
+
+
+### 2.5 Reglas por capa
+
+**Presentación**
+
+- **R-PRE-01 (INV)** — La presentación DEBE validar la forma de la entrada (tipos, formatos, campos obligatorios, longitudes) antes de llamar a la aplicación.
+- **R-PRE-02 (INV)** — La presentación NO DEBE contener reglas de negocio. Una comprobación que solo tiene sentido si se conoce el negocio («un pedido confirmado no se puede editar») pertenece al dominio.
+- **R-PRE-03 (DEF)** — Cada operación de presentación (endpoint, comando, acción de pantalla) DEBERÍA invocar exactamente un caso de uso.
+- **R-PRE-04 (INV)** — La presentación NO DEBE importar nada de infraestructura ni del dominio, salvo los tipos de solo lectura que la aplicación exponga a propósito.
+- **R-PRE-05 (INV)** — Los detalles del protocolo (códigos HTTP, cabeceras, códigos de salida de CLI, navegación de UI) DEBEN quedarse en la presentación.
+
+**Aplicación**
+
+- **R-APL-01 (DEF)** — Cada caso de uso DEBE representar una intención del usuario o del sistema y nombrarse con un verbo: `AddOrderLine`, `RegisterUser`, `CancelReservation`.
+- **R-APL-02 (CONV)** — Un caso de uso DEBE recibir un único objeto de entrada inmutable (comando o consulta) y devolver un DTO o un `Result` con un DTO.
+- **R-APL-03 (INV)** — La aplicación DEBE acceder a la infraestructura solo a través de interfaces (puertos o repositorios), recibidas por inyección.
+- **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable.
+- **R-APL-05 (INV)** — La transacción DEBE abrirse y cerrarse en la aplicación, una por caso de uso, mediante una unidad de trabajo.
+- **R-APL-06 (INV)** — La autorización («¿puede este usuario hacer esto?») DEBE comprobarse en la aplicación. La autenticación («¿quién es?») se resuelve en la presentación.
+
+**Dominio**
+
+- **R-DOM-01 (INV)** — El dominio NO DEBE importar código de presentación, aplicación ni infraestructura, ni tampoco frameworks o librerías de entrada y salida.
+- **R-DOM-02 (DEF)** — Las invariantes de una entidad DEBEN protegerse dentro de la propia entidad: no puede existir una instancia en estado inválido.
+- **R-DOM-03 (CONV)** — Las entidades NO DEBEN exponer *setters* públicos. El estado cambia solo mediante métodos con nombre de negocio (`confirm()`, `addLine()`).
+- **R-DOM-04 (CONV)** — Los conceptos con reglas propias (dinero, email, cantidad, rango de fechas) DEBERÍAN modelarse como value objects en lugar de como primitivos.
+- **R-DOM-05 (DEF)** — El dominio DEBE definir las interfaces de repositorio de sus agregados, expresadas en términos de dominio y no de tablas.
+
+**Infraestructura**
+
+- **R-INF-01 (INV)** — Toda clase de infraestructura que se use desde capas interiores DEBE implementar una interfaz definida en el dominio o en la aplicación.
+- **R-INF-02 (INV)** — Los modelos de persistencia (filas, entidades ORM, documentos) NO DEBEN salir de la infraestructura. Se convierten a tipos de dominio con un *mapper*.
+- **R-INF-03 (INV)** — La infraestructura DEBE traducir las excepciones de las librerías externas a errores de la jerarquía común (sección 5), conservando la causa original.
+- **R-INF-04 (DEF)** — Los reintentos, los *timeouts*, los *circuit breakers* y la caché DEBEN implementarse en infraestructura, de forma transparente para el resto.
+
+**Shared**
+
+- **R-SHR-01 (INV)** — Shared NO DEBE importar de ninguna otra capa ni de ningún módulo del proyecto.
+- **R-SHR-02 (INV)** — Shared NO DEBE contener lógica de negocio. Si una utilidad solo la usa un módulo, vive en ese módulo.
+- **R-SHR-03 (DEF)** — Shared NO DEBERÍA tener agrupaciones «cajón de sastre» (del tipo `utils` o `helpers`) sin un tema concreto. Cada agrupación tiene un propósito con nombre.
+- **R-SHR-04 (DEF)** — La configuración DEBE leerse y validarse una sola vez, al arrancar, y entregarse a cada componente como un objeto tipado. Las capas interiores NO DEBEN leer variables de entorno directamente.
+
+---
+
+
+
+## 3. Estructura del proyecto
+
+Las capas son roles, no nombres de carpeta. Cada archivo, una sola capa.
+
+### 3.1 Mapa de capas
+
+Vive en `docs/ARCHITECTURE.md` (plantilla: `assets/ARCHITECTURE.template.md`): glob de cada rol; módulo y API pública; rutas del framework; convenciones; variante, organización, política de errores (R-ERR-05), estilo de casos de uso (R-PAR-08); herramienta y comando de fronteras.
+
+### 3.2 Inferir el mapa cuando no existe
+
+Árbol → imposición del framework → rol vacío junto a piezas parecidas, sin niveles nuevos en la raíz → registrar y confirmar si es interactivo. Vacío y sin imposición: por módulo y capa, o solo por capa.
+
+### 3.3 Nombres
+
+Patrón conceptual fijo; forma escrita la del proyecto. Controlador `OrderController`; esquema `AddLineRequestSchema`; caso de uso `AddOrderLine`; comando `AddOrderLineCommand`; DTO `OrderSummary`; puerto `Clock`; entidad `Order`; interfaz `OrderRepository`; concreto `SqlOrderRepository`; *mapper* `toOrderSummary`; código `ORDER_NOT_FOUND`. Detalle: `references/names-and-folders.md`.
+
+### 3.4 Reglas de estructura
+
+- **R-EST-01 (INV)** — El proyecto DEBERÍA declarar su mapa de capas (sección 3.1). Sea cual sea su organización, DEBE aplicarla de forma uniforme en todos sus módulos.
+- **R-EST-02 (INV)** — Un módulo NO DEBE importar archivos internos de otro módulo. Solo PUEDE usar lo que el otro expone en su API pública, normalmente casos de uso o DTO.
+- **R-EST-03 (DEF)** — Cada caso de uso DEBERÍA vivir en su propia unidad (archivo, clase o función) e identificarse con el nombre del caso de uso, escrito según la convención de nombres del proyecto.
+- **R-EST-04 (INV)** — La estructura de carpetas, el árbol de archivos y las convenciones de nombres del proyecto DEBEN respetarse. Esta guía NO DEBE usarse como motivo para mover, renombrar o reorganizar archivos existentes, ni para crear carpetas con los nombres de los ejemplos.
+- **R-EST-05 (DEF)** — Los nombres de dominio y de casos de uso DEBEN usar el vocabulario del negocio. Los nombres técnicos (`Sql`, `Http`, `Redis`) DEBEN aparecer solo en infraestructura y en platform.
+- **R-EST-06 (DEF)** — El proyecto DEBERÍA verificar en integración continua las reglas R-GEN-04, R-DOM-01, R-PRE-04, R-SHR-01 y R-EST-02 con una herramienta automática de análisis de dependencias del ecosistema del proyecto, configurada con contratos de capas y de importaciones prohibidas sobre las rutas del mapa.
+- **R-EST-07 (INV)** — Cada archivo nuevo DEBE colocarse en la ubicación que el mapa de capas asigna a su capa. Si su capa no tiene ubicación en el mapa, se propone una (sección 3.2) antes de crearlo.
+- **R-EST-08 (INV)** — Cuando el framework imponga la ubicación o la forma de un archivo (rutas basadas en ficheros, pantallas, migraciones, configuración), esa imposición prevalece. El archivo se clasifica por su rol y DEBE mantenerse delgado: delega en la capa que corresponda en lugar de contener lógica de otras capas.
+
+---
+
+
+
+## 4. Flujo de una operación
+
+
+
+### 4.1 Secuencia de escritura
+
+Exterior → presentación (forma) → aplicación (comando, transacción, autorización) → infraestructura (`find`) → dominio → infraestructura (`save`) → DTO por lista blanca → protocolo. Nada cruza una frontera sin mapeo.
+
+### 4.2 Fases y orden por coste
+
+1. Parámetros (presentación, sin E/S).
+2. Lógica: memoria → almacenamiento propio → externos → escrituras. Autorización primero si el orden revelaría información.
+3. Saneamiento: lista blanca, sin internos.
+
+- **R-FLU-10 (CONV)** — Toda operación DEBE ejecutar sus comprobaciones en tres fases y en este orden: (1) validar los parámetros, (2) validar la lógica, (3) sanear la respuesta. Una fase NO DEBE empezar si la anterior ha fallado.
+- **R-FLU-11 (CONV)** — Dentro de la validación de la lógica, las comprobaciones DEBERÍAN ordenarse de menor a mayor coste: en memoria, almacenamiento propio, servicios externos y, al final, escrituras. Si ese orden revelara información a quien no tiene permiso (por ejemplo, 404 frente a 403), la autorización DEBE ir primero.
+- **R-FLU-12 (CONV)** — La respuesta DEBE construirse por lista blanca: el DTO de salida enumera explícitamente cada campo. NO DEBE serializarse una entidad, un modelo de persistencia ni un objeto completo.
+- **R-FLU-13 (DEF)** — El escapado o la codificación de la salida (HTML, CSV, *shell*) DEBE hacerse en presentación, según el destino, y no al guardar los datos.
+- **R-FLU-14 (CONV)** — La entrada NO DEBE corregirse en silencio para hacerla válida: se valida y, si no cumple, se rechaza. Solo PUEDEN aplicarse las normalizaciones declaradas en el esquema, como recortar espacios o pasar un email a minúsculas.
+
+
+
+### 4.3 Objetos en cada frontera
+
+
+| Frontera                     | Entra                           | Sale                      | Mapea                     |
+| ---------------------------- | ------------------------------- | ------------------------- | ------------------------- |
+| Exterior → Presentación      | Carga útil                      | DTO de petición           | Presentación              |
+| Presentación → Aplicación    | Comando inmutable               | DTO o error               | Presentación / aplicación |
+| Aplicación ↔ Dominio         | Entidades, value objects        | Igual, errores de dominio | Aplicación                |
+| Aplicación ↔ Infraestructura | Tipos de dominio vía interfaces | Tipos de dominio          | Infraestructura           |
+| Presentación → Exterior      | DTO o error                     | Protocolo                 | Presentación              |
+
+
+- **R-FLU-03 (INV)** — Las entidades de dominio NO DEBERÍAN salir de la capa de aplicación. La presentación recibe DTO de salida.
+- **R-FLU-04 (CONV)** — Los comandos, las consultas y los DTO DEBEN ser inmutables y contener solo datos, sin comportamiento.
+- **R-FLU-05 (DEF)** — Cada *mapper* DEBE vivir en la capa exterior de la frontera que traduce y DEBE ser una función pura.
+
+
+
+### 4.4 Transacciones, lecturas y eventos
+
+- **R-FLU-06 (DEF)** — Si un caso de uso devuelve un error esperado, la unidad de trabajo DEBE descartar los cambios. Si lanza una excepción, DEBE revertirlos.
+- **R-FLU-07 (DEF)** — Las consultas de solo lectura PUEDEN resolverse con un servicio de consulta (*query service*) definido como interfaz en la aplicación e implementado en infraestructura, que devuelve DTO directamente sin pasar por entidades de dominio. Las operaciones de escritura NO DEBEN usar este atajo.
+- **R-FLU-09 (DEF)** — El dominio DEBE limitarse a registrar eventos. La publicación DEBE hacerla la aplicación, a través de un puerto, después de confirmar la transacción. Si la entrega tiene que estar garantizada, la infraestructura DEBERÍA usar el patrón *outbox*.
+
+---
+
+
+
+## 5. Errores
+
+Traducir en cada frontera y no filtrar internos es núcleo (INV). `Result` u excepciones, `code` y Problem Details son DEF/CONV.
+
+### 5.1 Taxonomía
+
+
+| `kind`           | Esperado | Origen                       | HTTP | Log     |
+| ---------------- | -------- | ---------------------------- | ---- | ------- |
+| `validation`     | Sí       | Presentación                 | 400  | `debug` |
+| `unauthorized`   | Sí       | Presentación                 | 401  | `info`  |
+| `forbidden`      | Sí       | Aplicación                   | 403  | `warn`  |
+| `not_found`      | Sí       | Aplicación                   | 404  | `info`  |
+| `conflict`       | Sí       | Aplicación o infraestructura | 409  | `info`  |
+| `domain_rule`    | Sí       | Dominio                      | 422  | `info`  |
+| `infrastructure` | No       | Infraestructura              | 503  | `error` |
+| `unexpected`     | No       | Cualquiera                   | 500  | `error` |
+
+
+HTTP solo si la presentación es HTTP. Formato: Problem Details (RFC 9457) con `code`, `requestId` y, en `validation`, `errors: [{ path, code, message }]`.
+
+### 5.2 Qué hace cada capa
+
+Dominio produce y no captura. Aplicación: no encontrado, prohibido, conflicto; deja subir lo técnico. Infraestructura traduce con `cause`. Presentación valida, autentica y, en un único manejador (platform lo registra), traduce y registra.
+
+### 5.3 Reglas de errores
+
+- **R-ERR-01 (INV)** — Todo error que cruce una frontera de capa DEBE ser una instancia de `AppError` (o de una subclase), con `kind` y `code`.
+- **R-ERR-02 (CONV)** — Los `code` DEBEN ser estables, estar escritos en SCREAMING_SNAKE_CASE, llevar el prefijo del módulo (`ORDER`_, `USER_`) y estar definidos en un catálogo por módulo. Cambiar un código publicado es un cambio incompatible.
+- **R-ERR-03 (INV)** — Cuando se crea un error a partir de otro, DEBE conservarse el original en `cause`.
+- **R-ERR-04 (INV)** — `details` NO DEBE contener secretos, contraseñas, *tokens* ni datos personales sensibles.
+- **R-ERR-05 (INV)** — El proyecto DEBE aplicar una única política para los errores esperados en todos sus módulos. La política recomendada es `Result`. Si el lenguaje o el equipo prefieren excepciones tipadas, PUEDEN usarlas, siempre con la misma jerarquía `AppError` y documentando la decisión.
+- **R-ERR-06 (CONV)** — Los errores de tipo `infrastructure` y `unexpected` DEBEN propagarse como excepciones, con cualquier política.
+- **R-ERR-07 (CONV)** — NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `not_found`.
+- **R-ERR-08 (INV)** — La traducción de los errores al protocolo y su registro en los logs DEBEN hacerse en un único manejador global de presentación. Las capas interiores NO DEBEN registrar un error y además relanzarlo, porque así se duplica en los logs.
+- **R-ERR-09 (CONV)** — NO DEBE haber bloques `catch` vacíos ni bloques que lo capturen todo sin traducir ni relanzar.
+- **R-ERR-10 (INV)** — El dominio NO DEBE conocer códigos HTTP, códigos de salida ni textos de interfaz.
+- **R-ERR-11 (CONV)** — Los textos que ve el usuario final DEBEN resolverse en presentación a partir del `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
+- **R-ERR-12 (INV)** — Las respuestas de error de tipo `infrastructure` y `unexpected` NO DEBEN incluir trazas de pila, SQL, nombres de tablas, *hosts* ni mensajes de librerías. Solo un texto genérico y el `requestId`.
+- **R-ERR-13 (CONV)** — La validación de forma DEBE acumular todos los errores de campo y devolverlos juntos, no solo el primero.
+- **R-ERR-14 (DEF)** — Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas.
+- **R-ERR-15 (DEF)** — Todo error registrado DEBE incluir el `requestId`, y el mismo identificador DEBE devolverse al cliente.
+- **R-ERR-16 (INV)** — Los logs NO DEBEN contener contraseñas, *tokens*, números de tarjeta ni datos personales sin enmascarar.
+
+Trazabilidad: reutiliza o genera `requestId`; propágalo; logs JSON con `timestamp`, `level`, `requestId`, `kind`, `code`, `module`.
+
+---
+
+
+
+## 6. Paradigmas y firmas
+
+Normas de código, salvo R-PAR-01 (dominio sin efectos: núcleo). El proyecto elige estilo de casos de uso y `Result` o excepciones.
+
+Reglas y *mappers* puros; coordinación e I/O inyectadas. Efectos (E/S, reloj, azar, ids, estado global, env): fuera del dominio, o por parámetro o puerto.
+
+- **R-PAR-01 (INV)** — El dominio DEBE estar libre de efectos secundarios. La hora, los identificadores y los valores aleatorios DEBEN llegar como parámetros o a través de puertos inyectados.
+- **R-PAR-02 (CONV)** — Los cálculos, las reglas sin estado, las validaciones y los mapeos DEBEN implementarse como funciones puras.
+- **R-PAR-03 (CONV)** — Los value objects, comandos, consultas, DTO y eventos DEBEN ser inmutables. Una operación sobre ellos devuelve una instancia nueva.
+- **R-PAR-04 (CONV)** — Las entidades PUEDEN tener estado mutable, pero ese estado solo DEBE cambiar a través de métodos que comprueben sus invariantes. Sus colecciones internas NO DEBEN exponerse de forma mutable.
+- **R-PAR-05 (CONV)** — Los componentes con dependencias (controladores, casos de uso, repositorios, clientes) DEBEN recibirlas desde fuera: por constructor si son objetos, o como argumento de una función fábrica si son funciones. NO DEBEN usar *singletons* globales ni localizadores de servicios.
+- **R-PAR-06 (CONV)** — La herencia DEBERÍA limitarse a la jerarquía de errores y a lo que exija el framework. Para reutilizar comportamiento se prefieren la composición o las funciones.
+- **R-PAR-07 (DEF)** — El estado compartido mutable (cachés, *pools*, contadores) solo PUEDE existir en infraestructura o en platform, y DEBE ser seguro ante la concurrencia.
+- **R-PAR-08 (CONV)** — Un proyecto DEBE elegir un estilo único para construir los casos de uso (clases o funciones fábrica) y aplicarlo en todos los módulos.
+
+RORO: un objeto de entrada; varios valores de salida, un objeto con nombre.
+
+- **R-PAR-09 (CONV)** — Los casos de uso, los métodos de puertos con más de un parámetro y las fábricas de entidades y value objects con más de dos campos DEBEN seguir RORO: un único objeto de entrada, tipado e inmutable.
+- **R-PAR-10 (CONV)** — Cualquier otra función DEBERÍA seguir RORO cuando tenga tres o más parámetros, algún parámetro booleano, parámetros opcionales o dos o más parámetros del mismo tipo.
+- **R-PAR-11 (CONV)** — RORO NO DEBERÍA usarse en funciones puras de uno o dos parámetros con significado evidente, en *callbacks* de `map` / `filter` / `reduce` ni en código de rendimiento crítico.
+- **R-PAR-12 (CONV)** — El objeto de entrada DEBE tener un tipo con nombre que distinga los campos obligatorios de los opcionales, y los valores por defecto DEBEN declararse en un único sitio (la firma o el esquema).
+- **R-PAR-13 (CONV)** — Una función DEBERÍA devolver un objeto con nombre cuando produce más de un valor o cuando es previsible que su salida crezca. Si devuelve un único valor de significado evidente, PUEDE devolver un primitivo.
+
+Equivalencias: `references/paradigm-and-signatures.md`.
+
+---
+
+
+
+## 7. Pruebas
+
+Norma de código. El marco es el del proyecto. Detalle: `references/tests.md`.
+
+
+| Capa            | Tipo                      | Dobles             | Verifica                         |
+| --------------- | ------------------------- | ------------------ | -------------------------------- |
+| Dominio         | Unitarias                 | Ninguno            | Reglas, errores de dominio       |
+| Aplicación      | Caso de uso               | *Fakes* en memoria | Orquestación, transacción        |
+| Infraestructura | Integración               | Tecnología real    | Consultas, traducción de errores |
+| Presentación    | Contrato                  | Caso de uso *stub* | Validación, formato              |
+| Sistema         | Extremo a extremo (pocas) | Ninguno            | Flujos críticos                  |
+| Arquitectura    | Imports                   | —                  | Fronteras (R-EST-06)             |
+
+
+- **R-TST-01 (DEF)** — Toda regla de negocio del dominio DEBE tener al menos una prueba unitaria sin dobles.
+- **R-TST-02 (CONV)** — Las pruebas de aplicación DEBERÍAN usar *fakes* en memoria que implementen las interfaces reales, en lugar de *mocks* que verifican llamadas internas.
+- **R-TST-03 (DEF)** — Cada implementación de repositorio DEBE tener pruebas de integración contra la tecnología real, incluida la traducción de errores (R-INF-03).
+- **R-TST-04 (DEF)** — Cada código de error esperado de un caso de uso DEBERÍA tener una prueba que lo provoque.
+- **R-TST-05 (CONV)** — Las pruebas DEBERÍAN ubicarse según la convención del proyecto (junto al código o en un árbol paralelo). Si no hay convención, DEBERÍAN reproducir la estructura del código que prueban.
+
+---
+
+
+
+## 8. Plantillas de código
+
+Están en `references/errors.md`, `references/flow-and-validation.md` y `references/paradigm-and-signatures.md`. Adáptalas al lenguaje del proyecto.
+
+---
+
+
+
+## 9. Implementación y verificación
+
+De dentro hacia fuera. Cada paso compila y tiene pruebas. Cada archivo, donde diga el mapa.
+
+1. Dominio: reglas, catálogo, pruebas sin dobles.
+2. Aplicación: comando, DTO, caso de uso, puerto, *fakes*.
+3. Infraestructura: implementación, traducción de errores, integración.
+4. Presentación: esquema, operación delgada, *presenter*. El framework manda la ruta.
+5. Composición: conectar en la raíz.
+
+Proyecto nuevo, antes del 1: variante, organización, política de errores y estilo de casos de uso en `docs/ARCHITECTURE.md`; mapa; shared y platform; fronteras. Después: `requestId`, logs, métricas.
+
+Checklist: `SKILL.md`.
+
+---
+
+
+
+## 10. Antipatrones
+
+
+| Antipatrón                    | Síntoma                                       | Corrección                                |
+| ----------------------------- | --------------------------------------------- | ----------------------------------------- |
+| Controlador gordo             | Reglas o SQL en el controlador                | Caso de uso + dominio (R-PRE-02)          |
+| Modelo anémico                | Entidades con *setters*; negocio en servicios | Reglas en la entidad (R-DOM-02, R-DOM-03) |
+| Fuga del ORM                  | Entidad ORM como dominio o API                | *Mapper* (R-INF-02)                       |
+| Repositorio genérico          | SQL o filtros arbitrarios                     | Métodos con intención (R-DOM-05)          |
+| *Sinkhole*                    | Caso de uso que solo reenvía                  | Ligera o consulta (R-FLU-07)              |
+| Lasaña                        | Abstracciones de más                          | Cuatro capas como máximo                  |
+| Shared cajón de sastre        | `utils` con negocio                           | Devolver al módulo (R-SHR-02, R-SHR-03)   |
+| Servicio dios                 | Decenas de métodos                            | Un caso de uso por unidad (R-EST-03)      |
+| Configuración dispersa        | `env` por todo el código                      | Validar al arrancar (R-SHR-04)            |
+| Dominio con reloj             | `new Date()` en entidades                     | Parámetro o puerto (R-PAR-01)             |
+| Log y relanzar                | El mismo error dos veces                      | Solo el manejador global (R-ERR-08)       |
+| Decidir por `message`         | Lógica según el texto                         | Decidir por `code` (R-ERR-02)             |
+| 200 con error o 500 para todo | Protocolo roto                                | Estado según el `kind`                    |
+| Reestructuración por la guía  | Carpetas movidas para imitar ejemplos         | Mapa sobre lo existente (R-EST-04)        |
+| Lógica en el framework        | Negocio en la ruta o la pantalla              | Delgado y delegar (R-EST-08)              |
+
+

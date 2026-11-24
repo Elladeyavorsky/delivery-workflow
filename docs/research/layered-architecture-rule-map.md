@@ -1,12 +1,14 @@
-# Recorte de «Arquitectura en capas» hacia la skill
+# Mapa de reglas de arquitectura en capas
 
-Fuente: `docs/research/arquitectura-en-capas.md` (v1.2, 92 reglas). Destino: `.apm/skills/layered-architecture-guideline/`.
+Índice del corte ya aplicado. Lo usa quien edite `layered-architecture-guideline`. Los agentes no lo leen; `apm install` no lo copia.
 
-Este documento decide qué regla va a qué fichero y con qué etiqueta. Quien corta la fuente lo ejecuta sin reclasificar. Si una regla no encaja, pregunta en la issue en lugar de decidir.
+Fuente: `.apm/skills/layered-architecture-guideline/assets/layered-architecture-guide.md` (v1.3, 92 reglas). Destino: skill, `references/` y `assets/ARCHITECTURE.template.md`.
+
+Cada ID apunta a un fichero y a una etiqueta INV/DEF/CONV. No reclasifiques. Si una regla no encaja, pregunta en la issue.
 
 Reglas de trabajo:
 
-- Conserva los IDs de la v1.2. Áreas: AGT, GEN, PRE, APL, DOM, INF, SHR, FLU, ERR, EST, PAR, TST.
+- Conserva los IDs de la v1.3 (misma norma que la v1.2). Áreas: AGT, GEN, PRE, APL, DOM, INF, SHR, FLU, ERR, EST, PAR, TST.
 - Cada ID se define una sola vez. Cuando dos reglas se fusionan, la frase conserva los dos IDs.
 - `SKILL.md` tiene 1.500 palabras o menos. Cada referencia, 800 o menos, código incluido. Si algo no cabe, recorta ejemplos y tablas, nunca reglas INV. Si una referencia sigue sin caber, deja una sola plantilla de código y pregunta en la issue.
 - `SKILL.md` no lleva código ni nombra `Result`, RORO, `AppError`, un lenguaje o un framework.
@@ -34,8 +36,7 @@ Prueba para decidir: si quito la regla, ¿sigo teniendo capas, dependencias haci
 | REF-NOM | `references/names-and-folders.md` |
 | REF-FW | `references/frameworks.md` |
 | REF-FLU | `references/flow-and-validation.md` |
-| ASSET-MAPA | `assets/ARCHITECTURE.template.md` |
-| SCRIPT | `scripts/check-boundaries.sh` y la configuración de fronteras en `assets/` |
+| ASSET-MAPA | `assets/ARCHITECTURE.template.md`. `Herramienta` y `Comando` (R-EST-06) van a `docs/ARCHITECTURE.md` del proyecto |
 
 ## Invariantes del núcleo
 
@@ -94,7 +95,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | R-GEN-01 | INV | SKILL-INV 2 | |
 | R-GEN-02 | INV | SKILL-INV 2 | |
 | R-GEN-03 | DEF | SKILL-INT | La variante clásica se documenta en el mapa |
-| R-GEN-04 | INV | SKILL-INV 2 + SCRIPT | |
+| R-GEN-04 | INV | SKILL-INV 2 + ASSET-MAPA | |
 | R-GEN-05 | INV | SKILL-INT | Ver corrección 3 |
 
 ### FLU · Flujo entre capas
@@ -102,7 +103,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | ID | Etiqueta | Destino | Nota |
 | --- | --- | --- | --- |
 | R-FLU-01 | INV | SKILL-INV 2 | |
-| R-FLU-02 | INV | SKILL-INV 2 + SCRIPT | La matriz 2.2 va en `SKILL.md` y es la base de la configuración del script |
+| R-FLU-02 | INV | SKILL-INV 2 + ASSET-MAPA | La matriz 2.2 va en `SKILL.md`. `Herramienta` y `Comando` en ASSET-MAPA |
 | R-FLU-03 | INV | SKILL-INV 7 | |
 | R-FLU-04 | CONV | REF-PAR | Fusionar con R-PAR-03 |
 | R-FLU-05 | DEF | REF-FLU | La pureza del mapper se remite a REF-PAR |
@@ -123,7 +124,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | R-PRE-01 | INV | SKILL-INV 5 | |
 | R-PRE-02 | INV | SKILL-INV 5 | Enlaza R-ERR-14 |
 | R-PRE-03 | DEF | REF-FLU | |
-| R-PRE-04 | INV | SKILL-INV 5 + SCRIPT | |
+| R-PRE-04 | INV | SKILL-INV 5 + ASSET-MAPA | |
 | R-PRE-05 | INV | SKILL-INV 9 | |
 
 ### APL · Aplicación
@@ -141,7 +142,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 
 | ID | Etiqueta | Destino | Nota |
 | --- | --- | --- | --- |
-| R-DOM-01 | INV | SKILL-INV 3 + SCRIPT | |
+| R-DOM-01 | INV | SKILL-INV 3 + ASSET-MAPA | |
 | R-DOM-02 | DEF | REF-PAR | Modelo rico, variante completa |
 | R-DOM-03 | CONV | REF-PAR | |
 | R-DOM-04 | CONV | REF-PAR | |
@@ -160,7 +161,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 
 | ID | Etiqueta | Destino | Nota |
 | --- | --- | --- | --- |
-| R-SHR-01 | INV | SKILL-INV 12 + SCRIPT | |
+| R-SHR-01 | INV | SKILL-INV 12 + ASSET-MAPA | |
 | R-SHR-02 | INV | SKILL-INV 12 | |
 | R-SHR-03 | DEF | REF-NOM | |
 | R-SHR-04 | DEF | REF-PAR | Se agrupa con la lista de efectos secundarios (variables de entorno) |
@@ -170,11 +171,11 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | ID | Etiqueta | Destino | Nota |
 | --- | --- | --- | --- |
 | R-EST-01 | INV | SKILL-PROTO + ASSET-MAPA | El proyecto declara su mapa y sus decisiones en `docs/ARCHITECTURE.md` |
-| R-EST-02 | INV | SKILL-INV 2 + SCRIPT | Si el proyecto tiene módulos |
+| R-EST-02 | INV | SKILL-INV 2 + ASSET-MAPA | Si el proyecto tiene módulos |
 | R-EST-03 | DEF | REF-NOM | |
 | R-EST-04 | INV | SKILL-PROTO | Fusionar con R-AGT-02 |
 | R-EST-05 | DEF | REF-NOM | |
-| R-EST-06 | DEF | SCRIPT + ASSET-MAPA | Reglas verificadas: R-GEN-04, R-DOM-01, R-PRE-04, R-SHR-01, R-EST-02 |
+| R-EST-06 | DEF | ASSET-MAPA | `Herramienta` y `Comando` en `docs/ARCHITECTURE.md`. Reglas verificadas: R-GEN-04, R-DOM-01, R-PRE-04, R-SHR-01, R-EST-02 |
 | R-EST-07 | INV | SKILL-PROTO | |
 | R-EST-08 | INV | SKILL-PROTO + REF-FW | Fusionar con R-AGT-07 |
 
@@ -233,7 +234,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | --- | --- |
 | Cabecera «Cómo leer» (vocabulario y prioridad ante conflictos) | SKILL-PROTO, en breve |
 | 2.1 Capas | `SKILL.md`, tabla reducida a Responsabilidad y No contiene |
-| 2.2 Matriz de imports | `SKILL.md` y base de la configuración de SCRIPT |
+| 2.2 Matriz de imports | `SKILL.md`. `Herramienta` y `Comando` en ASSET-MAPA |
 | 2.3 Tabla de decisión | `SKILL.md`. Las equivalencias por tipo de proyecto van a REF-FW |
 | 2.4 Variante e intensidad | SKILL-INT, con las señales de mal uso |
 | 3.1 Mapa de capas | ASSET-MAPA |
@@ -258,4 +259,4 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | CONV | 28 |
 | Total | 92 |
 
-Al terminar, comprueba que cada ID de la v1.2 aparece en la skill exactamente una vez y que las cuentas coinciden.
+Al terminar, comprueba que cada ID de la v1.3 aparece en la skill exactamente una vez y que las cuentas coinciden.

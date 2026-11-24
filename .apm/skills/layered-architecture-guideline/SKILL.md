@@ -17,7 +17,7 @@ description: "Arquitectura en capas: invariantes, ubicación, nombres y separaci
 - **Fuera de alcance:** Scripts de un solo uso, ETL, sistemas por eventos, videojuegos, prototipos desechables.
 - **Precedencia:** Petición de la persona > `docs/ARCHITECTURE.md` y `docs/STYLE.md` > framework > esta skill. Un INV solo se salta con excepción escrita en `docs/ARCHITECTURE.md`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/layered-architecture-guideline`.
+Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layered-architecture-guideline`.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -122,3 +122,4 @@ Casos: `references/frameworks.md`.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
 - Sin herramienta de fronteras en el proyecto: dilo como «fronteras no comprobadas».
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.
+- Si SKILL y references no bastan: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.

@@ -409,6 +409,9 @@ for ref in errors flow-and-validation paradigm-and-signatures tests names-and-fo
   check "layered-architecture-guideline trae references/${ref}.md" test -f "${lag}/references/${ref}.md"
 done
 check "layered-architecture-guideline trae assets/ARCHITECTURE.template.md" test -f "$tpl"
+check "layered-architecture-guideline trae assets/layered-architecture-guide.md" test -f "${lag}/assets/layered-architecture-guide.md"
+check "SKILL.md nombra la guía condensada como último recurso" grep -q 'layered-architecture-guide.md' "${lag}/SKILL.md"
+check "docs/research no duplica la guía de capas" bash -c "! test -e '${package}/docs/research/arquitectura-en-capas.md'"
 for agent in concept-developer code-developer; do
   check "${agent} precarga layered-architecture-guideline" bash -c "$(declare -f frontmatter); frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -qx '  - layered-architecture-guideline'"
 done
@@ -418,7 +421,7 @@ done
 check "la plantilla tiene Herramienta, Comando y R-EST-06 (DEF)" bash -c "grep -q 'Herramienta:' '$tpl' && grep -q 'Comando:' '$tpl' && grep -qF 'R-EST-06 (DEF)' '$tpl'"
 check "layered-architecture-guideline no trae scripts ni .cjs de un stack" bash -c "! test -e '${lag}/scripts/check-boundaries.sh' && ! test -e '${lag}/assets/boundaries.typescript.cjs'"
 check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE '\\b(rust|nest|php|ruby|spring|django|fastapi|golang|kotlin|python|typescript|javascript)\\b|node\\.js|\\bnpm\\b|dependency-cruiser|depcruise|import-linter|archunit|c#' '${lag}/SKILL.md'"
-check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!docs/research/' ':!tests/scripts.test.sh'"
+check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!tests/scripts.test.sh'"
 check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
 
 echo
