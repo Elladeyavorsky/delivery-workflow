@@ -1,42 +1,91 @@
 # Cómo contribuir a delivery-workflow
 
-Esta guía lleva un cambio desde la issue hasta la pull request. Quien revisa solo lee la issue y la pull request, así que todo lo que necesite saber tiene que quedar escrito ahí.
+Esta guía lleva un cambio desde la issue hasta la pull request. La leen agentes y personas. Quien revisa solo lee la issue y la pull request: lo que necesite saber tiene que quedar escrito ahí.
+
+Todas las contribuciones entran por un fork. Sin permiso de escritura en el repositorio original no puedes subir ramas, asignar ni etiquetar: [Contribuir desde un fork](#contribuir-desde-un-fork) explica el flujo.
 
 ## Contexto
 
 delivery-workflow es un paquete [APM](https://github.com/microsoft/apm) para Claude Code, Cursor y Codex. Lleva una tarea de GitHub desde la idea hasta la revisión. El repositorio tiene:
 
 - `.apm/skills/` y `.apm/agents/`: las skills y los agentes del paquete.
-- `.github/`: los workflows de release y de avisos de PR en Discord.
+- `.github/`: los workflows (release, comprobaciones de código y de pull request, avisos de PR en Discord, actualización de la dependencia APM) y sus scripts.
 - `tests/`: los tests del paquete.
-- `docs/`: mantenimiento, modelos, avisos de Discord.
+- `docs/`: mantenimiento, modelos, avisos de Discord e investigación.
 
 Antes de tocar nada, lee:
 
 1. [README.md](README.md): qué hace el paquete, cómo se instala y cómo se usa.
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
-3. [AGENTS.md](AGENTS.md): formato de la issue en este repositorio (sección `## Decisión`).
-4. La issue del cambio: qué se decide, por qué y qué alternativas se descartaron.
+3. La issue del cambio: qué cambia y por qué.
 
-## Reglas del proyecto
+## Requisitos
 
-Haz:
+- Un fork del repositorio, clonado, con tu fork como remoto `origin`.
+- `git`, [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. Para los tests de Python, [uv](https://docs.astral.sh/uv/).
+- Un `.env` en la raíz con tu token de GitHub ([El token de GitHub](README.md#el-token-de-github)). `.env` está en `.gitignore`.
+- El paquete instalado con APM para tu herramienta, como explica [Trabajar en este repositorio](README.md#trabajar-en-este-repositorio).
+
+## Reglas
+
+### Las que comprueba el CI
+
+`PR: check rules` y `Code: check` corren en las pull requests hacia `staging` que no están en draft. Si una regla falla, la pull request no pasa.
+
+| Regla | Detalle |
+| --- | --- |
+| Base | La pull request va contra `staging`. `main` recibe cambios solo desde `staging`, en el release. |
+| Rama | `número-tipo-descripcion`, por ejemplo `44-fix-setup-context7-subfolders`. |
+| Título | Los de [Formatos](#formatos). |
+| Cierre de la issue | El cuerpo tiene una línea propia `Closes #N`, sin más texto en esa línea. |
+| Persona asignada | La pull request tiene una persona asignada. |
+| Commits | Cada commit de la pull request cumple el formato de [Formatos](#formatos). Un commit con `!` lleva `BREAKING CHANGE:` en el cuerpo. |
+| `.env` | El diff no añade ni modifica ningún `.env`. |
+| Versión | `version` en `apm.yml` no cambia: la versión sale de la etiqueta que crea el workflow de release. |
+| Conflictos | La pull request no tiene conflictos con `staging`. |
+| Tests | Pasan `node --test tests/*.mjs tests/discord-pr-notifications/*.test.mjs` y `bash tests/scripts.test.sh`. |
+
+### Las que no comprueba el CI
 
 - Trabaja siempre a partir de una issue.
-- Abre la pull request contra `staging`: `main` recibe cambios solo desde `staging`, en el release.
-- Escribe los commits en inglés con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/).
-- Escribe issues, pull requests y documentación en español, con la skill [say-it-straight](.apm/skills/say-it-straight/SKILL.md).
-- Pregunta en la issue cuando falte un dato o dos documentos se contradigan.
+- No subas cambios a `main` ni a `staging`, ni siquiera de tu fork. Sube a tu rama de trabajo.
+- No uses `git push --force` ni `--no-verify`.
+- No commitees la línea `model` de los agentes: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
+- No edites a mano `apm_modules/` ni `apm.lock.yaml`: los genera `apm`.
+- Un cambio de diseño del paquete pide una issue aprobada antes de empezar. Es diseño: el orquestador, dónde vive la spec, cómo se lee el token, cómo se eligen los modelos, y una skill o un agente nuevos.
+- Di que algo funciona solo después de probarlo.
 
-Para no romper nada:
+## Formatos
 
-- Un cambio de diseño del paquete (orquestador, dónde vive la spec, el token, los modelos, una skill o un agente nuevos) pide una issue aprobada antes. Esa issue deja escrita la decisión, el motivo y las alternativas descartadas.
-- El `.env` y tu token de GitHub quedan fuera de los commits: dan acceso a tu cuenta.
-- La línea `model` de los agentes también queda fuera de los commits: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
-- `apm_modules/` y `apm.lock.yaml` los genera `apm`: cámbialos a través de `apm`, no a mano.
-- `version` en `apm.yml` no se cambia a mano para publicar: la versión sale de la etiqueta que crea el workflow de release.
-- `main` y `staging` cambian por pull request: sube tus cambios a tu rama de trabajo.
-- Da por bueno un cambio cuando lo hayas probado.
+| Qué | Formato | Idioma |
+| --- | --- | --- |
+| Título de issue y de pull request | Empieza por un verbo con mayúscula (`Add`, `Fix`, `Document`). Menos de 72 caracteres, solo ASCII, sin punto final, sin tipo delante y sin número de issue. Ejemplo: `Fix the manifest search in setup-context7`. | Inglés |
+| Cuerpo de issue y de pull request, y documentación | Con la skill [say-it-straight](.apm/skills/say-it-straight/SKILL.md). | Español |
+| Rama | `número-tipo-descripcion`. La descripción lleva minúsculas, dígitos y guiones. | Inglés |
+| Commit | `tipo: qué hace el cambio`, o `tipo(ámbito): …`. Imperativo, la descripción empieza en minúscula, solo ASCII y sin punto final. Un cambio que rompe algo que ya funcionaba lleva `!` tras el tipo y `BREAKING CHANGE:` en el cuerpo. | Inglés |
+| Etiqueta de la issue | El tipo del cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. | — |
+
+Tipos de commit, con [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/):
+
+| Tipo | Para qué |
+| --- | --- |
+| `feat` | Una funcionalidad nueva. |
+| `fix` | La corrección de un error. |
+| `docs` | Solo documentación. |
+| `refactor` | Cambia el código sin cambiar lo que hace. |
+| `test` | Tests nuevos o cambiados. |
+| `chore` | Mantenimiento: configuración y tareas sin cambio visible. |
+| `knowledge` | Conocimiento del proyecto que no es código ni documentación de uso. |
+
+### Cómo afectan los commits a la versión
+
+El workflow de release lee los commits al fusionar en `main` y una IA de Groq elige la versión:
+
+- `major`: commits con `!` o `BREAKING CHANGE`, o un cambio completo de cómo se instala o se usa el paquete.
+- `minor`: funcionalidades nuevas, normalmente commits `feat`.
+- `patch`: `fix`, `docs`, `chore`, `refactor`, `test` y `knowledge`.
+
+Usa el tipo que describe el cambio. No elijas uno para forzar una versión.
 
 ## Qué cambios se aceptan
 
@@ -45,31 +94,45 @@ Para no romper nada:
 - Documentación: erratas, explicaciones que faltan o que han quedado desfasadas.
 - Tests nuevos o mejores.
 
-Cualquier otro cambio necesita una issue aprobada antes de empezar. Eso incluye una skill o un agente nuevos, y cambios en el orquestador, en dónde vive la spec, en cómo se lee el token o en cómo se eligen los modelos.
+Cualquier otro cambio necesita una issue aprobada antes de empezar. Eso incluye los cambios de diseño de la lista de reglas.
 
-## Cómo se escribe la issue
+## Contribuir desde un fork
 
-Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issues) si ya existe una parecida. Si no, crea una con este formato:
+Un fork no te da permisos en el repositorio original. Esto cambia cinco pasos del flujo.
 
-- **Título** en inglés, empezando por un verbo. Ejemplo: `Fix the manifest search in setup-context7`.
-- **Etiqueta** con el tipo de cambio: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`.
-- **Descripción** en español. Si usas `/delivery-workflow`, la skill `manage-issue` la escribe con la plantilla del tipo.
-- **Decisión** en el cuerpo: qué se decide, por qué, y qué alternativas se descartaron. Quien revise la pull request solo lee la issue: el motivo del cambio tiene que estar ahí.
+1. **Prepara el fork.** Clona tu fork como `origin`, añade el original como `upstream` y sincroniza `staging` antes de crear la rama:
 
-Si es un error, añade los pasos para reproducirlo, lo que esperabas y lo que ha pasado. Si lo has visto en la [prueba manual](docs/MAINTENANCE.md#probar-el-paquete), anota también la herramienta y el paso.
+   ```bash
+   git remote add upstream https://github.com/venturars/delivery-workflow.git
+   git fetch upstream
+   git checkout staging && git merge --ff-only upstream/staging && git push origin staging
+   ```
+
+2. **Crea la issue en el repositorio original.** Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issues) si ya existe una parecida. Sin permiso de triage no puedes poner la etiqueta ni asignar: escribe el tipo del cambio al principio de la descripción y quien mantiene pone la etiqueta.
+3. **Escribe la spec, el plan y las tasks donde puedas.** Si eres la autora de la issue, edita su cuerpo. Si no, publícalos como un comentario con las secciones `## Spec`, `## Plan` y `## Tasks`.
+4. **Sube la rama a tu fork y abre la pull request contra el original:**
+
+   ```bash
+   git push -u origin 44-fix-setup-context7-subfolders
+   gh pr create --repo venturars/delivery-workflow --base staging \
+     --head TU_USUARIO:44-fix-setup-context7-subfolders --draft
+   ```
+
+5. **No puedes asignar la pull request.** `PR: check rules` falla por la asignación hasta que quien mantiene la asigne. Dilo en la descripción de la pull request.
+
+Si `/delivery-workflow` falla al etiquetar o asignar por falta de permisos, no lo reintentes: sigue con el resto y deja constancia en la pull request.
 
 ## Flujo de trabajo
 
-Cada paso espera a que el anterior esté hecho. Puedes hacerlo a mano o pedirlo a `/delivery-workflow`, que sigue los mismos pasos.
+Cada paso espera a que el anterior esté hecho. Puedes hacerlo a mano o pedirlo a `/delivery-workflow` (en Codex, `$delivery-workflow`), que sigue los mismos pasos.
 
-1. **Localiza la issue** y entiende qué hay que resolver.
-2. **Escribe la spec, el plan y las tasks en la issue**, bajo `## Spec`, `## Plan` y `## Tasks`.
-3. **Crea la rama** desde `staging` con el formato `número-tipo-descripcion`. Ejemplo: `44-fix-setup-context7-subfolders`.
-4. **Desarrolla** la tarea.
-5. **Prueba** lo desarrollado con las comprobaciones de abajo.
-6. **Haz los commits** con las convenciones de abajo.
-7. **Abre una pull request contra `staging`.** En la descripción escribe `Closes #número` con el número de la issue.
-8. **Atiende la revisión.** Si piden cambios, súbelos a la misma rama.
+1. **Localiza la issue** y entiende qué hay que resolver. Si no existe, créala con el formato de [Formatos](#formatos).
+2. **Crea la rama** desde `staging` con el formato `número-tipo-descripcion`.
+3. **Haz el commit vacío de apertura** `chore: open #N` y súbelo. La pull request necesita al menos un commit para abrirse.
+4. **Abre la pull request contra `staging` en draft.** En el cuerpo, una línea `Closes #N`.
+5. **Escribe la spec, el plan y las tasks en la issue**, bajo `## Spec`, `## Plan` y `## Tasks`.
+6. **Desarrolla y prueba** con [las comprobaciones](#comprobaciones-antes-de-pedir-revisión). Guarda cada trozo en un commit y súbelo.
+7. **Atiende la revisión.** Si piden cambios, súbelos a la misma rama.
 
 Lo que pasa después no es cosa tuya: quien mantiene el paquete lleva `staging` a `main` y publica la versión ([Publicar una versión](docs/MAINTENANCE.md#publicar-una-versión)).
 
@@ -85,45 +148,30 @@ uv run --no-project --python 3.15 --with pytest --with markdownify --with beauti
 bash tests/apm-audit.test.sh
 ```
 
-`bash tests/apm-audit.test.sh` crea una copia temporal del paquete, excluye el estado local y los artefactos generados, regenera allí los artefactos APM y ejecuta `apm audit --ci`. Al terminar, elimina la copia temporal y deja intacto el checkout.
+El CI ejecuta solo las tres primeras. Las dos últimas corren solo en local. Qué cubre cada una: [Tests del paquete](docs/MAINTENANCE.md#tests-del-paquete).
 
 Si cambias una skill o un agente, prueba el cambio también en un repositorio desechable, como explica [Probar el paquete](docs/MAINTENANCE.md#probar-el-paquete).
 
-Si una comprobación falla, arréglala antes de seguir. Si no puedes ejecutarla, dilo en la pull request. Di que algo funciona solo después de probarlo.
+En la descripción de la pull request escribe qué comprobaciones ejecutaste y el resultado, y cuáles no pudiste ejecutar y por qué. Si una comprobación falla, arréglala antes de seguir.
 
-## Convenciones de commits
+## Cuándo parar y preguntar
 
-Un commit tiene este formato:
+- Falta un dato o dos documentos se contradicen: no decidas. Pregunta a la persona que te encargó el cambio y deja la pregunta en un comentario de la issue.
+- El cambio no está en [Qué cambios se aceptan](#qué-cambios-se-aceptan): para hasta que la issue esté aprobada.
+- Una regla del CI no se puede cumplir, como la asignación en un fork: dilo en la pull request y sigue con el resto.
 
-```text
-tipo: qué hace el cambio
-```
+## Si dudas de cómo escribir el código
 
-| Tipo | Para qué |
-| --- | --- |
-| `feat` | Una funcionalidad nueva. |
-| `fix` | La corrección de un error. |
-| `docs` | Solo documentación. |
-| `refactor` | Cambia el código sin cambiar lo que hace. |
-| `test` | Tests nuevos o cambiados. |
-| `chore` | Mantenimiento: configuración, versión y tareas sin cambio visible. |
-| `knowledge` | Conocimiento del proyecto que no es código ni documentación de uso. |
+No hay una guía de estilo aparte. Busca la respuesta en este orden y para en el primero que la dé:
 
-El mensaje va en inglés, en imperativo y sin punto final. Un cambio que rompe algo que ya funcionaba lleva `!` tras el tipo (`feat!:`) y `BREAKING CHANGE:` en el cuerpo.
+1. La issue del cambio: la spec, el plan y las tasks.
+2. [README.md](README.md): instalación, uso y permisos.
+3. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
+4. [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
+5. [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba manual y release.
+6. El código y los tests que ya existen en el mismo directorio: imita su estilo.
 
-La versión la decide el workflow de release al fusionar en `main`: una IA de Groq lee los commits y elige `major`, `minor` o `patch`.
-
-## Cómo se escribe el código
-
-Sigue los documentos del repositorio. Mandan sobre cualquier otra costumbre:
-
-- [README.md](README.md): instalación, uso y permisos.
-- [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.
-- [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
-- [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba manual y release.
-- La issue del cambio: la decisión, el motivo y las alternativas descartadas.
-
-Si dos documentos se contradicen, o ninguno cubre tu caso, pregunta en la issue antes de decidir.
+Si ninguno lo cubre, o dos se contradicen, sigue [Cuándo parar y preguntar](#cuándo-parar-y-preguntar).
 
 ## Licencia
 
