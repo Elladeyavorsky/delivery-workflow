@@ -135,7 +135,7 @@ La skill `layered-architecture-guideline` fija cuatro capas (presentación, apli
 
 La usan `concept-developer` y `code-developer`. `code-tester` y `concept-tester` siguen el plan, no la precargan.
 
-Si el proyecto no tiene `docs/ARCHITECTURE.md` y su mapa de capas no está en `AGENTS.md`, `CLAUDE.md` ni `README.md`, `concept-developer` lo crea desde la plantilla de la skill y deja `Por decidir` lo que no sabe. Escribe en el plan el mapa archivo → capa. `code-developer` coloca el código en su capa. Si el proyecto ya tiene mapa, manda ese.
+Si falta `docs/ARCHITECTURE.md`, `concept-developer` lo crea desde la plantilla de la skill y deja `Por decidir` lo que no sabe. Si existe, añade las secciones de la plantilla que falten y conserva lo que ya hay; no sustituye el fichero. Escribe en el plan el mapa archivo → capa. `code-developer` coloca el código en su capa.
 
 El mapa de capas es independiente del lenguaje. Cada proyecto elige y anota en `docs/ARCHITECTURE.md` la herramienta que verifica las fronteras; los agentes la proponen según el stack.
 

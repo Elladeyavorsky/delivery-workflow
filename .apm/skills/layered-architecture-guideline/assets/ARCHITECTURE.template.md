@@ -2,7 +2,7 @@
 
 Estas rutas son la única referencia válida para ubicar archivos. La plantilla se adapta al proyecto, nunca al revés.
 
-Copia este fichero a `docs/ARCHITECTURE.md` y rellena cada `Por decidir`.
+Si el proyecto no tiene `docs/ARCHITECTURE.md`, copia este fichero y rellena cada `Por decidir`. Si ya lo tiene, añade las secciones que falten; no sustituyas el fichero ni cambies las rutas que ya hay.
 
 ## Mapa de capas
 

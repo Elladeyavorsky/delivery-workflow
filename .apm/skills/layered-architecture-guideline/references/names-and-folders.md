@@ -4,7 +4,9 @@ Se lee para inferir el mapa cuando falta y para el patrón de nombres. El mapa v
 
 ## Inferir el mapa
 
-Base de R-AGT-01. Si no existe `docs/ARCHITECTURE.md` ni otro mapa del proyecto:
+Base de R-AGT-01. Si `docs/ARCHITECTURE.md` ya existe, añade las secciones de `assets/ARCHITECTURE.template.md` que falten; conserva texto y rutas. No sustituyas el fichero ni reorganices carpetas para imitar ejemplos.
+
+Si no existe `docs/ARCHITECTURE.md`:
 
 1. Recorre el árbol e identifica qué rutas ya cumplen cada rol (controladores o pantallas, acceso a datos, reglas).
 2. Identifica las rutas que impone el framework y las convenciones de nombres que ya se usan.

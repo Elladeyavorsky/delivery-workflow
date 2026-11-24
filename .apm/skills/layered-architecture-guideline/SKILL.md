@@ -21,7 +21,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
-1. **Leer el mapa.** `docs/ARCHITECTURE.md` y `docs/STYLE.md`. Si falta el primero, usa `<carpeta de esta skill>/assets/ARCHITECTURE.template.md`. Otro fichero de mapa del proyecto manda. Sin mapa: infiere, deja constancia y confirma si es interactivo (`references/names-and-folders.md`). **R-AGT-01 (INV)**. El proyecto declara mapa y decisiones en `docs/ARCHITECTURE.md`. **R-EST-01 (INV)**.
+1. **Leer el mapa.** `docs/ARCHITECTURE.md` y `docs/STYLE.md`. Si falta el primero, créalo desde `<carpeta de esta skill>/assets/ARCHITECTURE.template.md` (infiere con `references/names-and-folders.md`). Si existe, completa las secciones que falten; no lo sustituyas. **R-AGT-01 (INV)**. El proyecto declara mapa y decisiones en `docs/ARCHITECTURE.md`. **R-EST-01 (INV)**.
 2. **Decidir la capa** con la tabla de la sección 4. El archivo nuevo va donde el mapa indica (**R-EST-07 (INV)**) e imita a los vecinos (**R-AGT-03 (DEF)**). No reorganices lo existente ni crees una estructura paralela, salvo petición explícita (**R-AGT-02 (INV)**, **R-EST-04 (INV)**).
 3. **Frameworks.** Protocolo de la sección 4 (**R-AGT-07 (INV)**, **R-EST-08 (INV)**).
 4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flow-and-validation.md`, `references/paradigm-and-signatures.md`, `references/errors.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
@@ -117,8 +117,8 @@ Casos: `references/frameworks.md`.
 
 ## 5. Manejo de Errores y Excepciones
 
-- Sin `docs/ARCHITECTURE.md`, parte de la plantilla. Intensidad o framework sin decidir: hueco.
-- Si el proyecto ya tiene mapa, no lo sobrescribas.
+- Sin `docs/ARCHITECTURE.md`, créalo desde la plantilla. Intensidad o framework sin decidir: hueco.
+- Si existe `docs/ARCHITECTURE.md`, completa lo que falte de la plantilla; no lo sustituyas.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
 - Sin herramienta de fronteras en el proyecto: dilo como «fronteras no comprobadas».
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.
