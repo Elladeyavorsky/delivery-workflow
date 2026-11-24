@@ -40,7 +40,7 @@ RORO (*Receive an Object, Return an Object*): un objeto de entrada con parámetr
 
 ## Plantilla de entidad
 
-Adáptalas al lenguaje del proyecto.
+Los ejemplos de código usan TypeScript como notación. Los nombres como `HttpRequest`, `Database`, `schema` o `validate` son marcadores: sustitúyelos por lo que ya use el proyecto y adapta la sintaxis a su lenguaje.
 
 ```typescript
 // [dominio] invariantes dentro, sin setters, sin E/S

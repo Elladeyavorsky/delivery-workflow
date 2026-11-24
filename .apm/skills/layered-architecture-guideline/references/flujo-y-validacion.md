@@ -35,7 +35,7 @@ Las consultas de solo lectura (R-FLU-07) se resuelven con un *query service*: in
 
 ## Plantillas
 
-Adáptalas al lenguaje del proyecto.
+Los ejemplos de código usan TypeScript como notación. Los nombres como `HttpRequest`, `Database`, `schema` o `validate` son marcadores: sustitúyelos por lo que ya use el proyecto y adapta la sintaxis a su lenguaje.
 
 ```typescript
 // [aplicación] comando → Result<DTO>

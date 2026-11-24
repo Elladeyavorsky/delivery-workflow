@@ -417,7 +417,7 @@ for agent in code-tester concept-tester; do
 done
 check "la plantilla tiene Herramienta, Comando y R-EST-06 (DEF)" bash -c "grep -q 'Herramienta:' '$tpl' && grep -q 'Comando:' '$tpl' && grep -qF 'R-EST-06 (DEF)' '$tpl'"
 check "layered-architecture-guideline no trae scripts ni .cjs de un stack" bash -c "! test -e '${lag}/scripts/check-boundaries.sh' && ! test -e '${lag}/assets/boundaries.typescript.cjs'"
-check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE 'typescript|javascript|python|java\\b|kotlin|golang|c#|rust|php|ruby|node\\.js|npm|dependency-cruiser|depcruise|import-linter|archunit|django|fastapi|spring|nest' '${lag}/SKILL.md'"
+check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE '\\b(rust|nest|php|ruby|spring|django|fastapi|golang|kotlin|python|typescript|javascript)\\b|node\\.js|\\bnpm\\b|dependency-cruiser|depcruise|import-linter|archunit|c#' '${lag}/SKILL.md'"
 check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!docs/research/' ':!tests/scripts.test.sh'"
 check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
 

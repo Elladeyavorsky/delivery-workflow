@@ -137,7 +137,7 @@ La usan `concept-developer` y `code-developer`. `code-tester` y `concept-tester`
 
 Si el proyecto no tiene `docs/ARCHITECTURE.md` y su mapa de capas no está en `AGENTS.md`, `CLAUDE.md` ni `README.md`, `concept-developer` lo crea desde la plantilla de la skill y deja `Por decidir` lo que no sabe. Escribe en el plan el mapa archivo → capa. `code-developer` coloca el código en su capa. Si el proyecto ya tiene mapa, manda ese.
 
-El mapa de capas es independiente del lenguaje. Cada proyecto elige y anota en `docs/ARCHITECTURE.md` la herramienta que verifica las fronteras; los agentes la proponen según el stack. En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`.
+El mapa de capas es independiente del lenguaje. Cada proyecto elige y anota en `docs/ARCHITECTURE.md` la herramienta que verifica las fronteras; los agentes la proponen según el stack.
 
 ## Protección de datos
 

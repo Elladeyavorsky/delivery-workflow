@@ -45,7 +45,7 @@ Reutiliza el `requestId` si llega en una cabecera; si no, genéralo. Propágalo 
 
 ## Plantillas
 
-Adáptalas al lenguaje del proyecto. Subclases: `ValidationError`, `NotFoundError`, `DomainError`, `InfrastructureError`, `UnexpectedError`.
+Los ejemplos de código usan TypeScript como notación. Los nombres como `HttpRequest`, `Database`, `schema` o `validate` son marcadores: sustitúyelos por lo que ya use el proyecto y adapta la sintaxis a su lenguaje. Subclases: `ValidationError`, `NotFoundError`, `DomainError`, `InfrastructureError`, `UnexpectedError`.
 
 ```typescript
 // [shared] AppError y Result
