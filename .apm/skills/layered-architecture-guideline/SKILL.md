@@ -21,10 +21,10 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
-1. **Leer el mapa.** `docs/ARCHITECTURE.md` y `docs/STYLE.md`. Si falta el primero, usa `<carpeta de esta skill>/assets/ARCHITECTURE.template.md`. Otro fichero de mapa del proyecto manda. Sin mapa: infiere, deja constancia y confirma si es interactivo (`references/nombres-y-carpetas.md`). **R-AGT-01 (INV)**. El proyecto declara mapa y decisiones en `docs/ARCHITECTURE.md`. **R-EST-01 (INV)**.
+1. **Leer el mapa.** `docs/ARCHITECTURE.md` y `docs/STYLE.md`. Si falta el primero, usa `<carpeta de esta skill>/assets/ARCHITECTURE.template.md`. Otro fichero de mapa del proyecto manda. Sin mapa: infiere, deja constancia y confirma si es interactivo (`references/names-and-folders.md`). **R-AGT-01 (INV)**. El proyecto declara mapa y decisiones en `docs/ARCHITECTURE.md`. **R-EST-01 (INV)**.
 2. **Decidir la capa** con la tabla de la sección 4. El archivo nuevo va donde el mapa indica (**R-EST-07 (INV)**) e imita a los vecinos (**R-AGT-03 (DEF)**). No reorganices lo existente ni crees una estructura paralela, salvo petición explícita (**R-AGT-02 (INV)**, **R-EST-04 (INV)**).
 3. **Frameworks.** Protocolo de la sección 4 (**R-AGT-07 (INV)**, **R-EST-08 (INV)**).
-4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flujo-y-validacion.md`, `references/paradigma-y-firmas.md`, `references/errores.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
+4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flow-and-validation.md`, `references/paradigm-and-signatures.md`, `references/errors.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
 5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: ejecuta el `Comando` de `docs/ARCHITECTURE.md`.
 
 ## 4. Reglas

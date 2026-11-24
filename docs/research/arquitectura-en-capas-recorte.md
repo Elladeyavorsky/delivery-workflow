@@ -28,12 +28,12 @@ Prueba para decidir: si quito la regla, ¿sigo teniendo capas, dependencias haci
 | SKILL-INV | `SKILL.md`, sección Invariantes. El número remite a la tabla siguiente |
 | SKILL-PROTO | `SKILL.md`, sección Flujo de Trabajo |
 | SKILL-INT | `SKILL.md`, sección Intensidad y variante |
-| REF-ERR | `references/errores.md` |
-| REF-PAR | `references/paradigma-y-firmas.md` |
+| REF-ERR | `references/errors.md` |
+| REF-PAR | `references/paradigm-and-signatures.md` |
 | REF-TST | `references/tests.md` |
-| REF-NOM | `references/nombres-y-carpetas.md` |
+| REF-NOM | `references/names-and-folders.md` |
 | REF-FW | `references/frameworks.md` |
-| REF-FLU | `references/flujo-y-validacion.md` |
+| REF-FLU | `references/flow-and-validation.md` |
 | ASSET-MAPA | `assets/ARCHITECTURE.template.md` |
 | SCRIPT | `scripts/check-boundaries.sh` y la configuración de fronteras en `assets/` |
 

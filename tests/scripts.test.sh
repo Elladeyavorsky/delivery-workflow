@@ -405,7 +405,7 @@ check "el paso del art. 50 no se salta en alto riesgo" bash -c "grep -qF 'El pas
 lag="${skills}/layered-architecture-guideline"
 tpl="${lag}/assets/ARCHITECTURE.template.md"
 check "layered-architecture-guideline existe" test -f "${lag}/SKILL.md"
-for ref in errores flujo-y-validacion paradigma-y-firmas tests nombres-y-carpetas frameworks; do
+for ref in errors flow-and-validation paradigm-and-signatures tests names-and-folders frameworks; do
   check "layered-architecture-guideline trae references/${ref}.md" test -f "${lag}/references/${ref}.md"
 done
 check "layered-architecture-guideline trae assets/ARCHITECTURE.template.md" test -f "$tpl"
