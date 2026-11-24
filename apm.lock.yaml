@@ -8,9 +8,9 @@ dependencies:
 - repo_url: venturars/delivery-workflow
   name: delivery-workflow
   host: github.com
-  resolved_commit: db35bee7f409cf5bbbbc075431a293ebe9ee8180
-  resolved_ref: v1.2.1
-  version: 1.2.1
+  resolved_commit: 0946cdc2af36bff8f0d128932fb02bb5a666f39f
+  resolved_ref: v1.2.3
+  version: 1.2.3
   package_type: apm_package
   deployed_files:
   - .claude/agents/code-developer.md
@@ -384,19 +384,19 @@ dependencies:
     .claude/skills/setup-context7/assets/library-profiles.json: sha256:bcfa9f501d23197fdba0e72951951fed082a5285cd1a1ed61f1c416a3fbec692
     .claude/skills/setup-context7/scripts/setup-context7.mjs: sha256:3e7c87892ea8b56fb08618f1ed57551e714a2e274ab3b88c264b70bb1a50c353
     .claude/skills/setup-docs-rag/LICENSE: sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
-    .claude/skills/setup-docs-rag/SKILL.md: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+    .claude/skills/setup-docs-rag/SKILL.md: sha256:11de88d180d42465236a2c78b3d779b620da7d33ac10443e90438da47aed5baf
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py: sha256:50df771813ce51173e8be701be127b54107cdbf36a7a610ff488a49e719c17cb
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py: sha256:5a3b83ca78b55d3d3f40c7e434ff31d911434a14878d8f2e098b15b7c2297437
-    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:646a3d0c1b7b5314c2a530e8f9a698e7cb5102bf467d7221c91442bd37e517c3
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py: sha256:c1472cf03fa6dce3f473a3f4a702c8f0999dc277df8c80506e087dc0f3e015b6
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py: sha256:2a0c4e7590808eb4c8e7c51657011cdfce0c49420d811eb48a4539d570bf2bbb
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py: sha256:03cb2a4a34f8de67d1b6df4f6e275d0d48a787fab20fa5f4ab01e846a7d9cee8
-    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+    .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:735c435db962d85f6e0e5b674539e3ca51e4f62b78cee7cb906b65acc69ec859
     .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py: sha256:a35e644a06fe21394c50ea08487f708c4cf584603adec0ca5956afbe63e1b980
-    .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+    .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:f9c4bdf7412bb11c65ce1bd85559193e27df91953839ee552808a5f990af4bea
     .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs: sha256:554a72ca874749d0f3bbb9e43c363d3bdf4eda5a41f9b3e79209d343ab6de77d
-  content_hash: sha256:a33e720dff3ed0396f16bb0a808483095b4d0c4754b6854825631397fbfc8fff
+  content_hash: sha256:3b6199748318fd4609874512e9a0c539f26021360c55aa2eecdbe91f51e91108
   package_targets:
   - claude
   - codex
@@ -2398,7 +2398,7 @@ deployments:
   - venturars/delivery-workflow
   - .
   active_owner: venturars/delivery-workflow
-  content_hash: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+  content_hash: sha256:11de88d180d42465236a2c78b3d779b620da7d33ac10443e90438da47aed5baf
 - kind: project-relative
   target: claude
   value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py
@@ -2428,7 +2428,7 @@ deployments:
   - venturars/delivery-workflow
   - .
   active_owner: venturars/delivery-workflow
-  content_hash: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+  content_hash: sha256:646a3d0c1b7b5314c2a530e8f9a698e7cb5102bf467d7221c91442bd37e517c3
 - kind: project-relative
   target: claude
   value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py
@@ -2461,6 +2461,15 @@ deployments:
   content_hash: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
 - kind: project-relative
   target: claude
+  value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/rst.py
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:9c0774838fd92f3f9c2bf973048072341b68ce34f83e1f6d04c7e73d463e41c3
+- kind: project-relative
+  target: claude
   value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py
   runtime: null
   scope: project
@@ -2478,7 +2487,7 @@ deployments:
   - venturars/delivery-workflow
   - .
   active_owner: venturars/delivery-workflow
-  content_hash: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+  content_hash: sha256:735c435db962d85f6e0e5b674539e3ca51e4f62b78cee7cb906b65acc69ec859
 - kind: project-relative
   target: claude
   value: .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py
@@ -2498,7 +2507,7 @@ deployments:
   - venturars/delivery-workflow
   - .
   active_owner: venturars/delivery-workflow
-  content_hash: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+  content_hash: sha256:f9c4bdf7412bb11c65ce1bd85559193e27df91953839ee552808a5f990af4bea
 - kind: project-relative
   target: claude
   value: .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs
@@ -2727,6 +2736,7 @@ local_deployed_files:
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py
+- .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/rst.py
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py
 - .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py
@@ -2870,15 +2880,16 @@ local_deployed_file_hashes:
   .claude/skills/setup-context7/SKILL.md: sha256:31b5c84598e3432b773fe1aeea3d20914667f4387ef210422ee0226a24e66c4d
   .claude/skills/setup-context7/assets/library-profiles.json: sha256:bcfa9f501d23197fdba0e72951951fed082a5285cd1a1ed61f1c416a3fbec692
   .claude/skills/setup-context7/scripts/setup-context7.mjs: sha256:3e7c87892ea8b56fb08618f1ed57551e714a2e274ab3b88c264b70bb1a50c353
-  .claude/skills/setup-docs-rag/SKILL.md: sha256:8b55b43ecba22c4ab8479ccf7dec2e4a611fac11dfecb778407e83357dd1eb44
+  .claude/skills/setup-docs-rag/SKILL.md: sha256:11de88d180d42465236a2c78b3d779b620da7d33ac10443e90438da47aed5baf
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/__init__.py: sha256:50df771813ce51173e8be701be127b54107cdbf36a7a610ff488a49e719c17cb
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/chunking.py: sha256:5a3b83ca78b55d3d3f40c7e434ff31d911434a14878d8f2e098b15b7c2297437
-  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:096e7efd15cc7475826e9ff36363abad31dd9d3405ce9505b5f4292c50aa4751
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/cleanup.py: sha256:646a3d0c1b7b5314c2a530e8f9a698e7cb5102bf467d7221c91442bd37e517c3
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/indexer.py: sha256:c1472cf03fa6dce3f473a3f4a702c8f0999dc277df8c80506e087dc0f3e015b6
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/lookup.py: sha256:2a0c4e7590808eb4c8e7c51657011cdfce0c49420d811eb48a4539d570bf2bbb
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/profiles.py: sha256:f56891daf11de242951ce8008706a3d7a7a122596c8ad6a4c5d634b1f43d7af8
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/rst.py: sha256:9c0774838fd92f3f9c2bf973048072341b68ce34f83e1f6d04c7e73d463e41c3
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/server.py: sha256:03cb2a4a34f8de67d1b6df4f6e275d0d48a787fab20fa5f4ab01e846a7d9cee8
-  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:ca9abcbf504215ebc42a93d22646f359c9ead25d552ae6c4e9d3675a0ccf3f93
+  .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/sources.py: sha256:735c435db962d85f6e0e5b674539e3ca51e4f62b78cee7cb906b65acc69ec859
   .claude/skills/setup-docs-rag/scripts/docs_rag/docs_rag/store.py: sha256:a35e644a06fe21394c50ea08487f708c4cf584603adec0ca5956afbe63e1b980
-  .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:8f7ca6972a39f1c311a3c903f8cddbcf309dde7ed4cf984deb7f8adc7d01f0e9
+  .claude/skills/setup-docs-rag/scripts/docs_rag/pyproject.toml: sha256:f9c4bdf7412bb11c65ce1bd85559193e27df91953839ee552808a5f990af4bea
   .claude/skills/setup-docs-rag/scripts/setup-docs-rag.mjs: sha256:554a72ca874749d0f3bbb9e43c363d3bdf4eda5a41f9b3e79209d343ab6de77d
