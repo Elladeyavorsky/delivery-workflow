@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { readMergeable, reviewPullRequest } from '../.github/scripts/review-pull-request.mjs';
 
-const workflow = readFileSync(new URL('../.github/workflows/review.yml', import.meta.url), 'utf8');
+const workflow = readFileSync(new URL('../.github/workflows/pr-check-rules.yml', import.meta.url), 'utf8');
 
 function validFacts(overrides = {}) {
   return {
@@ -13,7 +13,7 @@ function validFacts(overrides = {}) {
     body: '## Issue\n\nCloses #88\n',
     assignee: 'venturars',
     mergeable: true,
-    paths: ['.github/workflows/review.yml'],
+    paths: ['.github/workflows/pr-check-rules.yml'],
     versionBefore: '1.1.1',
     versionAfter: '1.1.1',
     commits: [
@@ -100,7 +100,9 @@ test('reintenta el cálculo de conflictos hasta que GitHub responde', async () =
 });
 
 test('review corre los tests y la comprobación solo en staging, no en main', () => {
-  assert.match(workflow, /^name: review$/m);
+  assert.match(workflow, /^name: "PR: check rules"$/m);
+  assert.match(workflow, /group: pr-check-rules-\$\{\{ github\.event\.pull_request\.number \}\}\n\s*cancel-in-progress: true/);
+  assert.match(workflow, /^  check-rules:$/m);
   assert.match(workflow, /pull_request:\s*\n\s*branches: \[staging\]\n/);
   assert.match(workflow, /types: \[opened, synchronize, reopened, ready_for_review, review_requested\]/);
   assert.match(workflow, /name: discord-pr-number/);
@@ -109,8 +111,18 @@ test('review corre los tests y la comprobación solo en staging, no en main', ()
   assert.match(workflow, /contents: read/);
   assert.match(workflow, /pull-requests: read/);
   assert.match(workflow, /fetch-depth: 0/);
-  assert.match(workflow, /node --test tests\/\*\.mjs tests\/discord-pr-notifications\/\*\.test\.mjs/);
-  assert.match(workflow, /bash tests\/scripts\.test\.sh/);
+  assert.doesNotMatch(workflow, /node --test|scripts\.test\.sh/);
   assert.match(workflow, /node \.github\/scripts\/review-pull-request\.mjs/);
   assert.doesNotMatch(workflow, /pull_request_target|secrets\./);
+});
+
+test('Code: check ejecuta los tests de la pull request y resume el resultado en ci', () => {
+  const codeCheck = readFileSync(new URL('../.github/workflows/code-check.yml', import.meta.url), 'utf8');
+  assert.match(codeCheck, /^name: "Code: check"$/m);
+  assert.match(codeCheck, /pull_request:\s*\n\s*branches: \[staging\]\n/);
+  assert.match(codeCheck, /cancel-in-progress: true/);
+  assert.match(codeCheck, /node --test tests\/\*\.mjs tests\/discord-pr-notifications\/\*\.test\.mjs/);
+  assert.match(codeCheck, /bash tests\/scripts\.test\.sh/);
+  assert.match(codeCheck, /^  ci:$/m);
+  assert.doesNotMatch(codeCheck, /pull_request_target|secrets\./);
 });

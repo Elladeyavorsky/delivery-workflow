@@ -185,8 +185,4 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.match(workflow, /dependencies\.apm ya apunta a \$\{REF\}/);
   assert.match(workflow, /self-release\.py set "\$DEPENDENCY_REPO" "\$REF"/);
   assert.doesNotMatch(workflow, /steps\.release\.outputs\.ref/);
-
-  const release = readFileSync(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
-  assert.match(release, /self-release\.py align --check "\$REPOSITORIO"/);
-  assert.match(release, /Quita \$\{REPOSITORIO\} de dependencies\.apm/);
 });

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const action = readFileSync(new URL('../../.github/actions/discord-pr-notifications/action.yml', import.meta.url), 'utf8');
-const reviewWorkflow = readFileSync(new URL('../../.github/workflows/review.yml', import.meta.url), 'utf8');
+const reviewWorkflow = readFileSync(new URL('../../.github/workflows/pr-check-rules.yml', import.meta.url), 'utf8');
 const confirmationTrigger = readFileSync(new URL('../../.github/workflows/discord-pr-confirmation-trigger.yml', import.meta.url), 'utf8');
 const packagePublisher = readFileSync(new URL('../../.github/workflows/discord-pr-publish.yml', import.meta.url), 'utf8');
 const docs = readFileSync(new URL('../../docs/DISCORD-PR-NOTIFICATIONS.md', import.meta.url), 'utf8');
@@ -51,7 +51,7 @@ test('el disparador de confirmación solo transporta el número de una PR coment
   assert.doesNotMatch(confirmationTrigger, /actions\/checkout|secrets\.|pull_request_target/);
 });
 
-test('review entrega el número de PR a Discord solo cuando la base es staging', () => {
+test('PR: check rules entrega el número de PR a Discord solo cuando la base es staging', () => {
   assert.match(reviewWorkflow, /name: discord-pr-number/);
   assert.match(reviewWorkflow, /if: github\.base_ref == 'staging'/);
   assert.match(reviewWorkflow, /PR_NUMBER: \$\{\{ github\.event\.pull_request\.number \}\}/);
@@ -60,9 +60,9 @@ test('review entrega el número de PR a Discord solo cuando la base es staging',
 });
 
 test('delivery-workflow publica desde su staging con la acción local confiable', () => {
-  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \["review", "Discord: capture confirmation"\]/);
+  assert.match(packagePublisher, /workflow_run:\s*\n\s*workflows: \["PR: check rules", "Discord: capture confirmation"\]/);
   assert.match(packagePublisher, /minimum-reviewers: 1/);
-  assert.match(packagePublisher, /required-check: review/);
+  assert.match(packagePublisher, /required-check: check-rules/);
   assert.match(packagePublisher, /steps\.gate\.outputs\.proceed == 'true'/);
   assert.match(packagePublisher, /github\.ref == 'refs\/heads\/staging'/);
   assert.match(packagePublisher, /workflow_run\.conclusion == 'success'/);

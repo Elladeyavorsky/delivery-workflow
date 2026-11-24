@@ -100,21 +100,15 @@ La skill `setup-compliance` lleva en `assets/reglamento-ia/` el texto oficial en
 
 Los cambios entran en `staging` por pull request desde su rama de trabajo. Para publicar:
 
-1. Fusiona los cambios de desarrollo en `staging`. No hace falta subir `version` a mano: `release.yml` calcula el siguiente `major`, `minor` o `patch` a partir de los commits desde la última etiqueta estable cuando recibe el push a `main`.
-2. Quien mantiene el paquete abre la pull request de `staging` a `main`. GitHub no inicia `release.yml` en respuesta a una PR creada con `GITHUB_TOKEN`; no cuentes con una ejecución de validación mientras la PR está abierta. En una PR desde un fork, si el workflow se ejecuta y `version` en `apm.yml` no coincide con la calculada, la persona autora debe fijarla manualmente a la versión calculada.
-3. Al hacer merge, el push a `main` dispara `release.yml`. Ese workflow calcula y valida la versión en el push; si hace falta, la fija en un commit `chore: release X.Y.Z`. En ese mismo commit quita `dependencies.apm` de este repositorio, si está, para que la etiqueta no pida otro commit del mismo paquete. Después continúa con la publicación en la misma ejecución. Si la versión no supera la última estable o la etiqueta ya existe, termina sin crear la etiqueta ni la release. Si la validación pasa, crea la etiqueta `vX.Y.Z` y la release. No hace falta etiquetar a mano.
+1. Fusiona los cambios de desarrollo en `staging`.
+2. Quien mantiene el paquete abre la pull request de `staging` a `main` y la fusiona.
+3. El push a `main` dispara `release-create-version.yml` («Release: create version»). El workflow busca la última etiqueta `vX.Y.Z`, reúne los commits y los ficheros cambiados desde ella y se los envía a la IA de Groq. La IA decide si el cambio es `major`, `minor` o `patch` y escribe el resumen. El workflow calcula la versión nueva, crea la etiqueta y la release con ese resumen y la lista de PR. No hace falta etiquetar a mano. Si el commit ya tiene etiqueta, no crea otra.
 
-Para ver qué versión saldría: `bash .github/scripts/release-version.sh`.
+El workflow necesita el secreto `GROQ_API_KEY` en el repositorio. Si falta, si la IA no responde o si su respuesta no es válida, el workflow falla y no crea etiqueta ni release.
 
-La versión siguiente se calcula desde los Conventional Commits posteriores a la
-última etiqueta estable. Aplica esta prioridad determinista: un `!` o
-`BREAKING CHANGE` produce `major`; si no existe ninguno, un `feat` produce
-`minor`; los demás cambios producen `patch`. Las reglas de los commits
-seleccionan el tipo y el número; una IA no interviene en el cálculo.
+El workflow no cambia `version` en `apm.yml` ni hace commits en `main`: la versión publicada es la etiqueta.
 
-Las releases estables usan etiquetas `vX.Y.Z` inmutables. Si `vX.Y.Z` ya
-existe o la versión calculada no supera la última etiqueta estable, el workflow
-termina sin mover, borrar ni recrear la etiqueta.
+Las releases estables usan etiquetas `vX.Y.Z`. Una IA decide el tipo de cambio, así que dos ejecuciones sobre los mismos commits pueden dar un resumen distinto.
 
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
 
@@ -122,4 +116,4 @@ Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin a
 
 El workflow `APM: update dependency` solo corre en este repositorio. Hace checkout de `staging` y abre la pull request contra esa rama. La instalación de APM y `apm update` usan el token de Actions (`GITHUB_TOKEN`), para no pedir los metadatos de release de forma anónima. El instalador no añade su directorio al PATH cuando detecta CI; el paso lo publica en `GITHUB_PATH`. Cada día a las 08:17 UTC, y también a mano, elige la release estable más alta de `venturars/delivery-workflow` cuyo `apm.yml` no depende de este repositorio. Las etiquetas que sí dependen, como `v1.1.3` y `v1.1.4`, se saltan: APM no instala dos commits del mismo paquete. Si el manifiesto ya apunta a la elegida, no ejecuta `apm update`. Si apunta a una anterior, o el commit de release quitó `dependencies.apm`, escribe esa entrada con la referencia nueva y ejecuta `apm update --force` para `claude`, `cursor` y `codex`. `--force` hace falta porque el runner no guarda recibos de despliegue y el paquete local (`.apm/`) publica los mismos ficheros que la dependencia: sin esa opción, APM 0.38 rechaza la escritura con `no trustworthy local deployment baseline` y no mueve el lock. La pull request se abre en draft, queda en la rama `chore/update-delivery-workflow` e incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
 
-No es un workflow reutilizable: otro repositorio no puede llamarlo. Tampoco se engancha al evento `release`, porque esa release la crea `GITHUB_TOKEN` y GitHub no arrancaría el workflow. La pull request la abre el mismo token, así que no dispara `review`.
+No es un workflow reutilizable: otro repositorio no puede llamarlo. Tampoco se engancha al evento `release`, porque esa release la crea `GITHUB_TOKEN` y GitHub no arrancaría el workflow. La pull request la abre el mismo token, así que no dispara `PR: check rules`.

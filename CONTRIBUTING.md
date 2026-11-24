@@ -34,7 +34,7 @@ Para no romper nada:
 - El `.env` y tu token de GitHub quedan fuera de los commits: dan acceso a tu cuenta.
 - La línea `model` de los agentes también queda fuera de los commits: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
 - `apm_modules/` y `apm.lock.yaml` los genera `apm`: cámbialos a través de `apm`, no a mano.
-- `version` en `apm.yml` cambia solo en el commit de release.
+- `version` en `apm.yml` no se cambia a mano para publicar: la versión sale de la etiqueta que crea el workflow de release.
 - `main` y `staging` cambian por pull request: sube tus cambios a tu rama de trabajo.
 - Da por bueno un cambio cuando lo hayas probado.
 
@@ -111,7 +111,7 @@ tipo: qué hace el cambio
 
 El mensaje va en inglés, en imperativo y sin punto final. Un cambio que rompe algo que ya funcionaba lleva `!` tras el tipo (`feat!:`) y `BREAKING CHANGE:` en el cuerpo.
 
-Los commits no deciden la versión. La decide `version` en `apm.yml`.
+La versión la decide el workflow de release al fusionar en `main`: una IA de Groq lee los commits y elige `major`, `minor` o `patch`.
 
 ## Cómo se escribe el código
 
