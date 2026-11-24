@@ -115,22 +115,22 @@ fi
 export BOUNDARIES_CONFIG
 BOUNDARIES_CONFIG=$(cat "$extract_json")
 
-globs=()
-if [[ -s "$roots_file" ]]; then
-  while IFS= read -r root || [[ -n "$root" ]]; do
-    [[ -z "$root" ]] && continue
-    if [[ -d "${project}/${root}" ]]; then
-      globs+=("${root}/**/*.ts" "${root}/**/*.tsx")
-    fi
-  done <"$roots_file"
-  if (( ${#globs[@]} == 0 )); then
-    fail2 "La herramienta analizó 0 ficheros. Comprueba el glob **/*.ts y **/*.tsx."
-  fi
-else
-  globs=("**/*.ts" "**/*.tsx")
+if [[ ! -s "$roots_file" ]]; then
+  fail2 "No se pudo derivar la carpeta raíz de layers. Empieza cada ruta de layers con un directorio literal (por ejemplo ^src/...)."
 fi
 
-cruise_args=(--config "$config_file" -T json --exclude "(^|/)(node_modules|dist|build|coverage|\.git)/")
+globs=()
+while IFS= read -r root || [[ -n "$root" ]]; do
+  [[ -z "$root" ]] && continue
+  if [[ -d "${project}/${root}" ]]; then
+    globs+=("${root}/**/*.ts" "${root}/**/*.tsx")
+  fi
+done <"$roots_file"
+if (( ${#globs[@]} == 0 )); then
+  fail2 "La herramienta analizó 0 ficheros. Comprueba el glob **/*.ts y **/*.tsx."
+fi
+
+cruise_args=(--config "$config_file" -T json)
 if [[ -f "${project}/tsconfig.json" ]]; then
   cruise_args+=(--ts-config tsconfig.json)
 fi
