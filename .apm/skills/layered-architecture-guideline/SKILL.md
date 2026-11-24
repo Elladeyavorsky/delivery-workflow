@@ -25,7 +25,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 2. **Decidir la capa** con la tabla de la sección 4. El archivo nuevo va donde el mapa indica (**R-EST-07 (INV)**) e imita a los vecinos (**R-AGT-03 (DEF)**). No reorganices lo existente ni crees una estructura paralela, salvo petición explícita (**R-AGT-02 (INV)**, **R-EST-04 (INV)**).
 3. **Frameworks.** Protocolo de la sección 4 (**R-AGT-07 (INV)**, **R-EST-08 (INV)**).
 4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flujo-y-validacion.md`, `references/paradigma-y-firmas.md`, `references/errores.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
-5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: `bash <carpeta de esta skill>/scripts/check-boundaries.sh`.
+5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: ejecuta el `Comando` de `docs/ARCHITECTURE.md`.
 
 ## 4. Reglas
 
@@ -86,7 +86,7 @@ Ligera: presentación, servicios (aplicación + dominio) e infraestructura; repo
 
 La ligera separa al menos presentación e infraestructura y aplica las reglas de errores INV (**R-GEN-05 (INV)**). En la completa, el dominio define las interfaces de repositorio de sus agregados, en términos de dominio (**R-DOM-05 (DEF)**). Un proyecto nuevo usa la variante invertida. Si usa la clásica, lo documenta en el mapa (**R-GEN-03 (DEF)**). Las consultas de solo lectura pueden devolver objetos de transferencia sin entidades; las escrituras no (**R-FLU-07 (DEF)**). Única excepción a **R-GEN-01**.
 
-Señales de mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas, tocar todas las capas de todos los módulos.
+Señales: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas, tocar todas las capas de todos los módulos.
 
 ### Frameworks
 
@@ -120,5 +120,5 @@ Casos: `references/frameworks.md`.
 - Sin `docs/ARCHITECTURE.md`, parte de la plantilla. Intensidad o framework sin decidir: hueco.
 - Si el proyecto ya tiene mapa, no lo sobrescribas.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
-- `check-boundaries.sh` sale con 0 OK, 1 violaciones, 2 no comprobado.
+- Sin herramienta de fronteras en el proyecto: dilo como «fronteras no comprobadas».
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.

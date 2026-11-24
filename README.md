@@ -137,11 +137,7 @@ La usan `concept-developer` y `code-developer`. `code-tester` y `concept-tester`
 
 Si el proyecto no tiene `docs/ARCHITECTURE.md` y su mapa de capas no está en `AGENTS.md`, `CLAUDE.md` ni `README.md`, `concept-developer` lo crea desde la plantilla de la skill y deja `Por decidir` lo que no sabe. Escribe en el plan el mapa archivo → capa. `code-developer` coloca el código en su capa. Si el proyecto ya tiene mapa, manda ese.
 
-```bash
-bash .agents/skills/layered-architecture-guideline/scripts/check-boundaries.sh [ruta-del-proyecto]
-```
-
-En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`. Solo TypeScript. Necesita Node 20 o superior y `dependency-cruiser` instalado en el proyecto (no descarga nada). Instálalo con `npm install --save-dev dependency-cruiser`. Lee las rutas de capa del bloque `json boundaries` de `docs/ARCHITECTURE.md`. Salida 0: sin violaciones. 1: violaciones, una línea por fichero y regla. 2: no se pudo comprobar, con la causa.
+El mapa de capas es independiente del lenguaje. Cada proyecto elige y anota en `docs/ARCHITECTURE.md` la herramienta que verifica las fronteras; los agentes la proponen según el stack. En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`.
 
 ## Protección de datos
 

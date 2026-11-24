@@ -23,7 +23,7 @@ skills:
 
 1. **Recepción:** El encargo trae el número de la issue, la ronda y la task. Si es un ciclo de cambios pedidos, trae también revisión.
 2. **Validación:** Lee los documentos del proyecto que existan: `docs/CONSTITUTION.md`, `docs/STYLE.md`, `docs/ARCHITECTURE.md` y `docs/COMMANDS.md`. Lee la spec, el plan y las tasks con `issue-spec read` (con `--revision` si el encargo es de revisión).
-3. **Procesamiento:** Implementa únicamente la task de la ronda. Si la task es el linter o el formateador, ejecútalos sobre el código tocado con el comando del proyecto. Cada fichero nuevo va en la capa y la ruta que dice `docs/ARCHITECTURE.md`, según `layered-architecture-guideline`. Si la task es el linter o el formateador y `docs/ARCHITECTURE.md` declara una verificación de fronteras, ejecútala también con `bash <carpeta de esta skill>/scripts/check-boundaries.sh` o el comando que declare el mapa: salida 1, corrige las violaciones del código que tocó; salida 2, no la des por pasada y déjala dicha al cerrar como «fronteras no comprobadas», con la causa.
+3. **Procesamiento:** Implementa únicamente la task de la ronda. Si la task es el linter o el formateador, ejecútalos sobre el código tocado con el comando del proyecto. Cada fichero nuevo va en la capa y la ruta que dice `docs/ARCHITECTURE.md`, según `layered-architecture-guideline`. Si la task es el linter o el formateador, ejecuta también el `Comando` de `docs/ARCHITECTURE.md`. Si falla, corrige el código. Si `Comando` es `Por decidir`, no existe o no se puede ejecutar, dilo al cerrar como «fronteras no comprobadas» con la causa; no lo des por bueno.
 4. **Formateo:** Lista los ficheros de código que has cambiado y di qué documentación ha quedado desfasada. La documentación se queda como está para `concept-developer`. El ciclo es quien da la spec por pasada, no este agente.
 
 ## 4. Herramientas y APIs Asignadas
@@ -40,5 +40,5 @@ skills:
 - **Si la task no es de código:** Dilo y cierra sin editar.
 - **Si un fichero de documentación ya no describe el código:** Nómbralo al cerrar, sin abrirlo para escribir.
 - **Si encuentras un secreto o la task necesita uno:** Para. Nombra el fichero, no el valor.
-- **Si `check-boundaries.sh` sale con 2:** Dilo al cerrar como «fronteras no comprobadas» y la causa. No la des por buena.
+- **Si las fronteras no se pueden comprobar:** Dilo al cerrar como «fronteras no comprobadas» y la causa. No la des por buena.
 - **Si arrancas un servidor o un proceso:** Páralo antes de cerrar.

@@ -401,242 +401,25 @@ check "el paso 1 recorre las letras a) a h) del art. 5.1 con sus excepciones" ba
 check "el paso 4 recorre las condiciones a) a d) del art. 6.3 y el registro del 6.4" bash -c "step=\$(sed -n '/^### 4\\. Excepciones/,/^### 5\\./p' '${sc}/assets/ai-act-classification.md'); for l in a b c d; do grep -qF -- \"- **\$l)**\" <<<\"\$step\" || exit 1; done; grep -qF 'art. 49.2' <<<\"\$step\" && grep -qF 'puesta en servicio' <<<\"\$step\" || grep -qF 'ponerlo en servicio' <<<\"\$step\""
 check "el paso del art. 50 no se salta en alto riesgo" bash -c "grep -qF 'El paso 5 se evalúa además' '${sc}/assets/ai-act-classification.md' && ! grep -qF 'pasos en este orden y para en el primero' '${sc}/assets/ai-act-classification.md'"
 
-# layered-architecture-guideline: skill, plantilla y check-boundaries.sh (depcruise falso).
+# layered-architecture-guideline: skill, plantilla y precarga; sin verificador de un stack.
 lag="${skills}/layered-architecture-guideline"
-cb="${lag}/scripts/check-boundaries.sh"
+tpl="${lag}/assets/ARCHITECTURE.template.md"
 check "layered-architecture-guideline existe" test -f "${lag}/SKILL.md"
 for ref in errores flujo-y-validacion paradigma-y-firmas tests nombres-y-carpetas frameworks; do
   check "layered-architecture-guideline trae references/${ref}.md" test -f "${lag}/references/${ref}.md"
 done
-check "layered-architecture-guideline trae assets/ARCHITECTURE.template.md" test -f "${lag}/assets/ARCHITECTURE.template.md"
-check "layered-architecture-guideline trae assets/boundaries.typescript.cjs" test -f "${lag}/assets/boundaries.typescript.cjs"
-check "check-boundaries.sh existe" test -f "$cb"
-check "check-boundaries.sh es ejecutable" test -x "$cb"
+check "layered-architecture-guideline trae assets/ARCHITECTURE.template.md" test -f "$tpl"
 for agent in concept-developer code-developer; do
   check "${agent} precarga layered-architecture-guideline" bash -c "$(declare -f frontmatter); frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -qx '  - layered-architecture-guideline'"
 done
 for agent in code-tester concept-tester; do
   check "${agent} no precarga layered-architecture-guideline" bash -c "$(declare -f frontmatter); ! frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -q 'layered-architecture-guideline'"
 done
-check "el bloque json boundaries de la plantilla es JSON válido con seis capas" node -e '
-  const fs = require("fs");
-  const md = fs.readFileSync(process.argv[1], "utf8");
-  const match = md.match(/```json[ \t]+boundaries[ \t]*\r?\n([\s\S]*?)\r?\n```/);
-  if (!match) process.exit(1);
-  const config = JSON.parse(match[1]);
-  const layers = ["presentation", "application", "domain", "infrastructure", "shared", "platform"];
-  process.exit(layers.every((name) => Array.isArray(config.layers?.[name])) ? 0 : 1);
-' "${lag}/assets/ARCHITECTURE.template.md"
-
-proj="${work}/layers"
-unset DEPCRUISE_BIN FAKE_DEPCRUISE_JSON FAKE_DEPCRUISE_LOG FAKE_DEPCRUISE_BOUNDARIES
-cb_out=
-cb_st=0
-run_cb() {
-  cb_out=$("$@" 2>&1) && cb_st=0 || cb_st=$?
-}
-write_arch() {
-  mkdir -p "$(dirname "$1")"
-  {
-    printf '%s\n' '```json boundaries'
-    cat
-    printf '%s\n' '```'
-  } >"$1"
-}
-filled_layers() {
-  cat <<'JSON'
-{
-  "layers": {
-    "presentation": ["^src/presentation"],
-    "application": ["^src/application"],
-    "domain": ["^src/domain"],
-    "infrastructure": ["^src/infrastructure"],
-    "shared": ["^src/shared"],
-    "platform": ["^src/platform"]
-  },
-  "domainAllowedPackages": [],
-  "modules": { "pattern": "", "publicApi": "" }
-}
-JSON
-}
-reset_layers() {
-  rm -rf "$proj"
-  mkdir -p "$proj/src" "$proj/docs"
-  printf '%s\n' '{"name":"layers"}' >"$proj/package.json"
-  printf '%s\n' '{}' >"$proj/tsconfig.json"
-  write_arch "$proj/docs/ARCHITECTURE.md" < <(filled_layers)
-}
-
-reset_layers
-rm -f "$proj/docs/ARCHITECTURE.md"
-run_cb bash "$cb" "$proj"
-check "sin docs/ARCHITECTURE.md check-boundaries sale con 2" test "$cb_st" -eq 2
-
-reset_layers
-cp "${lag}/assets/ARCHITECTURE.template.md" "$proj/docs/ARCHITECTURE.md"
-run_cb bash "$cb" "$proj"
-check "con la plantilla vacía check-boundaries sale con 2" test "$cb_st" -eq 2
-check "con la plantilla vacía el mensaje nombra una capa" grep -qE 'presentation|application|domain|infrastructure' <<<"$cb_out"
-
-reset_layers
-write_arch "$proj/docs/ARCHITECTURE.md" <<'JSON'
-{
-  "layers": {
-    "presentation": ["^src/presentation"],
-    "application": ["^src/application"],
-    "domain": [],
-    "infrastructure": ["^src/infrastructure"],
-    "shared": ["^src/shared"],
-    "platform": ["^src/platform"]
-  },
-  "domainAllowedPackages": [],
-  "modules": { "pattern": "", "publicApi": "" }
-}
-JSON
-run_cb bash "$cb" "$proj"
-check "con domain vacío check-boundaries sale con 2" test "$cb_st" -eq 2
-check "con domain vacío el mensaje nombra domain" grep -q 'domain' <<<"$cb_out"
-
-reset_layers
-write_arch "$proj/docs/ARCHITECTURE.md" <<'JSON'
-{ esto no es json
-JSON
-run_cb bash "$cb" "$proj"
-check "con JSON inválido check-boundaries sale con 2" test "$cb_st" -eq 2
-
-reset_layers
-rm -f "$proj/package.json"
-run_cb bash "$cb" "$proj"
-check "sin package.json check-boundaries sale con 2" test "$cb_st" -eq 2
-check "sin package.json el mensaje nombra el stack" grep -q 'stack' <<<"$cb_out"
-
-reset_layers
-run_cb bash "$cb" "$proj"
-check "sin herramienta check-boundaries sale con 2" test "$cb_st" -eq 2
-check "sin herramienta pide npm install --save-dev dependency-cruiser" grep -qF 'npm install --save-dev dependency-cruiser' <<<"$cb_out"
-
-cat >"${work}/bin/depcruise" <<'DEPCRUISE'
-#!/usr/bin/env bash
-echo "$*" >>"${FAKE_DEPCRUISE_LOG:-/dev/null}"
-printf '%s\n' "${BOUNDARIES_CONFIG:-}" >"${FAKE_DEPCRUISE_BOUNDARIES:-/dev/null}"
-cat "${FAKE_DEPCRUISE_JSON}"
-DEPCRUISE
-chmod +x "${work}/bin/depcruise"
-dc_dir="${work}/fake-depcruise"
-mkdir -p "$dc_dir"
-cat >"${dc_dir}/ok.json" <<'JSON'
-{"summary":{"totalCruised":3,"violations":[]},"modules":[]}
-JSON
-cat >"${dc_dir}/violation.json" <<'JSON'
-{"summary":{"totalCruised":3,"violations":[{"rule":{"name":"R-DOM-01","severity":"error"},"from":"src/a.ts","to":"src/b.ts"}]},"modules":[]}
-JSON
-cat >"${dc_dir}/zero.json" <<'JSON'
-{"summary":{"totalCruised":0,"violations":[]},"modules":[]}
-JSON
-cat >"${dc_dir}/unresolved.json" <<'JSON'
-{"summary":{"totalCruised":3,"violations":[]},"modules":[{"source":"src/a.ts","dependencies":[{"module":"./x","couldNotResolve":true}]}]}
-JSON
-cat >"${dc_dir}/both.json" <<'JSON'
-{"summary":{"totalCruised":3,"violations":[{"rule":{"name":"R-DOM-01","severity":"error"},"from":"src/a.ts","to":"src/b.ts"}]},"modules":[{"source":"src/a.ts","dependencies":[{"module":"./x","couldNotResolve":true}]}]}
-JSON
-export FAKE_DEPCRUISE_JSON="${dc_dir}/ok.json"
-export FAKE_DEPCRUISE_LOG="${work}/depcruise.log"
-export FAKE_DEPCRUISE_BOUNDARIES="${work}/depcruise.boundaries"
-
-reset_layers
-write_arch "$proj/docs/ARCHITECTURE.md" <<'JSON'
-{
-  "layers": {
-    "presentation": ["^(src|lib)/presentation"],
-    "application": ["^(src|lib)/application"],
-    "domain": ["^(src|lib)/domain"],
-    "infrastructure": ["^(src|lib)/infrastructure"],
-    "shared": ["^(src|lib)/shared"],
-    "platform": ["^(src|lib)/platform"]
-  },
-  "domainAllowedPackages": [],
-  "modules": { "pattern": "", "publicApi": "" }
-}
-JSON
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con layers en alternancia check-boundaries sale con 2" test "$cb_st" -eq 2
-check "con layers en alternancia pide una raíz literal" grep -q 'directorio literal' <<<"$cb_out"
-
-reset_layers
-rm -rf "$proj/src"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "sin carpeta src check-boundaries sale con 2" test "$cb_st" -eq 2
-check "sin carpeta src dice 0 ficheros" grep -q '0 ficheros' <<<"$cb_out"
-
-reset_layers
-: >"$FAKE_DEPCRUISE_LOG"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con depcruise limpio check-boundaries sale con 0" test "$cb_st" -eq 0
-check "con depcruise limpio dice Fronteras OK: 3 ficheros analizados" grep -qF 'Fronteras OK: 3 ficheros analizados' <<<"$cb_out"
-check "depcruise recibe --config hacia boundaries.typescript.cjs" bash -c "grep -q -- '--config' '$FAKE_DEPCRUISE_LOG' && grep -q 'boundaries.typescript.cjs' '$FAKE_DEPCRUISE_LOG'"
-check "depcruise recibe -T json" grep -q -- '-T json' "$FAKE_DEPCRUISE_LOG"
-check "depcruise recibe --ts-config tsconfig.json" grep -q -- '--ts-config tsconfig.json' "$FAKE_DEPCRUISE_LOG"
-check "depcruise recibe el glob src/**/*.ts" grep -qF 'src/**/*.ts' "$FAKE_DEPCRUISE_LOG"
-check "depcruise recibe el glob src/**/*.tsx" grep -qF 'src/**/*.tsx' "$FAKE_DEPCRUISE_LOG"
-check "depcruise no recibe --exclude" bash -c "! grep -q -- '--exclude' '$FAKE_DEPCRUISE_LOG'"
-check "BOUNDARIES_CONFIG es JSON con layers.domain" node -e '
-  const fs = require("fs");
-  const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-  process.exit(config.layers && Object.prototype.hasOwnProperty.call(config.layers, "domain") ? 0 : 1);
-' "$FAKE_DEPCRUISE_BOUNDARIES"
-
-export FAKE_DEPCRUISE_JSON="${dc_dir}/violation.json"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con violación R-DOM-01 check-boundaries sale con 1" test "$cb_st" -eq 1
-check "con violación R-DOM-01 la línea es src/a.ts: R-DOM-01 (importa src/b.ts)" grep -qF 'src/a.ts: R-DOM-01 (importa src/b.ts)' <<<"$cb_out"
-
-export FAKE_DEPCRUISE_JSON="${dc_dir}/zero.json"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con totalCruised 0 check-boundaries sale con 2" test "$cb_st" -eq 2
-
-export FAKE_DEPCRUISE_JSON="${dc_dir}/unresolved.json"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con un import local sin resolver check-boundaries sale con 2" test "$cb_st" -eq 2
-
-export FAKE_DEPCRUISE_JSON="${dc_dir}/both.json"
-run_cb env DEPCRUISE_BIN="${work}/bin/depcruise" bash "$cb" "$proj"
-check "con violación e import sin resolver check-boundaries sale con 1" test "$cb_st" -eq 1
-
-export FAKE_DEPCRUISE_JSON="${dc_dir}/ok.json"
-mkdir -p "${proj}/node_modules/.bin"
-cp "${work}/bin/depcruise" "${proj}/node_modules/.bin/depcruise"
-chmod +x "${proj}/node_modules/.bin/depcruise"
-run_cb env -u DEPCRUISE_BIN bash "$cb" "$proj"
-check "check-boundaries usa el depcruise de node_modules/.bin" test "$cb_st" -eq 0
-check "el depcruise de node_modules/.bin dice Fronteras OK: 3 ficheros analizados" grep -qF 'Fronteras OK: 3 ficheros analizados' <<<"$cb_out"
-
-cjs="${lag}/assets/boundaries.typescript.cjs"
-cjs_config='{"layers":{"presentation":["^src/presentation"],"application":["^src/application"],"domain":["^src/domain"],"infrastructure":["^src/infrastructure"],"shared":["^src/shared"],"platform":["^src/platform"]},"modules":{"pattern":"^src/([^/]+)/","publicApi":"^src/[^/]+/index.ts$"}}'
-check "boundaries.typescript.cjs declara las seis reglas en error" env BOUNDARIES_CONFIG="$cjs_config" node -e '
-  const config = require(process.argv[1]);
-  const names = [...new Set(config.forbidden.map((rule) => rule.name))].sort();
-  const want = ["R-DOM-01", "R-EST-02", "R-FLU-02", "R-GEN-04", "R-PRE-04", "R-SHR-01"];
-  if (names.join("\0") !== want.join("\0")) process.exit(1);
-  process.exit(config.forbidden.every((rule) => rule.severity === "error") ? 0 : 1);
-' "$cjs"
-cjs_sin_modules='{"layers":{"presentation":["^src/presentation"],"application":["^src/application"],"domain":["^src/domain"],"infrastructure":["^src/infrastructure"],"shared":["^src/shared"],"platform":["^src/platform"]}}'
-check "sin modules desaparece R-EST-02" env BOUNDARIES_CONFIG="$cjs_sin_modules" node -e '
-  const config = require(process.argv[1]);
-  const names = new Set(config.forbidden.map((rule) => rule.name));
-  process.exit(names.has("R-EST-02") ? 1 : 0);
-' "$cjs"
-check "boundaries.typescript.cjs resuelve extensión .ts" env BOUNDARIES_CONFIG="$cjs_sin_modules" node -e '
-  const config = require(process.argv[1]);
-  process.exit(config.options.enhancedResolveOptions.extensions.includes(".ts") ? 0 : 1);
-' "$cjs"
-check "sin BOUNDARIES_CONFIG boundaries.typescript.cjs lanza error" env -u BOUNDARIES_CONFIG node -e '
-  try {
-    require(process.argv[1]);
-    process.exit(1);
-  } catch {
-    process.exit(0);
-  }
-' "$cjs"
+check "la plantilla tiene Herramienta, Comando y R-EST-06 (DEF)" bash -c "grep -q 'Herramienta:' '$tpl' && grep -q 'Comando:' '$tpl' && grep -qF 'R-EST-06 (DEF)' '$tpl'"
+check "layered-architecture-guideline no trae scripts ni .cjs de un stack" bash -c "! test -e '${lag}/scripts/check-boundaries.sh' && ! test -e '${lag}/assets/boundaries.typescript.cjs'"
+check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE 'typescript|javascript|python|java\\b|kotlin|golang|c#|rust|php|ruby|node\\.js|npm|dependency-cruiser|depcruise|import-linter|archunit|django|fastapi|spring|nest' '${lag}/SKILL.md'"
+check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!docs/research/' ':!tests/scripts.test.sh'"
+check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
 
 echo
 if [[ $failures -eq 0 ]]; then

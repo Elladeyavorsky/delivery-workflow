@@ -122,7 +122,7 @@ _Evitar_: referencias, fuentes
 El fichero `docs/ARCHITECTURE.md` del proyecto, que dice dónde va cada capa y qué reglas de fronteras comprueba.
 
 **Verificación de fronteras**:
-La comprobación de que los imports respetan las capas del mapa, con `check-boundaries.sh`. Sale con 0 si no hay violaciones, con 1 si las hay (una línea por fichero y regla) y con 2 si no se pudo comprobar.
+La comprobación automática de que los imports respetan las capas del mapa. La herramienta y el comando los elige cada proyecto y se anotan en `docs/ARCHITECTURE.md`.
 
 **Say it straight**:
 Skill del paquete que fija la prosa en español de issues, spec, PRs y docs: declarativa, sin relleno defensivo. No rige commits ni el chat del orquestador. **Fuera de esto** en una issue es alcance, no disclaimer.

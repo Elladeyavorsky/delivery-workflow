@@ -40,6 +40,8 @@ RORO (*Receive an Object, Return an Object*): un objeto de entrada con parámetr
 
 ## Plantilla de entidad
 
+Adáptalas al lenguaje del proyecto.
+
 ```typescript
 // [dominio] invariantes dentro, sin setters, sin E/S
 export class Order {

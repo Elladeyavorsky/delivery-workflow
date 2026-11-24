@@ -35,6 +35,8 @@ Las consultas de solo lectura (R-FLU-07) se resuelven con un *query service*: in
 
 ## Plantillas
 
+Adáptalas al lenguaje del proyecto.
+
 ```typescript
 // [aplicación] comando → Result<DTO>
 export class AddOrderLine {

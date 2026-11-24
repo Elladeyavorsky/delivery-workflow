@@ -10,6 +10,7 @@ Tras la tabla «¿en qué capa va esto?» de `SKILL.md`:
 - App móvil o frontend: pantallas, componentes y *view-models*; la aplicación incluye los almacenes de estado que orquestan.
 - CLI: análisis de argumentos y códigos de salida.
 - *Worker*: consumidor de colas o planificador.
+- Proyecto con varias partes: cada parte tiene su propio mapa de capas y se comunica con las demás por su contrato (API, mensajes), no por imports.
 
 MVC, MVP y MVVM son patrones internos de la presentación, no capas distintas.
 
