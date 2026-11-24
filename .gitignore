@@ -1,9 +1,13 @@
 .env
 
-
 # APM dependencies
 apm_modules/
 
 .DS_Store
 __pycache__/
 *.py[cod]
+
+.vscode/
+.cursor/
+.claude/
+.codex/
