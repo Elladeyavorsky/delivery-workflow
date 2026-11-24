@@ -38,7 +38,7 @@ Antes de tocar nada, lee:
 | Rama | `número-tipo-descripcion`, por ejemplo `44-fix-setup-context7-subfolders`. |
 | Título | Los de [Formatos](#formatos). |
 | Cierre de la issue | El cuerpo tiene una línea propia `Closes #N`, sin más texto en esa línea. |
-| Persona asignada | La pull request tiene una persona asignada. Desde un fork, [intenta asignar a Ventura](#contribuir-desde-un-fork). |
+| Persona asignada | La pull request tiene una persona asignada. En una pull request desde un fork no se exige: [intenta asignar a Ventura](#contribuir-desde-un-fork) igualmente. |
 | Commits | Cada commit de la pull request cumple el formato de [Formatos](#formatos). Un commit con `!` lleva `BREAKING CHANGE:` en el cuerpo. |
 | `.env` | El diff no añade ni modifica ningún `.env`. |
 | Versión | `version` en `apm.yml` no cambia: la versión sale de la etiqueta que crea el workflow de release. |
@@ -109,7 +109,7 @@ Esta sección es para quien no tiene permiso de escritura en el repositorio orig
    ```
 
 2. **Crea la issue en el repositorio original.** Busca antes en las [issues](https://github.com/venturars/delivery-workflow/issues) si ya existe una parecida. Sin permiso de triage no puedes poner la etiqueta ni asignar. No hace falta: quien mantiene pone la etiqueta.
-3. **Escribe la spec, el plan y las tasks donde puedas.** Si eres la autora de la issue, edita su cuerpo. Si no, publícalos como un comentario con las secciones `## Spec`, `## Plan` y `## Tasks`.
+3. **Escribe la spec, el plan y las tasks donde puedas.** `issue-spec can-edit N` dice si puedes editar el cuerpo de la issue. Con `yes`, escríbelos en el cuerpo. Con `no`, publícalos como comentario con `issue-spec revision N fichero` y usa `--revision` en `read`, `write`, `tick` y `state`. `/delivery-workflow` lo decide solo.
 4. **Sube la rama a tu fork y abre la pull request contra el original:**
 
    ```bash
@@ -118,9 +118,9 @@ Esta sección es para quien no tiene permiso de escritura en el repositorio orig
      --head TU_USUARIO:44-fix-setup-context7-subfolders --draft
    ```
 
-5. **Asigna la pull request a Ventura (`venturars`).** Si GitHub no te deja asignarla, déjala sin asignar y dilo en la descripción: la regla de la asignación se relaja en un fork.
+5. **Asigna la pull request a Ventura (`venturars`).** Si GitHub no te deja asignarla, déjala sin asignar: `PR: check rules` no exige la asignación en una pull request desde un fork.
 
-`/delivery-workflow` no está probado en un fork. Puede fallar al etiquetar, asignar o subir la rama: haz a mano el paso que falle, con los comandos de esta sección, y deja constancia en la pull request.
+`/delivery-workflow` escribe la spec en un comentario cuando no puedes editar la issue. No está probado en un fork para etiquetar, asignar ni subir la rama: haz a mano el paso que falle, con los comandos de esta sección, y deja constancia en la pull request.
 
 ## Flujo de trabajo
 
