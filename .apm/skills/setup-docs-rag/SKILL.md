@@ -70,8 +70,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
      - El resumen del `index`: `indexed`, `reindexed`, `deleted`, `unchanged`, `no_docs` con su `reason`, y `chunks`.
      - Las `notes` y los `warnings`.
   6. Recuerda recargar el editor, o la sesión de Claude Code o Codex, para que cargue el MCP.
-- **Qué sale del ordenador**: solo la descarga de la documentación, desde PyPI, Read the Docs, npm, GitHub, docs.rs, crates.io, proxy.golang.org, go.dev, nodejs.org o docs.python.org. Las preguntas de los agentes y los fragmentos se quedan en local.
-- **`GITHUB_TOKEN`**: si está en el `.env` del proyecto o en la terminal, se usa solo para subir el límite de la API de GitHub. Nunca se escribe en ningún archivo.
+- **Qué sale del ordenador**: solo la descarga de la documentación, desde PyPI, Read the Docs, npm, GitHub, gitlab.com, codeberg.org, api.bitbucket.org, el host del remoto git de un paquete autogestionado (GitLab o Gitea/Forgejo), docs.rs, crates.io, proxy.golang.org, go.dev, nodejs.org o docs.python.org. Las preguntas de los agentes y los fragmentos se quedan en local.
+- **`GITHUB_TOKEN`**: si está en el `.env` del proyecto o en la terminal, se usa solo para subir el límite de la API de GitHub (`api.github.com` y `raw.githubusercontent.com`); GitLab, Gitea, Forgejo y Bitbucket no lo reciben. Nunca se escribe en ningún archivo.
 - **Cuándo repetirla**: tras cambiar dependencias o el lockfile, vuelve a lanzar `/setup-docs-rag`; solo se reindexa lo que cambió. Con `apm install` o `apm update` no hace falta.
 - **Procesamiento de respuestas**: El script escribe JSON por stdout, con las claves en inglés. Los textos para la persona (`notes`, `warnings`, `detail`, `reason`) van en español.
   - `result` vale `changed`, `unchanged` o `missing`.
