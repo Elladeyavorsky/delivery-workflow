@@ -163,6 +163,7 @@ export async function notifyReviewers(config) {
   const result = await resolveReviewers(reviewers, relations,
     (query) => searchDiscordMembers(guildId, query, botToken), Date.now(), confirmations,
     (id) => getDiscordMember(guildId, id, botToken), userMap);
+  for (const problem of result.problems) console.warn(`PR #${number}: no Discord mention for ${problem}`);
   writeRelations(relationsFile, result.relations, cacheKey);
   const requestedIds = reviewers.map((reviewer) => reviewer.id);
   const resolvedIds = result.resolvedReviewers.map((reviewer) => reviewer.id);

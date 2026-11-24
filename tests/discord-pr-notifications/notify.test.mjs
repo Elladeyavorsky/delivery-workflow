@@ -595,3 +595,69 @@ test('rechaza configuración incompleta antes de consultar GitHub o Discord', as
   }
   assert.equal(requests, 0);
 });
+
+test('registra en el log el login y el motivo de una mención fallida', async (t) => {
+  const { config, pr } = setup(t);
+  pr.requested_reviewers = [reviewers[0], { login: 'ChangVictor', id: 303 }];
+  config.botToken = 'known-bot-token';
+  config.userMap = JSON.stringify({ alice: aliceId });
+  const comments = [];
+  const posts = [];
+  const warnings = [];
+  const logs = [];
+  t.mock.method(console, 'warn', (...args) => { warnings.push(args.join(' ')); });
+  t.mock.method(console, 'log', (...args) => { logs.push(args.join(' ')); });
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/guilds/111111111111111111/members/') && !url.includes('/search?')) {
+      return response({ user: { id: url.split('/').at(-1) } });
+    }
+    if (url.includes('/members/search?')) return response([]);
+    if (url.endsWith('/channels/222222222222222222/messages')) {
+      posts.push(JSON.parse(options.body));
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body });
+      return response(comments[0], 201);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  assert.equal(await notifyReviewers(config), 'notified');
+  assert.deepEqual(posts[0].allowed_mentions.users, [aliceId]);
+  assert.match(posts[0].content, /ChangVictor \(sin mención de Discord\)/);
+  assert.deepEqual(warnings, ['PR #40: no Discord mention for ChangVictor: no unique exact match']);
+  for (const line of [...warnings, ...logs]) {
+    assert.ok(!line.includes(aliceId), 'the log must not include the mapped Discord ID');
+    assert.ok(!line.includes(config.botToken), 'the log must not include the bot token');
+    assert.ok(!line.includes(config.userMap), 'the log must not include the user map');
+  }
+});
+
+test('no escribe avisos de mención cuando todos los revisores se resuelven', async (t) => {
+  const { config, pr } = setup(t);
+  const comments = [];
+  const warnings = [];
+  t.mock.method(console, 'warn', (...args) => { warnings.push(args.join(' ')); });
+  t.mock.method(console, 'log', () => {});
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/members/search?')) {
+      const login = new URL(url).searchParams.get('query');
+      return response([{ user: { username: login, id: login === 'alice' ? aliceId : bobId } }]);
+    }
+    if (url.endsWith('/channels/222222222222222222/messages')) {
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body });
+      return response(comments[0], 201);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  assert.equal(await notifyReviewers(config), 'notified');
+  assert.equal(console.warn.mock.callCount(), 0);
+  assert.deepEqual(warnings, []);
+});
