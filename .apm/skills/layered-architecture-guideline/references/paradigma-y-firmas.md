@@ -38,9 +38,7 @@ RORO (*Receive an Object, Return an Object*): un objeto de entrada con parámetr
 - **R-PAR-12 (CONV)** El objeto de entrada DEBE tener un tipo con nombre que distinga los campos obligatorios de los opcionales, y los valores por defecto DEBEN declararse en un único sitio (la firma o el esquema).
 - **R-PAR-13 (CONV)** Una función DEBERÍA devolver un objeto con nombre cuando produce más de un valor o cuando es previsible que su salida crezca. Si devuelve un único valor de significado evidente, PUEDE devolver un primitivo.
 
-## Plantilla de entidad
-
-Los ejemplos de código usan TypeScript como notación. Los nombres como `HttpRequest`, `Database`, `schema` o `validate` son marcadores: sustitúyelos por lo que ya use el proyecto y adapta la sintaxis a su lenguaje.
+## Plantilla de entidad (notación TypeScript)
 
 ```typescript
 // [dominio] invariantes dentro, sin setters, sin E/S
