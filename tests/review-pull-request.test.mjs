@@ -99,9 +99,9 @@ test('reintenta el cálculo de conflictos hasta que GitHub responde', async () =
   assert.equal(await readMergeable(() => null, 2, async () => {}), null);
 });
 
-test('review corre los tests y la comprobación en staging y en main', () => {
+test('review corre los tests y la comprobación solo en staging, no en main', () => {
   assert.match(workflow, /^name: review$/m);
-  assert.match(workflow, /pull_request:\s*\n\s*branches: \[staging, main\]/);
+  assert.match(workflow, /pull_request:\s*\n\s*branches: \[staging\]\n/);
   assert.match(workflow, /types: \[opened, synchronize, reopened, ready_for_review, review_requested\]/);
   assert.match(workflow, /name: discord-pr-number/);
   assert.match(workflow, /if: github\.base_ref == 'staging'/);
