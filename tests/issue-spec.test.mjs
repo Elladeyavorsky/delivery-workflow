@@ -168,3 +168,27 @@ test("run revision publica el comentario con la marca", async () => {
   assert.match(output, /Huella:/);
   assert.ok(posted.startsWith("<!-- Revisión 1 -->"));
 });
+
+test("run can-edit dice si la cuenta puede editar el cuerpo", async () => {
+  const answer = (viewerCanUpdate) => async (args) => {
+    assert.equal(args[0], "api");
+    assert.equal(args[1], "graphql");
+    return JSON.stringify({ data: { repository: { issue: { viewerCanUpdate } } } });
+  };
+  assert.equal(await run(["can-edit", "7"], { run: answer(true) }), "yes");
+  assert.equal(await run(["can-edit", "7"], { run: answer(false) }), "no");
+});
+
+test("write sin --revision en una issue no editable sale con 6", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "issue-spec-noedit-"));
+  const plan = join(dir, "plan.md");
+  await writeFile(plan, "## Plan\n\nNuevo");
+  const call = async (args) => {
+    if (args[0] === "issue" && args[1] === "view") return JSON.stringify({ body: BODY });
+    throw new Error("GraphQL: does not have permission to update the issue");
+  };
+  await assert.rejects(
+    run(["write", "7", "--expect-top", hashTop(TOP), "--plan", plan], { run: call }),
+    (error) => error.code === 6 && /revision/.test(error.message),
+  );
+});

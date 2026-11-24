@@ -28,7 +28,7 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
    - **Pensar la tarea:** la skill `help-me-to-think`.
    - **Dejarla escrita**, en este orden y sin esperar entre pasos:
      1. El subagente `manage-issue` con el tipo, el título y el cuerpo. El título va en inglés, empieza por un verbo y no lleva el tipo delante, aunque la persona hable en español: `Add a delivery-workflow test note`. El tipo es uno de los siete: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `knowledge`. Si la persona dice otra palabra, tradúcela al que corresponda («feature» es `feat`, «bug» es `fix`). Si no está claro cuál, pregúntalo antes de llamar.
-     2. `issue-spec top-hash N`. Guarda esa huella: va en cada encargo del ciclo.
+     2. `issue-spec can-edit N`. Si dice `no` (la issue es de otra persona y la cuenta no puede editarla, como en un fork), la spec, el plan y las tasks van en un comentario: la primera entrega las publica con `issue-spec revision` y el ciclo es de revisión, con `--revision` y la huella que devuelve `revision`. Si dice `yes`, `issue-spec top-hash N`: guarda esa huella, va en cada encargo del ciclo.
      3. La skill `pull-changes`, que adelanta la rama base.
      4. El subagente `manage-branch` con el número, el tipo y una descripción corta.
      5. El subagente `manage-commit` con la skill `manage-empty-commit`.
@@ -52,9 +52,9 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 
 ### El ciclo
 
-Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de la issue, la huella, la ronda, la task y, si las hay, las listas que dice cada paso. Si es un ciclo de cambios pedidos, el encargo dice revisión: entonces `read`, `write`, `tick`, `state` y `top-hash` llevan `--revision`. No lleva el chat ni el reporte de otro agente: todo lo que necesitan está en la issue (el cuerpo, o el comentario de revisión).
+Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de la issue, la huella, la ronda, la task y, si las hay, las listas que dice cada paso. Si es un ciclo de cambios pedidos o la issue no se puede editar, el encargo dice revisión: entonces `read`, `write`, `tick`, `state` y `top-hash` llevan `--revision`. No lleva el chat ni el reporte de otro agente: todo lo que necesitan está en la issue (el cuerpo, o el comentario de revisión).
 
-1. **Spec:** El subagente `concept-developer`, ronda 0. En la primera entrega escribe `## Spec`, `## Plan` y `## Tasks` debajo de la plantilla de la issue. En cambios pedidos las publica con `issue-spec revision`. Si su reporte trae «Consultas legales», sigue el paso «Consultas legales» antes de la ronda 1.
+1. **Spec:** El subagente `concept-developer`, ronda 0. En la primera entrega escribe `## Spec`, `## Plan` y `## Tasks` debajo de la plantilla de la issue. En cambios pedidos, o si la issue no se puede editar, las publica con `issue-spec revision`. Si su reporte trae «Consultas legales», sigue el paso «Consultas legales» antes de la ronda 1.
 2. **Rondas:** Como máximo 9. En cada una:
    1. Si queda una task de `code-developer` sin marcar, un `code-developer` nuevo con la primera. Si no queda ninguna, no se le llama.
    2. Si al cerrar dice que la documentación ha quedado desfasada, `concept-developer` otra vez en la misma ronda, con esa lista. No gasta una ronda.
