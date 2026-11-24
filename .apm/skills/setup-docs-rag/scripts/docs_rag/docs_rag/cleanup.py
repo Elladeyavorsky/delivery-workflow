@@ -68,117 +68,19 @@ def mdx_to_md(text: str) -> str:
 
 # --- reStructuredText (docs de Sphinx en el repositorio) ---
 
-_UNDERLINE = re.compile(r"^([=\-~^\"'`#*+<>:._])\1*\s*$")
-_DIRECTIVE = re.compile(r"^(\s*)\.\.\s+([\w:-]+)::\s*(.*)$")
-_ROLE = re.compile(r":[\w:-]+:`~?([^`<]+?)(?:\s*<[^>]+>)?`")
-_DEFINITIONS = {"function", "class", "method", "attribute", "data", "exception", "decorator", "classmethod", "staticmethod", "property",
-                 "py:function", "py:class", "py:method", "py:attribute", "py:data", "py:exception", "autofunction", "autoclass", "automethod"}
-_VERSION_DIRECTIVES = {"versionadded": "Added in version", "versionchanged": "Changed in version", "deprecated": "Deprecated since version"}
-
 
 def rst_to_md(text: str) -> str:
-    """Conversión ligera de reStructuredText a Markdown: títulos, código, definiciones y avisos de versión."""
-    lines = text.replace("\r\n", "\n").split("\n")
-    levels: list[str] = []
-    output: list[str] = []
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        following = lines[i + 1] if i + 1 < len(lines) else ""
-        # Título con sobrerrayado: ===\nTítulo\n===
-        if len(line.strip()) >= 3 and _UNDERLINE.match(line) and i + 2 < len(lines) and _UNDERLINE.match(lines[i + 2]) and lines[i + 1].strip():
-            marker = "o" + line[0]
-            if marker not in levels:
-                levels.append(marker)
-            output.append("#" * min(levels.index(marker) + 1, 6) + " " + lines[i + 1].strip())
-            i += 3
-            continue
-        # Título subrayado: Título\n=====
-        if line.strip() and _UNDERLINE.match(following) and len(following.strip()) >= min(len(line.strip()), 3) and not line.startswith(" "):
-            marker = following[0]
-            if marker not in levels:
-                levels.append(marker)
-            output.append("#" * min(levels.index(marker) + 1, 6) + " " + _ROLE.sub(r"`\1`", line.strip()))
-            i += 2
-            continue
-        d = _DIRECTIVE.match(line)
-        if d:
-            indentation, name, argument = d.groups()
-            if output and output[-1].strip():
-                output.append("")
-            page_body, i = _indented_block(lines, i + 1, len(indentation))
-            if name in ("code-block", "code", "sourcecode", "literalinclude"):
-                output += [f"```{argument.strip() if name != 'literalinclude' else ''}", *_strip_options(page_body), "```"]
-            elif name in _VERSION_DIRECTIVES:
-                version, _, rest = argument.partition(" ")
-                body_text = " ".join(l.strip() for l in _strip_options(page_body) if l.strip())
-                output.append(f"{_VERSION_DIRECTIVES[name]} {version}: {(rest + ' ' + body_text).strip()}".rstrip(": "))
-            elif name in _DEFINITIONS or name.startswith("py:"):
-                output.append(f"`{argument.strip()}`")
-                clean_body = [l for l in _strip_options(page_body)]
-                first = True
-                for l in clean_body:
-                    if first and l.strip():
-                        output.append(":   " + _ROLE.sub(r"`\1`", l.strip()))
-                        first = False
-                    else:
-                        output.append("    " + _ROLE.sub(r"`\1`", l.strip()) if l.strip() else "")
-                if first:
-                    output.append(":   ")
-            elif name in ("note", "warning", "tip", "important", "caution", "attention", "danger", "seealso", "admonition"):
-                output.append(f"> **{name.capitalize()}:** {argument}".rstrip())
-                output += ["> " + _ROLE.sub(r"`\1`", l.strip()) for l in _strip_options(page_body) if l.strip()]
-            elif name == "module" or name == "py:module" or name == "currentmodule":
-                output.append(f"Module: `{argument.strip()}`")
-            elif name in ("toctree", "image", "figure", "include", "only", "contents", "raw", "highlight", "index", "autosummary"):
-                pass
-            else:
-                output += [_ROLE.sub(r"`\1`", l) for l in page_body]
-            output.append("")
-            continue
-        # Bloque literal: párrafo que acaba en «::» seguido de texto sangrado.
-        if line.rstrip().endswith("::") and not line.strip().startswith(".."):
-            output.append(_ROLE.sub(r"`\1`", line.rstrip()[:-1]).rstrip())
-            page_body, j = _indented_block(lines, i + 1, len(line) - len(line.lstrip()))
-            if any(l.strip() for l in page_body):
-                output += ["", "```", *_strip_options(page_body), "```", ""]
-                i = j
-                continue
-            i += 1
-            continue
-        output.append(_ROLE.sub(r"`\1`", line).replace("``", "`"))
-        i += 1
-    return clean_md("\n".join(output))
+    """reStructuredText de Sphinx a Markdown: docutils lee el documento y `rst.py` escribe el árbol.
 
+    Si docutils no puede con el fichero o no queda nada, la página conserva el texto de origen."""
+    from .rst import convert
 
-def _indented_block(lines: list[str], start: int, base_indentation: int) -> tuple[list[str], int]:
-    page_body: list[str] = []
-    i = start
-    while i < len(lines):
-        l = lines[i]
-        if l.strip() and (len(l) - len(l.lstrip())) <= base_indentation:
-            break
-        page_body.append(l)
-        i += 1
-    while page_body and not page_body[-1].strip():
-        page_body.pop()
-    return _dedent(page_body), i
-
-
-def _dedent(lines: list[str]) -> list[str]:
-    indentations = [len(l) - len(l.lstrip()) for l in lines if l.strip()]
-    to_remove = min(indentations) if indentations else 0
-    return [l[to_remove:] if l.strip() else "" for l in lines]
-
-
-def _strip_options(lines: list[str]) -> list[str]:
-    """Quita las opciones de directiva (:linenos:, :caption: …) del principio del cuerpo."""
-    result = list(lines)
-    while result and re.match(r"^\s*:[\w-]+:", result[0]):
-        result.pop(0)
-    while result and not result[0].strip():
-        result.pop(0)
-    return result
+    source = text.replace("\r\n", "\n")
+    try:
+        markdown = convert(source)
+    except Exception:
+        markdown = ""
+    return clean_md(markdown if markdown.strip() else source)
 
 
 # --- Repeticiones entre páginas (navegación que se cuela, pies, banners) ---
