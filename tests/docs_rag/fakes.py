@@ -12,9 +12,11 @@ class FakeHttp:
     def __init__(self, responses: dict):
         self.responses = responses
         self.requested_keys: list[str] = []
+        self.requested_headers: list[dict] = []
 
     def __call__(self, url, request_headers=None, timeout=120):
         self.requested_keys.append(url)
+        self.requested_headers.append(dict(request_headers or {}))
         if url not in self.responses:
             raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)
         r = self.responses[url]

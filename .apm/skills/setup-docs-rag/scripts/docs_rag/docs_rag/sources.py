@@ -55,7 +55,7 @@ def _text(data: bytes) -> str:
 
 # --- GitHub: árbol del repositorio y ficheros sueltos (sin bajar el repositorio entero) ---
 
-_GITHUB = re.compile(r"github\.com[/:]([\w.-]+)/([\w.-]+?)(?:\.git)?(?:[/#?]|$)")
+_GITHUB = re.compile(r"github\.com(?::\d+(?=/))?[/:]([\w.-]+)/([\w.-]+?)(?:\.git)?(?:[/#?]|$)")
 
 
 def github_repo(url: str | None) -> tuple[str, str] | None:
@@ -86,13 +86,13 @@ def github_tree(http, owner: str, repo: str, refs: list[str], token: str | None)
     return None
 
 
-def github_files(http, owner, repo, ref, file_paths: list[str], token=None) -> dict[str, str]:
+def _download(fetch, file_paths: list[str]) -> dict[str, str]:
+    """Baja los ficheros con `fetch(ruta) -> bytes` hasta MAX_FILES ficheros y MAX_BYTES bytes. Salta los que fallan."""
     output: dict[str, str] = {}
     total = 0
     for file_path in file_paths[:MAX_FILES]:
-        url = f"https://raw.githubusercontent.com/{owner}/{repo}/{urllib.parse.quote(ref, safe='')}/{urllib.parse.quote(file_path)}"
         try:
-            data = http(url, {"Authorization": f"Bearer {token}"} if token else None)
+            data = fetch(file_path)
         except urllib.error.HTTPError:
             continue
         total += len(data)
@@ -100,6 +100,87 @@ def github_files(http, owner, repo, ref, file_paths: list[str], token=None) -> d
             break
         output[file_path] = _text(data)
     return output
+
+
+def _github_raw(http, owner, repo, ref, file_path: str, token=None) -> bytes:
+    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{urllib.parse.quote(ref, safe='')}/{urllib.parse.quote(file_path)}"
+    return http(url, {"Authorization": f"Bearer {token}"} if token else None)
+
+
+def github_files(http, owner, repo, ref, file_paths: list[str], token=None) -> dict[str, str]:
+    return _download(lambda file_path: _github_raw(http, owner, repo, ref, file_path, token), file_paths)
+
+
+# --- Remotos de repositorio: forge, host y ruta a partir de una URL ---
+
+_KNOWN_FORGES = {"github.com": "github", "gitlab.com": "gitlab", "codeberg.org": "gitea", "bitbucket.org": "bitbucket"}
+_TWO_SEGMENTS = ("github", "gitea", "bitbucket")
+_PATH_CUT = re.compile(r"/(?:-|tree|blob|issues|merge_requests|wikis|releases)(?=/|$)")
+_SCP_REMOTE = re.compile(r"^[\w.-]+@([\w.-]+):(?!//)(.+)$")
+_GITLAB_SHORT = re.compile(r"^gitlab:(?!//)(.+)$")
+
+
+@dataclass
+class RepoRemote:
+    kind: str  # github, gitlab, gitea, bitbucket o unknown (remoto git de otro host)
+    host: str
+    path: str  # segmentos separados por "/", sin .git
+
+
+def parse_remote(url: str | None) -> RepoRemote | None:
+    """Forge, host y ruta de la URL de un repositorio. None si no es un repositorio que se pueda consultar."""
+    url = (url or "").strip()
+    if not url:
+        return None
+    is_git = False
+    short = _GITLAB_SHORT.match(url)
+    scp = _SCP_REMOTE.match(url)
+    if short:
+        host, path, is_git = "gitlab.com", short.group(1), True
+    elif scp:
+        host, path, is_git = scp.group(1), scp.group(2), True
+    else:
+        parts = urllib.parse.urlsplit(url)
+        scheme = parts.scheme.lower()
+        if not parts.hostname or not (scheme in ("http", "https", "git", "ssh") or scheme.startswith("git+")):
+            return None
+        host = parts.hostname
+        if parts.port and scheme in ("http", "https", "git+http", "git+https"):
+            host = f"{host}:{parts.port}"
+        path = parts.path
+        is_git = scheme in ("git", "ssh") or scheme.startswith("git+")
+    host = host.lower().removeprefix("www.")
+    path = path.split("?", 1)[0].split("#", 1)[0]
+    cut = _PATH_CUT.search("/" + path.lstrip("/"))
+    if cut:
+        path = ("/" + path.lstrip("/"))[: cut.start()]
+    path = path.strip("/")
+    if path.endswith(".git"):
+        path = path[: -len(".git")]
+        is_git = True
+    segments = [s for s in path.split("/") if s]
+    kind = _KNOWN_FORGES.get(host.split(":", 1)[0])
+    if kind is None:
+        if not is_git:
+            return None
+        kind = "unknown"
+    if len(segments) < 2:
+        return None
+    if kind in _TWO_SEGMENTS:
+        segments = segments[:2]
+    return RepoRemote(kind=kind, host=host, path="/".join(segments))
+
+
+def pick_repo_url(urls: list[str]) -> str | None:
+    """La primera URL de un forge conocido; si no hay, la primera que sea un remoto git de otro host."""
+    remotes = [(u, parse_remote(u)) for u in urls]
+    for u, r in remotes:
+        if r and r.kind != "unknown":
+            return u
+    for u, r in remotes:
+        if r:
+            return u
+    return None
 
 
 _DOC_DIRS = re.compile(r"(?i)(?:^|/)(?:docs?|documentation|content|guides?|reference|api|manual|website/docs|src/pages)(?:/|$)")
@@ -134,26 +215,209 @@ def _repo_hint(tree: list[dict], file_paths: list[str]) -> str | None:
     return None
 
 
+# --- Forges: la misma forma (ref → árbol por páginas, fichero, origen) para cada API ---
+
+MAX_TREE_PAGES = 100
+_PAGE = 100
+_API_MISSING = (401, 403, 404)
+
+
+def _quote(text: str) -> str:
+    return urllib.parse.quote(text, safe="")
+
+
+class Forge:
+    """Un forge. `tree_page` devuelve (entradas blob/tree, hay_más) o None si el ref o la API no existen."""
+
+    missing_codes = _API_MISSING  # códigos HTTP que significan «ese ref o esa API no existen»
+    speculative = False  # True en un remoto desconocido: cualquier fallo de red o de formato es «esa API no existe»
+
+    def tree_page(self, http, ref: str, page: int) -> tuple[list[dict], bool] | None:
+        raise NotImplementedError
+
+    def fetch(self, http, ref: str, file_path: str) -> bytes:
+        raise NotImplementedError
+
+    def origin(self, ref: str) -> str:
+        raise NotImplementedError
+
+    def _get_json(self, http, url: str):
+        """JSON de la URL, o None si esa API o ese ref no existen. Sin Authorization: solo GitHub lleva token."""
+        try:
+            return _json(http, url)
+        except urllib.error.HTTPError as e:
+            if self.speculative or e.code in self.missing_codes:
+                return None
+            raise
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return None  # una página HTML de login, por ejemplo
+        except (urllib.error.URLError, TimeoutError):
+            if self.speculative:
+                return None
+            raise
+
+
+class GitHubForge(Forge):
+    def __init__(self, owner: str, repo: str, token: str | None = None):
+        self.owner, self.repo, self.token = owner, repo, token
+
+    def tree_page(self, http, ref, page):
+        found = github_tree(http, self.owner, self.repo, [ref], self.token)
+        return (found[1], False) if found else None
+
+    def fetch(self, http, ref, file_path):
+        return _github_raw(http, self.owner, self.repo, ref, file_path, self.token)
+
+    def origin(self, ref):
+        return f"https://github.com/{self.owner}/{self.repo}/tree/{ref}"
+
+
+class GitLabForge(Forge):
+    def __init__(self, host: str, path: str, speculative: bool = False):
+        self.host, self.path, self.speculative = host, path, speculative
+        self.project = f"https://{host}/api/v4/projects/{_quote(path)}"
+
+    def tree_page(self, http, ref, page):
+        url = f"{self.project}/repository/tree?ref={_quote(ref)}&recursive=true&per_page={_PAGE}&page={page}"
+        data = self._get_json(http, url) if page == 1 else _json(http, url)  # un fallo en una página posterior se propaga
+        if not isinstance(data, list):
+            return None
+        entries = [{"type": e.get("type"), "path": e["path"]} for e in data if isinstance(e, dict) and "path" in e]
+        return entries, len(data) >= _PAGE
+
+    def fetch(self, http, ref, file_path):
+        return http(f"{self.project}/repository/files/{_quote(file_path)}/raw?ref={_quote(ref)}", None)
+
+    def origin(self, ref):
+        return f"https://{self.host}/{self.path}/-/tree/{ref}"
+
+
+class GiteaForge(Forge):
+    """Gitea y Forgejo. Un ref desconocido en el árbol devuelve 400 (`sha not found`), no 404."""
+
+    missing_codes = (*_API_MISSING, 400)
+
+    def __init__(self, host: str, path: str, speculative: bool = False):
+        self.host, self.path, self.speculative = host, path, speculative
+        self.api = f"https://{host}/api/v1/repos/{urllib.parse.quote(path)}"
+
+    def tree_page(self, http, ref, page):
+        url = f"{self.api}/git/trees/{_quote(ref)}?recursive=true&page={page}"
+        data = self._get_json(http, url) if page == 1 else _json(http, url)  # un fallo en una página posterior se propaga
+        if not isinstance(data, dict) or not isinstance(data.get("tree"), list):
+            return None
+        entries = [{"type": e.get("type"), "path": e["path"]} for e in data["tree"] if isinstance(e, dict) and "path" in e]
+        return entries, bool(data.get("truncated"))
+
+    def fetch(self, http, ref, file_path):
+        return http(f"{self.api}/raw/{urllib.parse.quote(file_path)}?ref={_quote(ref)}", None)
+
+    def origin(self, ref):
+        kind = "commit" if re.fullmatch(r"[0-9a-f]{40}", ref) else "tag"
+        return f"https://{self.host}/{self.path}/src/{kind}/{ref}"
+
+
+class BitbucketForge(Forge):
+    """Bitbucket Cloud. No cubre Bitbucket Server ni Data Center."""
+
+    _TYPES = {"commit_file": "blob", "commit_directory": "tree"}
+    _API_HOST = "api.bitbucket.org"
+
+    def __init__(self, path: str):
+        self.path = path
+        self.api = f"https://{self._API_HOST}/2.0/repositories/{urllib.parse.quote(path)}"
+        self._next: str | None = None
+
+    def tree_page(self, http, ref, page):
+        if page == 1:
+            url = f"{self.api}/src/{_quote(ref)}/?max_depth=10&pagelen=100"
+        elif self._next:
+            url = self._next
+        else:
+            return None
+        data = self._get_json(http, url) if page == 1 else _json(http, url)  # un fallo en una página posterior se propaga
+        if not isinstance(data, dict) or not isinstance(data.get("values"), list):
+            return None
+        entries = [{"type": self._TYPES.get(e.get("type")), "path": e["path"]} for e in data["values"] if isinstance(e, dict) and "path" in e]
+        nxt = data.get("next")
+        self._next = nxt if isinstance(nxt, str) and urllib.parse.urlsplit(nxt).hostname == self._API_HOST else None
+        return entries, self._next is not None
+
+    def fetch(self, http, ref, file_path):
+        return http(f"{self.api}/src/{_quote(ref)}/{urllib.parse.quote(file_path)}", None)
+
+    def origin(self, ref):
+        return f"https://bitbucket.org/{self.path}/src/{ref}"
+
+
+def forge_chain(remote: RepoRemote, token: str | None = None) -> list[Forge]:
+    """Los forges a probar para un remoto, en orden. El token solo llega a GitHub."""
+    if remote.kind == "github":
+        owner, repo = remote.path.split("/")[:2]
+        return [GitHubForge(owner, repo, token)]
+    if remote.kind == "gitlab":
+        return [GitLabForge(remote.host, remote.path)]
+    if remote.kind == "gitea":
+        return [GiteaForge(remote.host, remote.path)]
+    if remote.kind == "bitbucket":
+        return [BitbucketForge(remote.path)]
+    chain: list[Forge] = [GitLabForge(remote.host, remote.path, speculative=True)]
+    if len(remote.path.split("/")) == 2:
+        chain.append(GiteaForge(remote.host, remote.path, speculative=True))
+    return chain
+
+
+def _load_tree(forge: Forge, http, refs: list[str], base: str = "") -> tuple[str, list[dict]] | None:
+    """Primer ref que existe y su árbol. Corta a MAX_TREE_PAGES páginas o al llegar a MAX_FILES ficheros de documentación."""
+    for ref in refs:
+        if not ref:
+            continue
+        tree: list[dict] = []
+        page = 1
+        while True:
+            try:
+                result = forge.tree_page(http, ref, page)
+            except (urllib.error.URLError, TimeoutError, ValueError):
+                if forge.speculative and page > 1:
+                    return None  # esa API no existe (CB-09)
+                raise
+            if result is None:
+                if page == 1:
+                    break  # ese ref no existe: siguiente ref
+                if forge.speculative:
+                    return None
+                raise NoDocumentation("El árbol del repositorio quedó incompleto: una página posterior no es válida.")
+            entries, more = result
+            tree += entries
+            if not more or page >= MAX_TREE_PAGES or len(doc_paths(tree, base)) >= MAX_FILES:
+                return ref, tree
+            page += 1
+    return None
+
+
 def docs_from_repo(http, url_repo: str | None, refs: list[str], token=None, base: str = "") -> Documentation | None:
     gh = github_repo(url_repo)
-    if not gh:
-        return None
-    found = github_tree(http, *gh, refs, token)
-    if not found:
-        return None
-    ref, tree = found
-    file_paths = doc_paths(tree, base)
-    if not file_paths:
-        return None
-    files = github_files(http, *gh, ref, file_paths, token)
-    if not files:
+    remote = RepoRemote("github", "github.com", f"{gh[0]}/{gh[1]}") if gh else parse_remote(url_repo)
+    if not remote:
         return None
     prefix = base.rstrip("/") + "/" if base else ""
-    return Documentation(
-        files={r[len(prefix):] if prefix and r.startswith(prefix) else r: t for r, t in files.items()},
-        hint=_repo_hint(tree, file_paths),
-        origin=f"https://github.com/{gh[0]}/{gh[1]}/tree/{ref}",
-    )
+    for forge in forge_chain(remote, token):
+        found = _load_tree(forge, http, refs, base)
+        if not found:
+            continue
+        ref, tree = found  # el primer forge que devuelve un árbol decide
+        file_paths = doc_paths(tree, base)
+        if not file_paths:
+            return None
+        files = _download(lambda file_path: forge.fetch(http, ref, file_path), file_paths)
+        if not files:
+            return None
+        return Documentation(
+            files={r[len(prefix):] if prefix and r.startswith(prefix) else r: t for r, t in files.items()},
+            hint=_repo_hint(tree, file_paths),
+            origin=forge.origin(ref),
+        )
+    return None
 
 
 # --- Python ---
@@ -207,7 +471,7 @@ def pypi_package(http, name: str, version: str, token=None) -> Documentation:
                 html = next(iter(files.values()))
                 hint = "mkdocs" if "mkdocs" in html.lower() else "sphinx"
                 return Documentation(files=files, hint=hint, origin=url)
-    repo = next((u for u in urls if github_repo(u)), None)
+    repo = pick_repo_url(urls)
     refs = [f"v{version}", version, f"{name}-{version}", f"release-{version}", f"{name}@{version}"]
     doc = docs_from_repo(http, repo, refs, token)
     if doc:
@@ -527,5 +791,5 @@ def fetch_docs(package: str, ecosystem: str, version: str, *, http=http_real, to
         raise NoDocumentation(f"Ecosistema desconocido: {ecosystem}.")
     except NoDocumentation as e:
         return Documentation(reason=str(e))
-    except (urllib.error.URLError, TimeoutError, OSError, zipfile.BadZipFile, tarfile.TarError, json.JSONDecodeError) as e:
+    except (urllib.error.URLError, TimeoutError, OSError, zipfile.BadZipFile, tarfile.TarError, json.JSONDecodeError, UnicodeDecodeError) as e:
         return Documentation(reason=f"Error al descargar la documentación: {e}")
