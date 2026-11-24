@@ -6,6 +6,8 @@ name: "Code: check"
 on:
   pull_request:
     branches: [staging]
+    # Los tipos por defecto más ready_for_review: al sacar la PR de draft arranca la comprobación
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Solo lee el repositorio
 permissions:
@@ -19,6 +21,8 @@ concurrency:
 jobs:
   # Sin «name»: GitHub lo llama «tests»
   tests:
+    # En draft no corre: el job queda skipped
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
