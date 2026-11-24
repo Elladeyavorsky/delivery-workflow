@@ -15,7 +15,7 @@ description: "Arquitectura en capas: invariantes, ubicación, nombres y separaci
 
 - **Cuándo actuar:** Crear un proyecto, añadir una funcionalidad, decidir capa, nombre o separación.
 - **Fuera de alcance:** Scripts de un solo uso, ETL, sistemas por eventos, videojuegos, prototipos desechables.
-- **Precedencia:** Petición de la persona > `docs/ARCHITECTURE.md` y `docs/STYLE.md` > framework > esta skill. Los docs del proyecto mandan. Un INV solo se salta con excepción escrita en `docs/ARCHITECTURE.md`.
+- **Precedencia:** Petición de la persona > `docs/ARCHITECTURE.md` y `docs/STYLE.md` > framework > esta skill. Un INV solo se salta con excepción escrita en `docs/ARCHITECTURE.md`.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/layered-architecture-guideline`.
 
@@ -25,7 +25,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 2. **Decidir la capa** con la tabla de la sección 4. El archivo nuevo va donde el mapa indica (**R-EST-07 (INV)**) e imita a los vecinos (**R-AGT-03 (DEF)**). No reorganices lo existente ni crees una estructura paralela, salvo petición explícita (**R-AGT-02 (INV)**, **R-EST-04 (INV)**).
 3. **Frameworks.** Protocolo de la sección 4 (**R-AGT-07 (INV)**, **R-EST-08 (INV)**).
 4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flujo-y-validacion.md`, `references/paradigma-y-firmas.md`, `references/errores.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
-5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: `<carpeta de esta skill>/scripts/check-boundaries.sh`.
+5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: `bash <carpeta de esta skill>/scripts/check-boundaries.sh`.
 
 ## 4. Reglas
 
