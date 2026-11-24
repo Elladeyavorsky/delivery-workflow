@@ -129,6 +129,20 @@ bash .agents/skills/docker-best-practices/scripts/check-docker.sh Dockerfile
 
 En Claude Code, la carpeta es `.claude/skills/docker-best-practices/`.
 
+## Arquitectura en capas
+
+La skill `layered-architecture-guideline` fija cuatro capas (presentación, aplicación, dominio e infraestructura) más shared, las dependencias hacia dentro y el manejo de errores. Decide dónde va cada pieza y cómo se separa. Respeta la estructura que impone un framework. Fuera de alcance: scripts de un solo uso, ETL, sistemas por eventos, videojuegos y prototipos desechables.
+
+La usan `concept-developer` y `code-developer`. `code-tester` y `concept-tester` siguen el plan, no la precargan.
+
+Si el proyecto no tiene `docs/ARCHITECTURE.md` y su mapa de capas no está en `AGENTS.md`, `CLAUDE.md` ni `README.md`, `concept-developer` lo crea desde la plantilla de la skill y deja `Por decidir` lo que no sabe. Escribe en el plan el mapa archivo → capa. `code-developer` coloca el código en su capa. Si el proyecto ya tiene mapa, manda ese.
+
+```bash
+bash .agents/skills/layered-architecture-guideline/scripts/check-boundaries.sh [ruta-del-proyecto]
+```
+
+En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`. Solo TypeScript. Necesita Node 20 o superior y `dependency-cruiser` instalado en el proyecto (no descarga nada). Lee las rutas de capa del bloque `json boundaries` de `docs/ARCHITECTURE.md`. Salida 0: sin violaciones. 1: violaciones, una línea por fichero y regla. 2: no se pudo comprobar, con la causa.
+
 ## Protección de datos
 
 La guía `data-protection-guideline` es un checklist del RGPD y la LOPDGDD que usan `concept-developer`, `concept-tester` y `legal-advisor`. Se activa con la sección `## Datos personales` de `docs/CONSTITUTION.md` del proyecto, señala posibles problemas de cada tarea con su artículo y no certifica cumplimiento.

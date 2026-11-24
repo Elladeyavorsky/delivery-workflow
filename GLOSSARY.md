@@ -118,6 +118,12 @@ _Evitar_: ronda (es del ciclo)
 Los ficheros de documentación del proyecto que el cambio tiene que obedecer y contra los que se compara el código.
 _Evitar_: referencias, fuentes
 
+**Mapa de capas**:
+El fichero `docs/ARCHITECTURE.md` del proyecto, que dice dónde va cada capa y qué reglas de fronteras comprueba.
+
+**Verificación de fronteras**:
+La comprobación de que los imports respetan las capas del mapa, con `check-boundaries.sh`. Sale con 0, 1 o 2.
+
 **Say it straight**:
 Skill del paquete que fija la prosa en español de issues, spec, PRs y docs: declarativa, sin relleno defensivo. No rige commits ni el chat del orquestador. **Fuera de esto** en una issue es alcance, no disclaimer.
 _Evitar_: prose, copywriting
