@@ -1,6 +1,4 @@
----
-description: Contrato de arquitectura en capas, independiente del lenguaje y del framework. Aplicar al crear, modificar o revisar código. Respeta siempre la estructura de carpetas del proyecto mediante su mapa de capas.
----
+> **Fuente histórica.** De este documento se deriva la skill `layered-architecture-guideline`. No es el estándar vigente: la referencia viva es la skill. El recorte está en `arquitectura-en-capas-recorte.md`.
 
 # Arquitectura en capas · Instrucciones para agentes (v1.2)
 
