@@ -1,0 +1,49 @@
+# Comprueba cada pull request a staging con los tests del paquete: los tests de Node
+# (tests/*.mjs y los de los avisos de Discord) y los de los scripts (tests/scripts.test.sh).
+# La comprobación que resume el resultado es «Code: check / ci»: falla si los tests fallan.
+name: "Code: check"
+
+on:
+  pull_request:
+    branches: [staging]
+    # Los tipos por defecto más ready_for_review: al sacar la PR de draft arranca la comprobación
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Solo lee el repositorio
+permissions:
+  contents: read
+
+# Un push nuevo a la misma pull request cancela la comprobación anterior
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Sin «name»: GitHub lo llama «tests»
+  tests:
+    # En draft no corre: el job queda skipped
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '22'
+      - run: node --test tests/*.mjs tests/discord-pr-notifications/*.test.mjs
+      - run: bash tests/scripts.test.sh
+
+  # El resumen del resultado: falla si algún job falló o se canceló.
+  ci:
+    needs: [tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTS"
+          if [[ " $RESULTS " == *" failure "* || " $RESULTS " == *" cancelled "* ]]; then
+            exit 1
+          fi

@@ -2,7 +2,7 @@ name: "Discord: publish notice"
 
 on:
   workflow_run:
-    workflows: ["review", "Discord: capture confirmation"]
+    workflows: ["PR: check rules", "Discord: capture confirmation"]
     types: [completed]
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       # El ledger comenta la PR; GITHUB_TOKEN necesita permiso de escritura sobre PR.
       pull-requests: write
     steps:
-      # Un review en draft deja el job skipped y la ejecución en success: no hay aviso.
+      # Un PR: check rules en draft deja el job skipped y la ejecución en success: no hay aviso.
       - name: Confirm the triggering job can publish
         id: gate
         env:
@@ -33,17 +33,17 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_NAME: ${{ github.event.workflow_run.name }}
         run: |
-          if [ "$RUN_NAME" != "review" ]; then
+          if [ "$RUN_NAME" != "PR: check rules" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           conclusion=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs" \
-            --jq '[.jobs[] | select(.name == "review") | .conclusion][0] // ""')
+            --jq '[.jobs[] | select(.name == "check-rules") | .conclusion][0] // ""')
           if [ "$conclusion" = "success" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           else
             echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "The review job did not succeed; Discord notice skipped."
+            echo "The check-rules job did not succeed; Discord notice skipped."
           fi
       # workflow_run apunta al commit confiable de la rama predeterminada.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -63,5 +63,5 @@ jobs:
           expected-repository: venturars/delivery-workflow
           base-branch: staging
           minimum-reviewers: 1
-          required-check: review
+          required-check: check-rules
           trigger-run-id: ${{ github.event.workflow_run.id }}
