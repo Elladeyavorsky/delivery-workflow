@@ -120,5 +120,5 @@ Casos: `references/frameworks.md`.
 - Sin `docs/ARCHITECTURE.md`, parte de la plantilla. Intensidad o framework sin decidir: hueco.
 - Si el proyecto ya tiene mapa, no lo sobrescribas.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
-- `check-boundaries.sh` con salida 2: comprobación no hecha.
+- `check-boundaries.sh` sale con 0 OK, 1 violaciones, 2 no comprobado.
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.

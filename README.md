@@ -141,7 +141,7 @@ Si el proyecto no tiene `docs/ARCHITECTURE.md` y su mapa de capas no está en `A
 bash .agents/skills/layered-architecture-guideline/scripts/check-boundaries.sh [ruta-del-proyecto]
 ```
 
-En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`. Solo TypeScript. Necesita Node 20 o superior y `dependency-cruiser` instalado en el proyecto (no descarga nada). Lee las rutas de capa del bloque `json boundaries` de `docs/ARCHITECTURE.md`. Salida 0: sin violaciones. 1: violaciones, una línea por fichero y regla. 2: no se pudo comprobar, con la causa.
+En Claude Code, la carpeta es `.claude/skills/layered-architecture-guideline/`. Solo TypeScript. Necesita Node 20 o superior y `dependency-cruiser` instalado en el proyecto (no descarga nada). Instálalo con `npm install --save-dev dependency-cruiser`. Lee las rutas de capa del bloque `json boundaries` de `docs/ARCHITECTURE.md`. Salida 0: sin violaciones. 1: violaciones, una línea por fichero y regla. 2: no se pudo comprobar, con la causa.
 
 ## Protección de datos
 
