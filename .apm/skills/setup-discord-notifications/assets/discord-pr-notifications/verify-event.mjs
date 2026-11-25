@@ -2,6 +2,9 @@ import { appendFileSync, readFileSync, statSync } from 'node:fs';
 import { hasDistinctReviewers, minimumReviewers } from './reviewers.mjs';
 import { requiredCheckName, requiredCheckPassed } from './required-check.mjs';
 
+// Los workflows de PR que pueden disparar el aviso: la plantilla, este paquete y el nombre «review».
+const PR_TRIGGER_NAMES = ['Discord: capture PR', 'PR: check rules', 'review'];
+
 function readPrNumber(filePath) {
   if (statSync(filePath).size > 10) {
     throw new Error('The event artifact is too large for a PR number.');
@@ -43,13 +46,16 @@ function belongsToTriggerRun(run, pullRequest) {
 
 function validatePullRequest(event, repository, baseBranch, runId, number, pullRequest, minimum) {
   const run = event.workflow_run;
-  const reviewTrigger = run?.event === 'pull_request' && run.name === 'review';
+  const pullRequestTrigger = run?.event === 'pull_request' && PR_TRIGGER_NAMES.includes(run.name);
+  // El comentario corre en la rama predeterminada. Sin ese nombre en el evento no hay coincidencia posible.
+  const defaultBranch = event.repository?.default_branch;
   const confirmationTrigger = run?.event === 'issue_comment' && run.name === 'Discord: capture confirmation' &&
-    run.head_repository?.full_name === repository && run.head_branch === baseBranch;
+    run.head_repository?.full_name === repository &&
+    typeof defaultBranch === 'string' && defaultBranch !== '' && run.head_branch === defaultBranch;
   if (event.repository?.full_name !== repository ||
       run?.repository?.full_name !== repository ||
       String(run.id) !== runId ||
-      !(reviewTrigger || confirmationTrigger) ||
+      !(pullRequestTrigger || confirmationTrigger) ||
       run.conclusion !== 'success') {
     throw new Error('The completed run does not belong to this repository and trigger.');
   }
@@ -68,7 +74,7 @@ function validatePullRequest(event, repository, baseBranch, runId, number, pullR
   if (pullRequest.draft !== false) {
     throw new Error(`PR #${number} has an invalid draft state.`);
   }
-  if (reviewTrigger && !belongsToTriggerRun(run, pullRequest)) {
+  if (pullRequestTrigger && !belongsToTriggerRun(run, pullRequest)) {
     throw new Error(`PR #${number} does not match the completed trigger run.`);
   }
 
@@ -92,7 +98,8 @@ async function main() {
   const token = process.env.GITHUB_TOKEN;
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? '') ||
       process.env.GITHUB_REPOSITORY !== repository ||
-      !/^[A-Za-z0-9_.-]+$/.test(baseBranch ?? '') ||
+      // La misma regla que validateBranch de la skill: admite «/» y la base solo se compara como texto.
+      !/^(?!.*(?:\.\.|\/\/|\.lock$))[A-Za-z0-9_](?:[A-Za-z0-9_.\/-]*[A-Za-z0-9_-])?$/.test(baseBranch ?? '') ||
       !/^[1-9][0-9]*$/.test(runId ?? '') || !token ||
       !process.env.GITHUB_EVENT_PATH || !process.env.PR_NUMBER_FILE || !process.env.GITHUB_OUTPUT) {
     throw new Error('Notification verification configuration is incomplete.');

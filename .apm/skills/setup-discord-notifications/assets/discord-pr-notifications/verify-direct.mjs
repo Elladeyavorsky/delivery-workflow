@@ -73,7 +73,8 @@ async function main() {
   const trustedBranch = process.env.TRUSTED_BRANCH;
   const token = process.env.GITHUB_TOKEN;
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? '') ||
-      !/^[A-Za-z0-9_.-]+$/.test(baseBranch ?? '') ||
+      // La misma regla que validateBranch de la skill: admite «/» y la base solo se compara como texto.
+      !/^(?!.*(?:\.\.|\/\/|\.lock$))[A-Za-z0-9_](?:[A-Za-z0-9_.\/-]*[A-Za-z0-9_-])?$/.test(baseBranch ?? '') ||
       !/^[A-Za-z0-9_.-]+$/.test(trustedBranch ?? '') ||
       process.env.GITHUB_REPOSITORY !== repository || !token ||
       !process.env.GITHUB_EVENT_PATH || !process.env.GITHUB_OUTPUT) {
