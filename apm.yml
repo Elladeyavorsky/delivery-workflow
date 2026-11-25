@@ -6,6 +6,8 @@ repository: https://github.com/venturars/delivery-workflow
 keywords: [git, github, workflow, spec, agents, claude-code, cursor, codex]
 targets: [claude, cursor, codex]
 dependencies:
+  apm:
+    - venturars/delivery-workflow#v1.2.3
   mcp:
     - name: eur-lex
       registry: false
