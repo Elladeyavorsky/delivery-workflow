@@ -65,10 +65,11 @@ export function fileState(text) {
 // --- Argumentos ---
 
 export const USAGE = [
-  "Uso: setup-discord-notifications.mjs <detect|apply|reset> [opciones]",
+  "Uso: setup-discord-notifications.mjs <detect|apply|reset|verify> [opciones]",
   "  detect   Repositorio, rama predeterminada, acceso de gh, ficheros de Discord y su estado, y entorno, secretos y variables (JSON). No escribe.",
   "  apply    Copia workflows y acción, crea el entorno protegido y fija secretos y variables. Pide --guild-id y --channel-id la primera vez.",
   "  reset    Quita los ficheros de Discord que escribió apply y no están editados. Con --remove-environment borra también el entorno, sus secretos y sus variables; sin ella los lista como pendientes.",
+  "  verify   Solo lectura. Con DISCORD_BOT_TOKEN del .env, --guild-id y --channel-id comprueba contra discord.com el token, que el bot está en el servidor y que ve el canal. Sale con código 6 si alguna falla.",
   "Opciones: --base RAMA  --guild-id ID  --channel-id ID  --minimum-reviewers N  --remove-environment  --root RUTA",
 ].join("\n");
 
@@ -591,6 +592,65 @@ export async function resetAll({ root, gh: rawGh, opts, env, remote, assetsDir =
   return out;
 }
 
+// --- verify ---
+
+export const DISCORD_API = "https://discord.com/api/v10";
+
+// GET a la API de Discord. El token va solo en la cabecera. Devuelve {status, body} sin lanzar por 4xx; si falla la red, {status: null, body: null}.
+export async function discordGet(fetchFn, path, token) {
+  let response;
+  try {
+    response = await fetchFn(`${DISCORD_API}${path}`, { method: "GET", headers: { Authorization: `Bot ${token}`, Accept: "application/json" } });
+  } catch {
+    return { status: null, body: null };
+  }
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    // sin cuerpo JSON
+  }
+  return { status: response.status, body };
+}
+
+const check = (result, reason, status = null) => ({ result, reason, status });
+
+// Motivo fijo según el código HTTP: nunca el cuerpo de la respuesta ni el token.
+function failure(status, rejected) {
+  if (status === null) return check("fallo", "No se pudo contactar con discord.com (error de red).");
+  if (status === 429) return check("fallo", "Discord limita las peticiones (HTTP 429). Espera y repite verify.", status);
+  return check("fallo", `${rejected} (HTTP ${status}).`, status);
+}
+
+export async function verifyAll({ env, opts, fetchFn = globalThis.fetch }) {
+  const token = env.DISCORD_BOT_TOKEN;
+  if (!token) throw new SetupDiscordError(`Falta ${BOT_TOKEN_VAR} en el .env. No se ha llamado a Discord.`, 2);
+  for (const [flag, value] of [["--guild-id", opts.guildId], ["--channel-id", opts.channelId]]) {
+    if (value === null || value === undefined) throw new SetupDiscordError(`Falta ${flag}. No se ha llamado a Discord.`, 2);
+    numeric(value, flag);
+  }
+  if (typeof fetchFn !== "function") throw new SetupDiscordError("Este Node no trae fetch: usa Node 20 o superior.", 3);
+  const skipped = check("omitida", "El token no es válido: no se comprueba.");
+  const checks = { token: null, servidor: skipped, canal: skipped };
+
+  const me = await discordGet(fetchFn, "/users/@me", token);
+  checks.token = me.status === 200 ? check("correcto", "El token vale.", 200) : failure(me.status, "Discord rechazó el token");
+  if (checks.token.result === "correcto") {
+    const guild = await discordGet(fetchFn, `/guilds/${opts.guildId}`, token);
+    checks.servidor = guild.status === 200 ? check("correcto", "El bot está en el servidor.", 200) : failure(guild.status, "El bot no está en el servidor o no lo ve");
+    const channel = await discordGet(fetchFn, `/channels/${opts.channelId}`, token);
+    if (channel.status === 200) {
+      checks.canal =
+        String(channel.body?.guild_id) === opts.guildId
+          ? check("correcto", "El bot ve el canal y es del servidor.", 200)
+          : check("fallo", "El canal pertenece a otro servidor que --guild-id.", 200);
+    } else {
+      checks.canal = failure(channel.status, "El bot no ve el canal o no existe");
+    }
+  }
+  return { ok: Object.values(checks).every((c) => c.result === "correcto"), checks };
+}
+
 async function resolveRoot(opts) {
   if (opts.root) return resolve(opts.root);
   try {
@@ -601,10 +661,11 @@ async function resolveRoot(opts) {
   }
 }
 
-export async function run(argv, { exec = defaultExec, random = randomBytes } = {}) {
+export async function run(argv, { exec = defaultExec, random = randomBytes, fetchFn = globalThis.fetch } = {}) {
   const opts = parseArgs(argv);
-  if (!["detect", "apply", "reset"].includes(opts.command)) throw new SetupDiscordError(USAGE, 2);
+  if (!["detect", "apply", "reset", "verify"].includes(opts.command)) throw new SetupDiscordError(USAGE, 2);
   const root = await resolveRoot(opts);
+  if (opts.command === "verify") return JSON.stringify(await verifyAll({ env: loadEnv(root), opts, fetchFn }), null, 2);
   const remote = await remoteRepository(root);
   const env = loadEnv(root);
   const gh = makeGh({ token: env.GITHUB_TOKEN, exec, root });
@@ -616,7 +677,10 @@ export async function run(argv, { exec = defaultExec, random = randomBytes } = {
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   run(process.argv.slice(2))
-    .then((out) => console.log(out))
+    .then((out) => {
+      console.log(out);
+      if (process.argv[2] === "verify" && JSON.parse(out).ok === false) process.exit(6);
+    })
     .catch((e) => {
       console.error(e.message);
       process.exit(e instanceof SetupDiscordError ? e.code : 1);

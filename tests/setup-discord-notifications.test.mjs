@@ -1061,3 +1061,269 @@ test("apply sin ids conserva o falla", async () => {
     assert.deepEqual(walk(limpio), [".env"]);
   }
 });
+
+// --- verify (escenarios 11 a 13, CB-10 a CB-12) ---
+
+// fetch doble: registra cada petición y responde según la ruta. Un valor Error se lanza como fallo de red.
+function fakeFetch(routes) {
+  const calls = [];
+  const fetchFn = async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    const path = String(url).replace("https://discord.com/api/v10", "");
+    const r = routes[path];
+    if (r instanceof Error) throw r;
+    if (!r) return { status: 404, json: async () => ({ message: "Unknown" }) };
+    return { status: r.status, json: async () => r.body ?? {} };
+  };
+  return { fetchFn, calls };
+}
+const okRoutes = {
+  "/users/@me": { status: 200, body: { id: "9", username: "bot" } },
+  [`/guilds/${GUILD}`]: { status: 200, body: { id: GUILD } },
+  [`/channels/${CHANNEL}`]: { status: 200, body: { id: CHANNEL, guild_id: GUILD } },
+};
+const verifyArgs = (root, extra = ["--guild-id", GUILD, "--channel-id", CHANNEL]) => ["verify", "--root", root, ...extra];
+const noExec = async () => assert.fail("verify no debe llamar a gh");
+
+test("verify con todo correcto", async () => {
+  const root = project({ env: defaultEnv });
+  const f = fakeFetch(okRoutes);
+  const r = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn }));
+  assert.equal(r.ok, true);
+  for (const k of ["token", "servidor", "canal"]) assert.equal(r.checks[k].result, "correcto", k);
+  assert.deepEqual(f.calls.map((c) => c.url), [
+    "https://discord.com/api/v10/users/@me",
+    `https://discord.com/api/v10/guilds/${GUILD}`,
+    `https://discord.com/api/v10/channels/${CHANNEL}`,
+  ]);
+  assert.ok(f.calls.every((c) => (c.init.method ?? "GET") === "GET"));
+});
+
+test("verify con token inválido omite servidor y canal", async () => {
+  const root = project({ env: defaultEnv });
+  const f = fakeFetch({ "/users/@me": { status: 401, body: { message: "401: Unauthorized" } } });
+  const r = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn }));
+  assert.equal(r.ok, false);
+  assert.equal(r.checks.token.result, "fallo");
+  assert.equal(r.checks.token.status, 401);
+  assert.equal(r.checks.servidor.result, "omitida");
+  assert.equal(r.checks.canal.result, "omitida");
+  assert.equal(f.calls.length, 1);
+});
+
+test("verify con bot fuera del servidor", async () => {
+  const root = project({ env: defaultEnv });
+  const f = fakeFetch({ ...okRoutes, [`/guilds/${GUILD}`]: { status: 403, body: { message: "Missing Access" } } });
+  const r = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn }));
+  assert.equal(r.ok, false);
+  assert.equal(r.checks.token.result, "correcto");
+  assert.equal(r.checks.servidor.result, "fallo");
+  assert.equal(r.checks.servidor.status, 403);
+  assert.match(r.checks.servidor.reason, /403/);
+});
+
+test("verify con canal invisible o inexistente", async () => {
+  const root = project({ env: defaultEnv });
+  for (const status of [403, 404]) {
+    const f = fakeFetch({ ...okRoutes, [`/channels/${CHANNEL}`]: { status, body: { message: "x" } } });
+    const r = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn }));
+    assert.equal(r.ok, false);
+    assert.equal(r.checks.servidor.result, "correcto");
+    assert.equal(r.checks.canal.result, "fallo");
+    assert.equal(r.checks.canal.status, status);
+  }
+});
+
+test("verify canal de otro servidor", async () => {
+  const root = project({ env: defaultEnv });
+  const f = fakeFetch({ ...okRoutes, [`/channels/${CHANNEL}`]: { status: 200, body: { id: CHANNEL, guild_id: "5555555" } } });
+  const r = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn }));
+  assert.equal(r.ok, false);
+  assert.equal(r.checks.servidor.result, "correcto");
+  assert.equal(r.checks.canal.result, "fallo");
+  assert.match(r.checks.canal.reason, /otro servidor/);
+});
+
+test("verify con 429 o red caída es fallo sin reintentos y distinto del token inválido", async () => {
+  const root = project({ env: defaultEnv });
+  const limit = fakeFetch({ "/users/@me": { status: 429, body: { message: "rate limited", retry_after: 1 } } });
+  const a = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: limit.fetchFn }));
+  assert.equal(a.ok, false);
+  assert.equal(a.checks.token.result, "fallo");
+  assert.equal(a.checks.token.status, 429);
+  assert.match(a.checks.token.reason, /429/);
+  assert.doesNotMatch(a.checks.token.reason, /rechaz/i);
+  assert.equal(limit.calls.length, 1);
+
+  const guild429 = fakeFetch({ ...okRoutes, [`/guilds/${GUILD}`]: { status: 429, body: {} } });
+  const g = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: guild429.fetchFn }));
+  assert.equal(g.checks.servidor.result, "fallo");
+  assert.equal(g.checks.servidor.status, 429);
+  assert.equal(guild429.calls.filter((c) => c.url.includes("/guilds/")).length, 1);
+
+  const down = fakeFetch({ "/users/@me": new TypeError("fetch failed: getaddrinfo ENOTFOUND") });
+  const b = JSON.parse(await run(verifyArgs(root), { exec: noExec, fetchFn: down.fetchFn }));
+  assert.equal(b.ok, false);
+  assert.equal(b.checks.token.result, "fallo");
+  assert.equal(b.checks.token.status, null);
+  assert.doesNotMatch(b.checks.token.reason, /ENOTFOUND|getaddrinfo/);
+  assert.equal(down.calls.length, 1);
+});
+
+test("verify sin token, ids ausentes o no numéricos falla con código 2 sin llamar a la red", async () => {
+  const sinFetch = () => assert.fail("no debe llamar a la red");
+  const sinToken = project({ env: "GITHUB_TOKEN=ghp_proyecto\n" });
+  await assert.rejects(run(verifyArgs(sinToken), { exec: noExec, fetchFn: sinFetch }), (e) => e instanceof SetupDiscordError && e.code === 2 && e.message.includes("DISCORD_BOT_TOKEN"));
+  const sinEnv = project();
+  await assert.rejects(run(verifyArgs(sinEnv), { exec: noExec, fetchFn: sinFetch }), (e) => e.code === 2 && e.message.includes("DISCORD_BOT_TOKEN"));
+
+  const root = project({ env: defaultEnv });
+  const casos = [
+    [["--channel-id", CHANNEL], "--guild-id"],
+    [["--guild-id", GUILD], "--channel-id"],
+    [[], "--guild-id"],
+    [["--guild-id", "abc", "--channel-id", CHANNEL], "--guild-id"],
+    [["--guild-id", GUILD, "--channel-id", "12x"], "--channel-id"],
+  ];
+  for (const [extra, nombre] of casos) {
+    await assert.rejects(run(verifyArgs(root, extra), { exec: noExec, fetchFn: sinFetch }), (e) => e instanceof SetupDiscordError && e.code === 2 && e.message.includes(nombre), extra.join(" "));
+  }
+});
+
+test("verify no filtra el token", async () => {
+  // El token solo va en la cabecera Authorization; nunca en URL, cuerpo, salida ni motivos.
+  const root = project({ env: defaultEnv });
+  const escenarios = [
+    okRoutes,
+    { "/users/@me": { status: 401, body: { message: `Bad token ${BOT}` } } },
+    { ...okRoutes, [`/guilds/${GUILD}`]: { status: 403, body: { message: `echo ${BOT}` } } },
+    { ...okRoutes, [`/channels/${CHANNEL}`]: { status: 404, body: { message: `echo ${BOT}` } } },
+    { "/users/@me": new Error(`fallo con ${BOT}`) },
+  ];
+  for (const routes of escenarios) {
+    const f = fakeFetch(routes);
+    const out = await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn });
+    assert.ok(!out.includes(BOT), "la salida no lleva el token");
+    assert.ok(f.calls.length > 0);
+    for (const c of f.calls) {
+      assert.ok(!c.url.includes(BOT), "la URL no lleva el token");
+      assert.equal(c.init.body, undefined, "sin cuerpo");
+      assert.equal(c.init.headers.Authorization, `Bot ${BOT}`);
+      const resto = { ...c.init, headers: { ...c.init.headers, Authorization: "" } };
+      assert.ok(!JSON.stringify(resto).includes(BOT), "el token solo está en Authorization");
+    }
+  }
+});
+
+test("verify no escribe ficheros ni llama a gh", async () => {
+  const root = project({ env: defaultEnv });
+  const antes = walk(root);
+  const envAntes = readFileSync(join(root, ".env"), "utf8");
+  const f = fakeFetch(okRoutes);
+  await run(verifyArgs(root), { exec: noExec, fetchFn: f.fetchFn });
+  assert.deepEqual(walk(root), antes);
+  assert.equal(readFileSync(join(root, ".env"), "utf8"), envAntes);
+});
+
+test("verify por la CLI sale con código 6 si una comprobación falla", () => {
+  const root = project({ env: defaultEnv });
+  const script = new URL("scripts/setup-discord-notifications.mjs", SKILL).pathname;
+  // Sin red real: un fetch global roto por --import hace que el token falle sin salir del proceso.
+  const hook = join(root, "nofetch.mjs");
+  writeFileSync(hook, "globalThis.fetch = async () => { throw new Error('sin red'); };\n");
+  let status = 0;
+  let stdout = "";
+  try {
+    stdout = execFileSync(process.execPath, ["--import", hook, script, "verify", "--root", root, "--guild-id", GUILD, "--channel-id", CHANNEL], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (e) {
+    status = e.status;
+    stdout = e.stdout;
+  }
+  assert.equal(status, 6);
+  assert.equal(JSON.parse(stdout).ok, false);
+  assert.ok(!stdout.includes(BOT));
+});
+
+// Escenario 14 y CB-13/CB-14: la guía del paso 0 de SKILL.md.
+const skillMd = () => read("SKILL.md");
+const flujo = (text) => text.slice(text.indexOf("#### Flujo"), text.indexOf("#### Motivos de fallo"));
+const paso0 = (text) => {
+  const f = flujo(text);
+  return f.slice(f.indexOf("0. **"), f.indexOf("\n1. "));
+};
+
+test("SKILL.md: el paso 0 va antes de detect", () => {
+  const f = flujo(skillMd());
+  const cero = f.indexOf("0. **Guía del bot");
+  const uno = f.indexOf("1. Lanza `detect`");
+  assert.ok(cero >= 0 && uno > cero);
+  assert.match(paso0(skillMd()), /Antes de `detect`/);
+  assert.match(paso0(skillMd()), /Si los tiene, salta este paso/);
+  assert.ok(!/antes de lanzarla, crea el bot/i.test(skillMd()));
+});
+
+test("SKILL.md: no pide activar ningún intent privilegiado", () => {
+  const text = skillMd();
+  for (const intent of [/Server Members Intent/i, /Message Content/i, /Presence/]) assert.ok(!intent.test(text), String(intent));
+  assert.match(paso0(text), /Privileged Gateway Intents/);
+  assert.match(paso0(text), /desactivados/);
+  assert.match(paso0(text), /No pidas activar ninguno/);
+});
+
+test("SKILL.md: el enlace de invitación lleva scope=bot y permissions=3072, sin Mention Everyone", () => {
+  const links = skillMd().match(/https:\/\/discord\.com\/oauth2\/authorize\?[^\s`)]+/g) ?? [];
+  assert.ok(links.length >= 1);
+  for (const link of links) {
+    const url = new URL(link);
+    assert.equal(url.searchParams.get("scope"), "bot");
+    assert.equal(url.searchParams.get("permissions"), "3072");
+    assert.ok(url.searchParams.has("client_id"));
+    const bits = BigInt(url.searchParams.get("permissions"));
+    assert.equal(bits & (1n << 17n), 0n, "Mention Everyone (1<<17) no debe estar");
+    assert.equal(bits, (1n << 10n) | (1n << 11n), "solo View Channel y Send Messages");
+  }
+  assert.ok(!/Mention Everyone/i.test(skillMd()));
+  assert.match(paso0(skillMd()), /ID de la aplicación/);
+});
+
+test("SKILL.md: la description menciona la guía y que verify consulta discord.com", () => {
+  const description = skillMd().match(/^description: "(.*)"$/m)?.[1] ?? "";
+  assert.match(description, /guía/i);
+  assert.match(description, /verify/);
+  assert.match(description, /discord\.com/);
+});
+
+test("SKILL.md: verify pide confirmación antes de lanzarse y apply no depende de él", () => {
+  const text = skillMd();
+  const f = flujo(text);
+  const verify = f.slice(f.indexOf("5. Ofrece `verify`"), f.indexOf("\n6. "));
+  assert.ok(verify.length > 0);
+  assert.ok(verify.indexOf("pide confirmación") >= 0 && verify.indexOf("pide confirmación") < verify.indexOf("lanza `verify`"));
+  assert.match(verify, /opcional/);
+  assert.match(verify, /Si rechaza, sigue sin él/);
+  assert.match(text, /\*\*`verify` solo con confirmación\*\*/);
+  assert.match(text, /`apply` no depende de él/);
+  const apply = f.slice(f.indexOf("6. Lanza `apply`"), f.indexOf("\n7. "));
+  assert.ok(!/verify/.test(apply));
+  assert.ok(f.indexOf("5. Ofrece `verify`") > f.indexOf("1. Lanza `detect`") && f.indexOf("5. Ofrece `verify`") < f.indexOf("6. Lanza `apply`"));
+});
+
+test("SKILL.md: el token no pasa por el chat y el aviso de .gitignore va antes de pedirlo (CB-14)", () => {
+  const cero = paso0(skillMd());
+  assert.match(cero, /sin pegarlo en el chat/);
+  const gitignore = cero.indexOf(".gitignore");
+  assert.ok(gitignore >= 0);
+  assert.ok(gitignore < cero.indexOf("1. Entrar"), "el aviso va antes del primer paso de la guía");
+  assert.ok(gitignore < cero.indexOf("DISCORD_BOT_TOKEN"));
+  assert.match(skillMd(), /el token, nunca/);
+  assert.match(skillMd(), /Si `\.env` no está en `\.gitignore`, avísalo antes de pedírselo/);
+});
+
+test("SKILL.md: un token perdido o mal copiado se regenera con Reset Token (CB-13)", () => {
+  const text = skillMd();
+  assert.match(paso0(text), /Reset Token/);
+  assert.match(paso0(text), /una sola vez/);
+  assert.match(paso0(text), /se perdió/);
+  assert.match(paso0(text), /el anterior deja de valer/);
+  assert.match(text, /\*\*`token` con `fallo` \(HTTP 401\)\*\*[^\n]*Reset Token/);
+});

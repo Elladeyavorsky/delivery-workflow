@@ -14,9 +14,25 @@ Para los revisores ausentes del mapa, el emisor consulta la relación cifrada de
 
 La skill `setup-discord-notifications` activa los avisos en un proyecto. Sin ella, `apm install` no añade nada de Discord. Los workflows son de GitHub Actions: un remoto que no sea de GitHub queda fuera. Requiere Node 20+, `gh` y un `GITHUB_TOKEN` en el `.env` con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`. En Codex, la skill se llama con `$` en vez de `/`.
 
-Antes de lanzarla, crea el bot en el Developer Portal de Discord, invítalo al servidor y copia su token. Discord no permite crear el bot por API. Añade `DISCORD_BOT_TOKEN=…` al `.env` tú mismo, sin pegarlo en el chat, y comprueba que `.env` está en `.gitignore`. Necesitas también el ID del servidor y el del canal de avisos.
+Discord no permite crear el bot por API: lo creas tú en el Developer Portal y la skill te guía. Antes de pedirte nada comprueba que `.env` está en `.gitignore` y avisa si no. Los pasos son:
 
-La skill muestra el estado del repositorio (`detect`), pregunta la rama base de las PR, el ID del servidor y el del canal, y lanza `apply`. Por defecto la rama base es `staging` si existe en el remoto y, si no, la rama predeterminada. `--minimum-reviewers` fija los revisores mínimos que escribe en el workflow de emisión: 1 por defecto.
+1. Crear una aplicación con «New Application» en `https://discord.com/developers/applications`.
+2. En la pestaña «Bot», crear el bot y pulsar «Reset Token». Discord muestra el token una sola vez: cópialo a una línea `DISCORD_BOT_TOKEN=…` del `.env`, sin pegarlo en el chat.
+3. Dejar desactivados los «Privileged Gateway Intents». La skill no pide activar ninguno, ni el «Server Members Intent».
+4. Copiar el «Application ID» y abrir el enlace de invitación que la skill construye con él: `https://discord.com/oauth2/authorize?client_id=ID_APLICACION&scope=bot&permissions=3072`. `permissions=3072` suma «View Channel» (1024) y «Send Messages» (2048); no incluye «Mention Everyone». Elige tu servidor.
+5. Activar el modo desarrollador en Discord y copiar el ID del servidor y el del canal de avisos.
+
+Si ya tienes el bot, el token en el `.env` y los dos IDs, la skill salta esta guía. Si el token se copió mal o se perdió, «Reset Token» genera otro y deja de valer el anterior.
+
+La skill muestra el estado del repositorio (`detect`), pregunta la rama base de las PR, el ID del servidor y el del canal, te ofrece `verify` y lanza `apply`. Por defecto la rama base es `staging` si existe en el remoto y, si no, la rama predeterminada. `--minimum-reviewers` fija los revisores mínimos que escribe en el workflow de emisión: 1 por defecto.
+
+### Comprobar el bot con `verify`
+
+`verify` es opcional y de solo lectura: no escribe ficheros ni toca la configuración de GitHub. Llama a `discord.com` con el `DISCORD_BOT_TOKEN` del `.env`, `--guild-id` y `--channel-id`, así que la skill pide tu confirmación antes de lanzarlo. `apply` no depende de él.
+
+Comprueba que el token vale, que el bot está en el servidor y que ve el canal y es de ese servidor. Devuelve `{ ok, checks: { token, servidor, canal } }`. Cada comprobación trae `result` (`correcto`, `fallo` u `omitida`), `reason` y, si Discord respondió, `status` con el código HTTP. Si el token falla, `servidor` y `canal` salen `omitida`. Con alguna comprobación en `fallo` sale con código 6 y la skill explica el motivo; no sigue con `apply` hasta que decidas. Sin `DISCORD_BOT_TOKEN` en el `.env`, o con un ID ausente o no numérico, sale con código 2 sin llamar a la red. Nunca imprime el token.
+
+`verify` no comprueba el permiso de publicar: lo confirma la prueba real del aviso, con una PR fuera de draft y un revisor pedido.
 
 ### Qué copia
 
@@ -91,7 +107,7 @@ El job `check-rules` de `.github/workflows/pr-check-rules.yml`, si la base es `s
 
 El primer aviso sale una vez por SHA. Si después hay una revisión `CHANGES_REQUESTED` y un commit nuevo vuelve a pasar `check-rules`, el emisor publica otra vez el aviso, marcado como actualización tras cambios pedidos. Un push sin un pedido de cambios nuevo no repite el mensaje.
 
-El administrador configura en el entorno protegido `discord-pr-notifications`, limitado a `staging`, los secretos `DISCORD_BOT_TOKEN` y `DISCORD_CACHE_KEY` y las variables `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`. Puede añadir `DISCORD_USER_MAP` cuando quiera asociar nombres distintos de forma permanente. La clave debe ser de 32 bytes codificados en base64. El bot necesita permiso para buscar miembros y publicar en el canal. Tras fusionar los workflows en `staging`, se comprueba con una PR real que el aviso aparece una sola vez aunque se repita la ejecución.
+El administrador configura en el entorno protegido `discord-pr-notifications`, limitado a `staging`, los secretos `DISCORD_BOT_TOKEN` y `DISCORD_CACHE_KEY` y las variables `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`. Puede añadir `DISCORD_USER_MAP` cuando quiera asociar nombres distintos de forma permanente. La clave debe ser de 32 bytes codificados en base64. El bot de este repositorio necesita permiso para buscar miembros y publicar en el canal. El bot que crea `/setup-discord-notifications` se invita con View Channel y Send Messages (`permissions=3072`); si la búsqueda de miembros exige otro permiso, la prueba manual de `docs/MAINTENANCE.md` lo mostrará. Tras fusionar los workflows en `staging`, se comprueba con una PR real que el aviso aparece una sola vez aunque se repita la ejecución.
 
 El emisor descarga el artefacto de la ejecución completada, vuelve a consultar la PR en GitHub y verifica repositorio, rama, estado, ejecución, el check requerido y los revisores antes de usar los secretos. La acción cifra las relaciones con AES-256-GCM, guarda cada entrada durante 48 horas en artefactos cifrados y registra por separado el anuncio inicial, el SHA avisado, los revisores mostrados y los ya mencionados. Así evita duplicados incluso cuando el primer aviso no lleva menciones. El grupo de concurrencia serializa el acceso a la caché. Discord permite hasta 100 menciones explícitas por mensaje; si el contenido supera los 2000 caracteres, la acción falla sin publicar.
 
