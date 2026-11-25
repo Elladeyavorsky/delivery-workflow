@@ -1,6 +1,6 @@
 # Errores
 
-Se lee para el modelo de errores de dominio y los mínimos de seguridad. Lo demás (protocolo, formato, logs, trazabilidad y errores técnicos) lo decide el proyecto en `docs/ARCHITECTURE.md`.
+Se lee para errores de dominio y mínimos de seguridad. Lo demás (protocolo, logs y errores técnicos) lo decide el proyecto en `docs/ARCHITECTURE.md`.
 
 ## Modelo
 
@@ -35,7 +35,7 @@ Con varias partes se decide por parte, con el mismo catálogo de `kind` y `code`
 | Dominio | Crea los errores con la fábrica. No los captura ni los traduce. |
 | Aplicación | Usa los mismos códigos (`session.missing` si no encuentra nada). Deja subir el resto. |
 | Infraestructura | Traduce los fallos del almacén con significado de negocio a los mismos códigos y conserva la causa. Sin mapeo: error técnico (R-INF-03). |
-| Presentación | Decide qué hacer con cada error según `kind` y `code`. La forma la define el proyecto. |
+| Presentación | Decide qué hacer con cada error según `kind` y `code`; recibe su tipo desde la aplicación (R-PRE-04). La forma la define el proyecto. |
 
 ## Reglas
 

@@ -128,7 +128,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 - **R-PRE-01 (INV)** — La presentación DEBE validar la forma de la entrada (tipos, formatos, campos obligatorios, longitudes) antes de llamar a la aplicación.
 - **R-PRE-02 (INV)** — La presentación NO DEBE contener reglas de negocio. Una comprobación que solo tiene sentido si se conoce el negocio («un pedido confirmado no se puede editar») pertenece al dominio.
 - **R-PRE-03 (DEF)** — Cada operación de presentación (endpoint, comando, acción de pantalla) DEBERÍA invocar exactamente un caso de uso.
-- **R-PRE-04 (INV)** — La presentación NO DEBE importar nada de infraestructura ni del dominio.
+- **R-PRE-04 (INV)** — La presentación NO DEBE importar nada de infraestructura ni del dominio. Lo que necesita (DTO, tipo de error de dominio) lo recibe de la aplicación.
 - **R-PRE-05 (INV)** — Los detalles del protocolo (códigos HTTP, cabeceras, códigos de salida de CLI, navegación de UI) DEBEN quedarse en la presentación.
 
 **Aplicación**
@@ -265,7 +265,7 @@ Alcance: errores de dominio, más cinco mínimos de seguridad que valen en toda 
 
 ### 5.2 Qué hace cada capa
 
-Dominio crea con la fábrica y no captura. Aplicación usa los mismos códigos (`session.missing`). Infraestructura traduce los fallos del almacén con significado de negocio a esos códigos y conserva la causa; el resto es técnico. Presentación decide según `kind` y `code`; la forma la define el proyecto.
+Dominio crea con la fábrica y no captura. Aplicación usa los mismos códigos (`session.missing`). Infraestructura traduce los fallos del almacén con significado de negocio a esos códigos y conserva la causa; el resto es técnico. Presentación decide según `kind` y `code` y recibe el tipo desde la aplicación; la forma la define el proyecto.
 
 ### 5.3 Reglas
 

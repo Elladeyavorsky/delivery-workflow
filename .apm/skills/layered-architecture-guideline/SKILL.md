@@ -34,7 +34,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 2. Dependencias solo hacia dentro, sin ciclos (**R-GEN-04 (INV)**). Las cuatro capas son cerradas (**R-GEN-01 (INV)**); shared es la única abierta (**R-GEN-02 (INV)**). Flujo presentación → aplicación → dominio; la aplicación llama a la infraestructura solo por interfaces (**R-FLU-01 (INV)**). Una capa interior no conoce tipos de una exterior; los imports siguen la matriz (**R-FLU-02 (INV)**). Un módulo solo usa la API pública de otro (**R-EST-02 (INV)**).
 3. El dominio no hace entrada/salida ni importa frameworks (**R-DOM-01 (INV)**). Hora, azar e identificadores entran por parámetro o por puerto (**R-PAR-01 (INV)**).
 4. La infraestructura implementa interfaces de dominio o aplicación (**R-INF-01 (INV)**). La aplicación solo la usa a través de ellas, inyectadas (**R-APL-03 (INV)**).
-5. La presentación valida la forma (**R-PRE-01 (INV)**), traduce y no contiene negocio (**R-PRE-02 (INV)**; no se reimplementan ahí, **R-ERR-14**) ni importa infraestructura ni dominio (**R-PRE-04 (INV)**).
+5. La presentación valida la forma (**R-PRE-01 (INV)**), traduce y no contiene negocio (**R-PRE-02 (INV)**; no se reimplementan ahí, **R-ERR-14**) ni importa infraestructura ni dominio; lo que necesita se lo da la aplicación (**R-PRE-04 (INV)**).
 6. La aplicación orquesta el caso de uso y controla transacción (**R-APL-05 (INV)**) y autorización (**R-APL-06 (INV)**). La autenticación se resuelve en la presentación.
 7. Nada cruza una frontera sin mapeo: ni entidades (**R-FLU-03 (INV)**) ni modelos de persistencia (**R-INF-02 (INV)**).
 8. Las dependencias concretas se crean solo en la raíz de composición (**R-FLU-08 (INV)**).
@@ -120,5 +120,5 @@ Casos: `references/frameworks.md`.
 - Sin mapa, créalo; si existe, completa. Hueco: intensidad, framework o fronteras.
 - Framework que fusiona capas: ligera y excepción en el mapa.
 - Sin herramienta de fronteras: «fronteras no comprobadas».
-- Un DEBERÍA desviado se anota en el mapa.
+- Un DEBERÍA desviado, en el mapa.
 - Guía: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.
