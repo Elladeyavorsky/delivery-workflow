@@ -10,7 +10,7 @@ Si no existe `docs/ARCHITECTURE.md`:
 
 1. Recorre el árbol e identifica qué rutas ya cumplen cada rol (controladores o pantallas, acceso a datos, reglas).
 2. Identifica las rutas que impone el framework y las convenciones de nombres que ya se usan.
-3. Para un rol sin ubicación, propone la más coherente con lo existente. No crees niveles nuevos en la raíz.
+3. Para un rol sin ubicación, propone la más coherente con lo existente y evita niveles nuevos en la raíz. Si hace falta una carpeta nueva (por ejemplo, para shared o platform), usa el nombre habitual del stack (`core/`, `lib/`, `internal/`...); si no hay ninguno, el del rol (`shared/`, `platform/`). Anótala en el mapa.
 4. Registra el mapa inferido en `docs/ARCHITECTURE.md` y, si el flujo es interactivo, confírmalo.
 5. Solo si el proyecto está vacío y el framework no impone nada puedes usar, de referencia: por módulo y capa (`modules/<módulo>/{presentation,application,domain,infrastructure}` + `shared/` + `platform/`) o solo por capa.
 

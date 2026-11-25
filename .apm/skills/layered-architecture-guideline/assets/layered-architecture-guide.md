@@ -174,7 +174,7 @@ Vive en `docs/ARCHITECTURE.md` (plantilla: `assets/ARCHITECTURE.template.md`): g
 
 ### 3.2 Inferir el mapa cuando no existe
 
-Árbol → imposición del framework → rol vacío junto a piezas parecidas, sin niveles nuevos en la raíz → registrar y confirmar si es interactivo. Vacío y sin imposición: por módulo y capa, o solo por capa.
+Árbol → imposición del framework → rol vacío junto a piezas parecidas, sin niveles nuevos en la raíz → registrar y confirmar si es interactivo. Vacío y sin imposición: por módulo y capa, o solo por capa. Carpeta nueva: nombre habitual del stack; si no hay, el del rol.
 
 ### 3.3 Nombres
 
