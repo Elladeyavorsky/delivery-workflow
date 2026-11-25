@@ -15,7 +15,7 @@ Se para cuando falta un dato necesario para la spec o para identificar a los rev
 
 ## Avisos opcionales de PR en Discord
 
-Un proyecto puede activar los [workflows de aviso](docs/DISCORD-PR-NOTIFICATIONS.md) para sus PR, con `staging` como rama base por defecto. Están apagados: APM no los instala y los agentes no intervienen. Para activarlos, ejecuta `/setup-discord-notifications` ([qué hace](docs/DISCORD-PR-NOTIFICATIONS.md#activar-con-setup-discord-notifications)). En este repositorio el bot publica en Discord cuando la PR está fuera de draft, tiene al menos un revisor pedido y el check `review` ha pasado en ese commit. Muestra los logins de GitHub y menciona solo a quienes pueda verificar.
+Un proyecto puede activar los [workflows de aviso](docs/DISCORD-PR-NOTIFICATIONS.md) para sus PR, con `staging` como rama base por defecto. Están apagados: APM no los instala y los agentes no intervienen. Para activarlos, ejecuta `/setup-discord-notifications` ([qué hace](docs/DISCORD-PR-NOTIFICATIONS.md#activar-con-setup-discord-notifications)). En este repositorio el bot publica en Discord cuando la PR está fuera de draft, tiene al menos un revisor pedido y el check `check-rules` ha pasado en ese commit. Muestra los logins de GitHub y menciona solo a quienes pueda verificar.
 
 Si falta una mención, el autor de la PR o un miembro autorizado del repositorio puede escribir **en un comentario de esa PR**:
 

@@ -21,6 +21,11 @@ import {
   repoInfo,
   run,
 } from "../.apm/skills/setup-discord-notifications/scripts/setup-discord-notifications.mjs";
+import {
+  RELATION_LIFETIME_MS,
+  parseMappingComment,
+} from "../.apm/skills/setup-discord-notifications/assets/discord-pr-notifications/confirmed-relations.mjs";
+import { parseUserMap } from "../.apm/skills/setup-discord-notifications/assets/discord-pr-notifications/user-map.mjs";
 
 const SKILL = new URL("../.apm/skills/setup-discord-notifications/", import.meta.url);
 const read = (rel) => readFileSync(new URL(rel, SKILL), "utf8");
@@ -254,7 +259,7 @@ test("las plantillas de workflows conservan la superficie de seguridad", () => {
   for (const t of [trigger, confirm]) {
     assert.doesNotMatch(t, /secrets\.|environment:|DISCORD_/);
   }
-  assert.match(trigger, /branches: \[\{\{BASE_BRANCH\}\}\]/);
+  assert.match(trigger, /branches: \["\{\{BASE_BRANCH\}\}"\]/);
   assert.match(trigger, /draft/);
   assert.match(trigger, /discord-pr-number/);
   // Solo el emisor recibe el token y el entorno, y no pasa required-check.
@@ -368,10 +373,10 @@ test("apply en un proyecto limpio", async () => {
   }
   const publish = readFileSync(join(root, WF, "discord-pr-publish.yml"), "utf8");
   assert.match(publish, /expected-repository: acme\/app\n/);
-  assert.match(publish, /base-branch: staging\n/);
+  assert.match(publish, /base-branch: "staging"\n/);
   assert.match(publish, /minimum-reviewers: 1\n/);
   assert.match(publish, /github\.ref == 'refs\/heads\/main'/);
-  assert.match(readFileSync(join(root, WF, "discord-pr-trigger.yml"), "utf8"), /branches: \[staging\]/);
+  assert.match(readFileSync(join(root, WF, "discord-pr-trigger.yml"), "utf8"), /branches: \["staging"\]/);
   // La acción es la copia de assets, sin marca (el .mjs y el yml llevan la suya).
   assert.ok(readdirSync(join(root, ACT)).includes("action.yml"));
   // Estado final en GitHub.
@@ -430,7 +435,9 @@ test("un workflow editado se conserva", async () => {
   const editado = join(root, WF, "discord-pr-publish.yml");
   writeFileSync(editado, "# mío, sin marca\nname: x\n");
   const sinMarca = join(root, WF, "discord-pr-trigger.yml");
-  const roto = readFileSync(sinMarca, "utf8").replace("branches: [staging]", "branches: [dev]");
+  const original = readFileSync(sinMarca, "utf8");
+  const roto = original.replace('branches: ["staging"]', 'branches: ["dev"]');
+  assert.notEqual(roto, original, "la edición cambia el fichero");
   writeFileSync(sinMarca, roto);
   const r = await apply(root, g);
   const res = byPath(r);
@@ -455,6 +462,36 @@ test("apply actualiza un fichero propio cuando cambian los valores", async () =>
   assert.match(readFileSync(join(root, WF, "discord-pr-publish.yml"), "utf8"), /minimum-reviewers: 2\n/);
   assert.equal(r.baseBranch, "main");
   assert.equal(r.minimumReviewers, 2);
+});
+
+test("las plantillas escriben la rama base entre comillas", async () => {
+  // Cada marcador de la rama base va entre comillas.
+  const marcados = [];
+  for (const w of ["discord-pr-trigger.yml", "discord-pr-confirmation-trigger.yml", "discord-pr-publish.yml"]) {
+    for (const m of read(`assets/workflows/${w}`).matchAll(/(.?)\{\{BASE_BRANCH\}\}(.?)/g)) {
+      assert.deepEqual([m[1], m[2]], ['"', '"'], w);
+      marcados.push(w);
+    }
+  }
+  assert.deepEqual(marcados, ["discord-pr-trigger.yml", "discord-pr-publish.yml"]);
+  // La predeterminada no es un valor YAML suelto: va dentro de una expresión, en un bloque de texto.
+  const plantilla = read("assets/workflows/discord-pr-publish.yml");
+  assert.equal(plantilla.match(/\{\{DEFAULT_BRANCH\}\}/g).length, 1);
+  assert.match(plantilla, /\n    if: >-\n      github\.ref == 'refs\/heads\/\{\{DEFAULT_BRANCH\}\}' &&\n/);
+
+  // CB-19: nombres que YAML leería como número, booleano o nulo sin las comillas.
+  for (const base of ["3.10", "true", "null"]) {
+    const root = project({ env: defaultEnv });
+    const result = await apply(root, sim({ branches: ["main", base] }), ["--base", base]);
+    assert.strictEqual(result.baseBranch, base);
+    const trigger = readFileSync(join(root, WF, "discord-pr-trigger.yml"), "utf8");
+    const publish = readFileSync(join(root, WF, "discord-pr-publish.yml"), "utf8");
+    // Entre comillas dobles YAML lee texto; con los caracteres de una rama válida, igual que JSON.
+    assert.deepEqual(JSON.parse(trigger.match(/^    branches: (.+)$/m)[1]), [base], base);
+    assert.strictEqual(JSON.parse(publish.match(/^          base-branch: (.+)$/m)[1]), base, base);
+    assert.equal(fileState(trigger), "igual", base);
+    assert.equal(fileState(publish), "igual", base);
+  }
 });
 
 test("sin token para antes de escribir", async () => {
@@ -1326,4 +1363,104 @@ test("SKILL.md: un token perdido o mal copiado se regenera con Reset Token (CB-1
   assert.match(paso0(text), /se perdió/);
   assert.match(paso0(text), /el anterior deja de valer/);
   assert.match(text, /\*\*`token` con `fallo` \(HTTP 401\)\*\*[^\n]*Reset Token/);
+});
+
+// Escenarios 15 y 22: lo que el agente dice en los recordatorios finales.
+const pasos = (text) => flujo(text).split(/\n(?=\d+\. )/);
+const paso = (text, inicio) => {
+  const found = pasos(text).filter((p) => new RegExp(`^\\d+\\. ${inicio}`).test(p));
+  assert.equal(found.length, 1, `un solo paso «${inicio}»`);
+  return { texto: found[0], numero: Number(found[0].match(/^\d+/)[0]) };
+};
+
+test("SKILL.md: tras apply informa de DISCORD_USER_MAP y /discord-map", () => {
+  const text = skillMd();
+  const aviso = paso(text, "Informa en el chat sobre las menciones");
+  assert.ok(aviso.numero > paso(text, "Lanza `apply`").numero, "el aviso va después de apply");
+  assert.ok(aviso.numero > paso(text, "Recuerda que los workflows").numero, "va junto a los recordatorios finales");
+  const t = aviso.texto;
+  assert.match(t, /sin preguntar los valores de `DISCORD_USER_MAP` ni crear la variable/);
+
+  // Cuándo la mención sale sola y qué pasa si los nombres difieren.
+  assert.match(t, /nombre de usuario de Discord del revisor coincide con su login de GitHub/);
+  assert.match(t, /coincidencia exacta y única, sin distinguir mayúsculas/);
+  assert.match(t, /miembro del servidor/);
+  assert.match(t, /Si difieren, sin mapa ni `\/discord-map` el aviso sale sin mencionarlo \(«sin mención de Discord»\) y no es un fallo/);
+
+  // Mapa permanente: variable del entorno, forma, duración, precedencia y fallos.
+  assert.match(t, /variable `DISCORD_USER_MAP` del entorno `discord-pr-notifications`/);
+  assert.match(t, /Settings.*Environments/);
+  assert.match(t, /No caduca y prevalece sobre `\/discord-map` y la caché/);
+  const fallos = t.match(/Hacen fallar el aviso [^.]+\./)?.[0];
+  assert.ok(fallos, "enumera lo que hace fallar el aviso");
+  for (const fallo of [/JSON mal formado/, /login inválido,/, /login repetido con distinta capitalización/, /17 a 20 dígitos/, /revisor pedido que no esté en el servidor/]) assert.match(fallos, fallo);
+  assert.match(t, /Dos claves idénticas en el JSON no dan error: gana la última/);
+  const mapa = t.match(/`(\{"[^`]+\})`/)?.[1];
+  assert.ok(mapa, "trae un ejemplo del JSON");
+  const id = "123456789012345678";
+  assert.deepEqual([...parseUserMap(mapa.replace("ID_DE_DISCORD", id))], [["login-de-github", id]]);
+  assert.match(t, /cada ID entre comillas/);
+
+  // Comentario: forma, quién, para quién, duración y visibilidad, contrastados con la acción.
+  const comando = t.match(/`(\/discord-map LOGIN_GITHUB ID_DISCORD)`, sin más texto en el comentario/)?.[1];
+  assert.ok(comando, "trae la forma del comentario");
+  const body = comando.replace("LOGIN_GITHUB", "octocat").replace("ID_DISCORD", id);
+  const now = Date.now();
+  const pr = { user: { id: 1 } };
+  const comment = (extra) => ({ body, user: { id: 2 }, author_association: "NONE", updated_at: new Date(now).toISOString(), ...extra });
+  assert.match(t, /lo escribe el autor de la PR o alguien que GitHub marca como/);
+  assert.ok(parseMappingComment(comment({ user: { id: 1 } }), pr, "acme/app", now), "autor de la PR");
+  for (const association of ["OWNER", "MEMBER", "COLLABORATOR"]) {
+    assert.ok(t.includes(`\`${association}\``), association);
+    assert.ok(parseMappingComment(comment({ author_association: association }), pr, "acme/app", now), association);
+  }
+  assert.equal(parseMappingComment(comment({ author_association: "CONTRIBUTOR" }), pr, "acme/app", now), null);
+  assert.equal(parseMappingComment(comment({ user: { id: 1 }, body: `${body} gracias` }), pr, "acme/app", now), null);
+  assert.match(t, /para un revisor pedido y con el ID de un miembro del servidor/);
+  assert.match(t, new RegExp(`Dura ${RELATION_LIFETIME_MS / 3_600_000} horas desde que se publica o se edita`));
+  assert.match(t, /visible en la PR/);
+
+  // De dónde sale el ID.
+  assert.match(t, /modo desarrollador y «Copiar ID de usuario»/);
+  assert.match(t, /El token del bot, nunca/);
+
+  // La regla crítica se ajusta a D-08 y apunta al paso del aviso.
+  const regla = text.split("\n").find((line) => line.startsWith("- **`DISCORD_USER_MAP`"));
+  assert.ok(regla);
+  assert.match(regla, /se explica, no se pregunta ni se crea/);
+  assert.ok(regla.includes(`(paso ${aviso.numero})`), regla);
+  assert.ok(!/No preguntes por `DISCORD_USER_MAP`/.test(text));
+  // Antes del aviso, el flujo no pregunta por el mapa ni lo fija.
+  for (const p of pasos(text).slice(0, aviso.numero)) assert.ok(!p.includes("DISCORD_USER_MAP"), p);
+  assert.ok(!/variable set DISCORD_USER_MAP/.test(text));
+});
+
+test("apply no crea ni fija DISCORD_USER_MAP", async () => {
+  const g = sim();
+  await apply(project({ env: defaultEnv }), g);
+  assert.ok(g.writes().length > 0);
+  assert.ok(!g.calls.some((c) => c.args.includes("DISCORD_USER_MAP")));
+});
+
+test("SKILL.md: los workflows van también a una base distinta", async () => {
+  const text = skillMd();
+  const recordatorio = paso(text, "Recuerda que los workflows");
+  assert.ok(recordatorio.numero > paso(text, "Lanza `apply`").numero);
+  const t = recordatorio.texto;
+  assert.match(t, /solo actúan cuando están en la rama predeterminada/);
+  assert.match(t, /si la rama base no es la predeterminada.*la persona los lleve también a la base/);
+  assert.match(t, /El commit y el merge son de la persona/);
+  assert.match(t, /la skill no hace commit, push ni PR/);
+  // Los campos que el recordatorio manda comparar salen en la salida de apply.
+  const result = await apply(project({ env: defaultEnv }), sim({ branches: ["main", "release/1.0"] }), ["--base", "release/1.0"]);
+  for (const [field, value] of [["baseBranch", "release/1.0"], ["defaultBranch", "main"]]) {
+    assert.ok(t.includes(`\`${field}\``), field);
+    assert.equal(result[field], value, field);
+  }
+});
+
+test("SKILL.md: la referencia al paso de la prueba real apunta a ese paso", () => {
+  const text = skillMd();
+  const prueba = paso(text, "Resume la prueba");
+  assert.ok(text.includes(`la prueba real del aviso (paso ${prueba.numero})`));
 });

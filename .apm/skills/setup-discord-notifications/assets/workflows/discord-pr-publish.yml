@@ -39,6 +39,6 @@ jobs:
           channel-id: ${{ vars.DISCORD_GIT_CHANNEL_ID }}
           user-map: ${{ vars.DISCORD_USER_MAP }}
           expected-repository: {{REPOSITORY}}
-          base-branch: {{BASE_BRANCH}}
+          base-branch: "{{BASE_BRANCH}}"
           minimum-reviewers: {{MINIMUM_REVIEWERS}}
           trigger-run-id: ${{ github.event.workflow_run.id }}

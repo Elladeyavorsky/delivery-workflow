@@ -302,7 +302,7 @@ export async function detectAll({ root, gh, remote, env }) {
 
 // --- apply ---
 
-// El nombre de rama acaba en YAML sin comillas y en una URL: solo caracteres seguros.
+// El nombre de rama acaba en YAML entre comillas y en una URL: solo caracteres seguros, sin comillas ni «\».
 export function validateBranch(name, label = "La rama") {
   const ok =
     typeof name === "string" &&

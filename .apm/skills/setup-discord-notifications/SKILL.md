@@ -41,8 +41,13 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 6. Lanza `apply` con `--base`, `--guild-id`, `--channel-id` y `--minimum-reviewers`.
 7. Muestra la tabla final con el `result` de cada fichero, del entorno, de los secretos y de las variables, y los avisos. Si `apply` falló a mitad, di qué quedó hecho y propón repetirlo.
 8. Aconseja borrar `DISCORD_BOT_TOKEN` del `.env` ahora que está en el secreto del entorno. No lo borres tú.
-9. Recuerda que los workflows solo actúan cuando están en la rama predeterminada: el commit y el merge son de la persona, la skill no hace commit, push ni PR.
-10. Resume la prueba: abrir una PR fuera de draft, pedir un revisor y comprobar que el aviso aparece en Discord una sola vez.
+9. Recuerda que los workflows solo actúan cuando están en la rama predeterminada y que, si la rama base no es la predeterminada (`baseBranch` y `defaultBranch` en la salida de `apply`), la persona los lleve también a la base. El commit y el merge son de la persona: la skill no hace commit, push ni PR.
+10. Informa en el chat sobre las menciones, sin preguntar los valores de `DISCORD_USER_MAP` ni crear la variable:
+    - **Cuándo hace falta mapear:** la mención sale sin configurar nada si el nombre de usuario de Discord del revisor coincide con su login de GitHub (coincidencia exacta y única, sin distinguir mayúsculas) y es miembro del servidor. Si difieren, sin mapa ni `/discord-map` el aviso sale sin mencionarlo («sin mención de Discord») y no es un fallo.
+    - **Mapa permanente:** la variable `DISCORD_USER_MAP` del entorno `discord-pr-notifications` (en GitHub, «Settings», «Environments»), con un valor JSON como `{"login-de-github":"ID_DE_DISCORD"}` y cada ID entre comillas. No caduca y prevalece sobre `/discord-map` y la caché. Hacen fallar el aviso un JSON mal formado, un login inválido, un login repetido con distinta capitalización, un ID que no sea un texto de 17 a 20 dígitos y el ID de un revisor pedido que no esté en el servidor. Dos claves idénticas en el JSON no dan error: gana la última.
+    - **Comentario en la PR:** `/discord-map LOGIN_GITHUB ID_DISCORD`, sin más texto en el comentario. Cuenta si lo escribe el autor de la PR o alguien que GitHub marca como `OWNER`, `MEMBER` o `COLLABORATOR`, para un revisor pedido y con el ID de un miembro del servidor. Dura 48 horas desde que se publica o se edita y es visible en la PR.
+    - **El ID:** sale de Discord con el modo desarrollador y «Copiar ID de usuario». Los IDs no son secretos: van en la variable o en el comentario y pueden pasar por el chat. El token del bot, nunca.
+11. Resume la prueba: abrir una PR fuera de draft, pedir un revisor y comprobar que el aviso aparece en Discord una sola vez.
 
 #### Motivos de fallo de `verify`
 
@@ -54,7 +59,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 - **`fallo` por error de red**: no se pudo contactar con `discord.com` (o el token tiene caracteres no válidos para una cabecera). Revisa la conexión y que el valor de `DISCORD_BOT_TOKEN` no tenga espacios ni comillas; repite.
 - **Error de código 2**: falta `DISCORD_BOT_TOKEN` en el `.env`, o falta `--guild-id` o `--channel-id`, o no es numérico. No se llamó a Discord.
 
-`verify` no comprueba el permiso de publicar: si todo sale `correcto`, la prueba real del aviso (paso 10) confirma que el bot puede escribir en el canal.
+`verify` no comprueba el permiso de publicar: si todo sale `correcto`, la prueba real del aviso (paso 11) confirma que el bot puede escribir en el canal.
 
 Para quitar los avisos, lanza `reset`. Si hay entorno, secretos o variables pendientes, ofrece `--remove-environment`, explica que borra el entorno `discord-pr-notifications` con sus secretos y variables, y lánzalo solo si la persona lo confirma.
 
@@ -63,6 +68,6 @@ Para quitar los avisos, lanza `reset`. Si hay entorno, secretos o variables pend
 - **Tú hablas, el script no**: El script nunca pregunta. Las preguntas las haces tú y le pasas las respuestas como opciones.
 - **El token del bot no pasa por el chat**: La persona añade `DISCORD_BOT_TOKEN=…` a su `.env` ella misma. Si `.env` no está en `.gitignore`, avísalo antes de pedírselo. Discord no permite crear el bot por API: lo crea la persona en el Developer Portal y esta skill la guía en el paso 0. Los IDs (aplicación, servidor, canal) sí pueden ir por el chat; el token, nunca.
 - **`verify` solo con confirmación**: Llama a `discord.com`. Pide confirmación a la persona antes de lanzarlo. Es opcional: `apply` no depende de él.
-- **No preguntes por `DISCORD_USER_MAP`**: queda como opcional en `docs/DISCORD-PR-NOTIFICATIONS.md`.
+- **`DISCORD_USER_MAP` se explica, no se pregunta ni se crea**: tras `apply`, di cuándo hace falta mapear y cómo (paso 10). La variable es opcional y la define la persona.
 - **Los ficheros editados se conservan**: Un fichero sin marca o con el hash roto cuenta como editado y no se pisa; dilo.
 - **Procesamiento de respuestas**: El script escribe JSON. Si el código de salida no es 0, lee el error y comunícalo. Usa solo lo que devuelve el script.

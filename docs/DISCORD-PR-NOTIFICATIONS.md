@@ -6,9 +6,9 @@ La acción compuesta de `.github/actions/discord-pr-notifications/` verifica una
 
 Ninguna skill ni agente del paquete consulta Discord o condiciona una solicitud de revisión. Instalar el paquete mediante APM no instala estos workflows: cada repositorio opta por ellos con [`/setup-discord-notifications`](#activar-con-setup-discord-notifications) o, a mano, al añadir sus archivos de `.github/workflows/` y configurar el entorno protegido. `delivery-workflow` los incluye para sus propias PR; aTempo puede activar la misma acción desde un workflow fijado al SHA completo de un commit confiable del paquete.
 
-El administrador puede definir la variable opcional `DISCORD_USER_MAP` del entorno protegido con un objeto JSON como `{"login-github":"ID_DE_DISCORD"}`, sustituyendo el marcador por un ID numérico real. La acción lo recibe mediante el input `user-map`: comprueba el formato de todas las entradas y valida que el ID del revisor pertenezca al servidor antes de mencionarlo. Este mapa fijo no caduca y prevalece sobre los comentarios y la caché. Un JSON roto o un ID inválido hace fallar el aviso con un error claro.
+El administrador puede definir la variable opcional `DISCORD_USER_MAP` del entorno protegido con un objeto JSON como `{"login-github":"ID_DE_DISCORD"}`, sustituyendo el marcador por un ID numérico real. La acción lo recibe mediante el input `user-map`: comprueba el formato de todas las entradas y valida que el ID del revisor pertenezca al servidor antes de mencionarlo. Este mapa fijo no caduca y prevalece sobre los comentarios y la caché. Hacen fallar el aviso un JSON mal formado, un login inválido, un login repetido con distinta capitalización, un ID que no sea un texto de 17 a 20 dígitos y el ID de un revisor pedido que no esté en el servidor. Dos claves idénticas en el JSON no dan error: gana la última.
 
-Para los revisores ausentes del mapa, el emisor consulta la relación cifrada de 48 horas y luego busca una coincidencia exacta y única entre el login de GitHub y el nombre de usuario de Discord, sin distinguir mayúsculas. Si los nombres son distintos, el autor de la PR o un miembro autorizado puede escribir `/discord-map LOGIN_GITHUB ID_DISCORD` en un comentario de la PR, sustituyendo ambos valores por el login y el ID reales. El ID se obtiene desde Discord con el modo desarrollador y «Copiar ID de usuario». El emisor valida la autoría del comentario, que el login sea un revisor solicitado y que el ID pertenezca al servidor. El comentario es visible para quien pueda leer la PR y deja de utilizarse a las 48 horas, aunque permanece en su historial. No contiene tokens ni claves. Confirmar la relación es opcional: la PR y el aviso continúan sin esa mención.
+Para los revisores ausentes del mapa, el emisor consulta la relación cifrada de 48 horas y luego busca una coincidencia exacta y única entre el login de GitHub y el nombre de usuario de Discord, sin distinguir mayúsculas. Si los nombres son distintos, el autor de la PR o alguien que GitHub marca como `OWNER`, `MEMBER` o `COLLABORATOR` puede escribir `/discord-map LOGIN_GITHUB ID_DISCORD` en un comentario de la PR, sin más texto y sustituyendo ambos valores por el login y el ID reales. El ID se obtiene desde Discord con el modo desarrollador y «Copiar ID de usuario». El emisor valida la autoría del comentario, que el login sea un revisor solicitado y que el ID pertenezca al servidor. El comentario es visible para quien pueda leer la PR y deja de utilizarse a las 48 horas de publicarse o editarse, aunque permanece en su historial. No contiene tokens ni claves. Confirmar la relación es opcional: la PR y el aviso continúan sin esa mención.
 
 ## Activar con `/setup-discord-notifications`
 
@@ -41,7 +41,7 @@ Comprueba que el token vale, que el bot está en el servidor y que ve el canal y
 - `.github/workflows/discord-pr-trigger.yml`, `.github/workflows/discord-pr-confirmation-trigger.yml` y `.github/workflows/discord-pr-publish.yml`.
 - Los ficheros de la acción, en `.github/actions/discord-pr-notifications/`.
 
-La primera línea de cada fichero lleva una marca con el hash SHA-256 del resto. No hace commit, push ni PR: los workflows solo actúan cuando están en la rama predeterminada, así que el commit y el merge son tuyos.
+La primera línea de cada fichero lleva una marca con el hash SHA-256 del resto. `apply` no hace commit, push ni PR: el commit y el merge son tuyos. Los workflows solo actúan cuando están en la rama predeterminada; si la rama base no es la predeterminada, llévalos también a la base.
 
 ### Qué crea en GitHub
 
@@ -50,7 +50,9 @@ Con `gh`, `apply` crea el entorno protegido `discord-pr-notifications`, limitado
 - Secretos: `DISCORD_BOT_TOKEN`, que toma del `.env`, y `DISCORD_CACHE_KEY`, una clave aleatoria de 32 bytes en base64 que no se rota si ya existe.
 - Variables: `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`.
 
-Los valores de los secretos van a `gh` por la entrada estándar y no se imprimen. Cuando `DISCORD_BOT_TOKEN` ya está en el entorno, el `.env` puede no traerlo. `--guild-id` y `--channel-id` pueden omitirse si la variable ya existe. Con el token fijado, borra `DISCORD_BOT_TOKEN` del `.env`. `DISCORD_USER_MAP` queda como variable opcional: la skill no la pregunta ni la crea.
+Los valores de los secretos van a `gh` por la entrada estándar y no se imprimen. Cuando `DISCORD_BOT_TOKEN` ya está en el entorno, el `.env` puede no traerlo. `--guild-id` y `--channel-id` pueden omitirse si la variable ya existe. Con el token fijado, borra `DISCORD_BOT_TOKEN` del `.env`.
+
+`DISCORD_USER_MAP` es una variable opcional: la skill no pregunta sus valores ni la crea. Después de `apply`, te informa en el chat sobre las menciones. La mención sale sin configurar nada si el nombre de usuario de Discord del revisor coincide con su login de GitHub (coincidencia exacta y única, sin distinguir mayúsculas) y es miembro del servidor. Hace falta mapear cuando los nombres difieren: sin mapa ni `/discord-map`, el aviso sale sin mencionar a esa persona («sin mención de Discord») y no es un fallo. [Activación optativa y nombres distintos](#activación-optativa-y-nombres-distintos) describe las dos formas de mapear, la variable (permanente) y el comentario `/discord-map` (48 horas). Los IDs de Discord no son secretos y pueden pasar por el chat; el token del bot, nunca.
 
 ### Actualizar y conservar lo editado
 
@@ -73,7 +75,7 @@ Si el plan de GitHub no admite entornos protegidos, `gh` responde 404 o 403 al c
 1. Copia de la carpeta `assets/` de la skill (`workflows/` y `discord-pr-notifications/`) los tres workflows a `.github/workflows/` y los ficheros de la acción a `.github/actions/discord-pr-notifications/`. Sustituye los marcadores `{{REPOSITORY}}` (`owner/repo`), `{{BASE_BRANCH}}`, `{{DEFAULT_BRANCH}}` y `{{MINIMUM_REVIEWERS}}`. Un fichero copiado sin la marca de la skill cuenta como editado: un `apply` posterior no lo pisa.
 2. En Settings, Environments, crea `discord-pr-notifications`. En Deployment branches and tags, elige «Selected branches and tags» y añade la rama predeterminada.
 3. En ese entorno, añade los secretos `DISCORD_BOT_TOKEN` y `DISCORD_CACHE_KEY` (por ejemplo, `openssl rand -base64 32`) y las variables `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`.
-4. Haz commit y merge a la rama predeterminada.
+4. Haz commit y merge a la rama predeterminada. Si la rama base no es la predeterminada, lleva los workflows también a la base.
 
 ### Mantener la copia de `assets/`
 
@@ -99,7 +101,24 @@ La línea solo contiene el número de PR, el login de GitHub y el motivo: no inc
 
 Este repositorio publica desde el workflow `PR: check rules` cuando su job termina en verde, y desde `Discord: capture confirmation` para `/discord-map`. El emisor `workflow_run` vive en la rama predeterminada `staging`. En ese modo se pasa `trigger-run-id`; la acción descarga únicamente el número de PR, comprueba la ejecución y vuelve a consultar la PR antes de acceder a Discord. Una PR cerrada, en borrador, con otra base, sin el mínimo de revisores o sin el check `required-check` en verde sobre el SHA actual se omite sin fallar el emisor. Si falta el artefacto, tampoco publica. Este repositorio pasa `minimum-reviewers: 1` y `required-check: check-rules`.
 
+Con `trigger-run-id`, la ejecución tiene que haber terminado en `success`, ser del repositorio esperado y venir de uno de estos disparadores:
+
+- **PR:** evento `pull_request` de un workflow llamado `Discord: capture PR` (el que copia la skill), `PR: check rules` (el de este repositorio) o `review`.
+- **Comentario `/discord-map`:** evento `issue_comment` del workflow `Discord: capture confirmation`, con `head_repository` igual al repositorio esperado. Su `head_branch` tiene que ser la rama predeterminada (`repository.default_branch` del evento), aunque la rama base sea otra. Si el evento no trae ese campo como texto no vacío, la ejecución se rechaza.
+
+Cualquier otra ejecución falla con «The completed run does not belong to this repository and trigger.».
+
 En un repositorio cuya rama predeterminada sea `main`, como aTempo, un workflow de `main` puede usar `pull_request_target` para PR dirigidas a `staging` e `issue_comment` para `/discord-map`. En este modo pasa `pr-number` y `trusted-branch: main`, sin `trigger-run-id`. La acción comprueba el tipo de evento, el repositorio, la rama predeterminada, el número y la base de la PR consultada en GitHub. El workflow privilegiado **no descarga ni ejecuta código de la PR**: invoca solo la acción fijada a un SHA completo del paquete. Así el entorno protegido puede seguir limitado a `main` y basta con incorporar ese workflow a la rama predeterminada.
+
+En los dos modos, `base-branch` admite `/` (por ejemplo, `release/1.0`) y se compara como texto con la base de la PR. Los verificadores de los dos modos y el emisor `notify.mjs` fallan con un error de configuración incompleta, sin consultar la PR ni llamar a Discord, si el nombre:
+
+- falta o está vacío;
+- tiene un carácter distinto de letras ASCII, dígitos, `_`, `.`, `-` y `/`;
+- empieza por `/`, `.` o `-`;
+- contiene `..` o `//`;
+- acaba en `/`, `.` o `.lock`.
+
+`trusted-branch` no admite `/`.
 
 ## Avisos de este repositorio
 

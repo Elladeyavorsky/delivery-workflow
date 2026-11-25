@@ -2,7 +2,7 @@ name: "Discord: capture PR"
 
 on:
   pull_request:
-    branches: [{{BASE_BRANCH}}]
+    branches: ["{{BASE_BRANCH}}"]
     types: [opened, synchronize, reopened, ready_for_review, review_requested]
 
 permissions: {}
