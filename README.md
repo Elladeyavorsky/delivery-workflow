@@ -15,7 +15,7 @@ Se para cuando falta un dato necesario para la spec o para identificar a los rev
 
 ## Avisos opcionales de PR en Discord
 
-Un proyecto puede activar los [workflows de aviso](docs/DISCORD-PR-NOTIFICATIONS.md) para sus PR hacia `staging`. APM no los instala y los agentes no intervienen. En este repositorio el bot publica en Discord cuando la PR está fuera de draft, tiene al menos un revisor pedido y el check `review` ha pasado en ese commit. Muestra los logins de GitHub y menciona solo a quienes pueda verificar.
+Un proyecto puede activar los [workflows de aviso](docs/DISCORD-PR-NOTIFICATIONS.md) para sus PR, con `staging` como rama base por defecto. Están apagados: APM no los instala y los agentes no intervienen. Para activarlos, ejecuta `/setup-discord-notifications` ([qué hace](docs/DISCORD-PR-NOTIFICATIONS.md#activar-con-setup-discord-notifications)). En este repositorio el bot publica en Discord cuando la PR está fuera de draft, tiene al menos un revisor pedido y el check `review` ha pasado en ese commit. Muestra los logins de GitHub y menciona solo a quienes pueda verificar.
 
 Si falta una mención, el autor de la PR o un miembro autorizado del repositorio puede escribir **en un comentario de esa PR**:
 
@@ -73,6 +73,8 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
 6. (Opcional) Configura el canal de documentación: Context7 con `/setup-context7` o el RAG local con `/setup-docs-rag`, según se describe en [Documentación de las dependencias](#documentación-de-las-dependencias).
 
 7. (Opcional) Genera la documentación de compliance del proyecto con `/setup-compliance`, según se describe en [Documentación de compliance](#documentación-de-compliance).
+
+8. (Opcional) Activa los avisos de revisión de PR en Discord con `/setup-discord-notifications`, según se describe en [Activar con `/setup-discord-notifications`](docs/DISCORD-PR-NOTIFICATIONS.md#activar-con-setup-discord-notifications).
 
 ## Documentación de las dependencias
 

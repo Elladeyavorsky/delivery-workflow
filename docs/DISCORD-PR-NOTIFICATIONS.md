@@ -4,11 +4,64 @@ La acción compuesta de `.github/actions/discord-pr-notifications/` verifica una
 
 ## Activación optativa y nombres distintos
 
-Ninguna skill ni agente del paquete consulta Discord o condiciona una solicitud de revisión. Instalar el paquete mediante APM no instala estos workflows: cada repositorio opta por ellos al añadir sus archivos de `.github/workflows/` y configurar el entorno protegido. `delivery-workflow` los incluye para sus propias PR; aTempo puede activar la misma acción desde un workflow fijado al SHA completo de un commit confiable del paquete.
+Ninguna skill ni agente del paquete consulta Discord o condiciona una solicitud de revisión. Instalar el paquete mediante APM no instala estos workflows: cada repositorio opta por ellos con [`/setup-discord-notifications`](#activar-con-setup-discord-notifications) o, a mano, al añadir sus archivos de `.github/workflows/` y configurar el entorno protegido. `delivery-workflow` los incluye para sus propias PR; aTempo puede activar la misma acción desde un workflow fijado al SHA completo de un commit confiable del paquete.
 
 El administrador puede definir la variable opcional `DISCORD_USER_MAP` del entorno protegido con un objeto JSON como `{"login-github":"ID_DE_DISCORD"}`, sustituyendo el marcador por un ID numérico real. La acción lo recibe mediante el input `user-map`: comprueba el formato de todas las entradas y valida que el ID del revisor pertenezca al servidor antes de mencionarlo. Este mapa fijo no caduca y prevalece sobre los comentarios y la caché. Un JSON roto o un ID inválido hace fallar el aviso con un error claro.
 
 Para los revisores ausentes del mapa, el emisor consulta la relación cifrada de 48 horas y luego busca una coincidencia exacta y única entre el login de GitHub y el nombre de usuario de Discord, sin distinguir mayúsculas. Si los nombres son distintos, el autor de la PR o un miembro autorizado puede escribir `/discord-map LOGIN_GITHUB ID_DISCORD` en un comentario de la PR, sustituyendo ambos valores por el login y el ID reales. El ID se obtiene desde Discord con el modo desarrollador y «Copiar ID de usuario». El emisor valida la autoría del comentario, que el login sea un revisor solicitado y que el ID pertenezca al servidor. El comentario es visible para quien pueda leer la PR y deja de utilizarse a las 48 horas, aunque permanece en su historial. No contiene tokens ni claves. Confirmar la relación es opcional: la PR y el aviso continúan sin esa mención.
+
+## Activar con `/setup-discord-notifications`
+
+La skill `setup-discord-notifications` activa los avisos en un proyecto. Sin ella, `apm install` no añade nada de Discord. Los workflows son de GitHub Actions: un remoto que no sea de GitHub queda fuera. Requiere Node 20+, `gh` y un `GITHUB_TOKEN` en el `.env` con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`. En Codex, la skill se llama con `$` en vez de `/`.
+
+Antes de lanzarla, crea el bot en el Developer Portal de Discord, invítalo al servidor y copia su token. Discord no permite crear el bot por API. Añade `DISCORD_BOT_TOKEN=…` al `.env` tú mismo, sin pegarlo en el chat, y comprueba que `.env` está en `.gitignore`. Necesitas también el ID del servidor y el del canal de avisos.
+
+La skill muestra el estado del repositorio (`detect`), pregunta la rama base de las PR, el ID del servidor y el del canal, y lanza `apply`. Por defecto la rama base es `staging` si existe en el remoto y, si no, la rama predeterminada. `--minimum-reviewers` fija los revisores mínimos que escribe en el workflow de emisión: 1 por defecto.
+
+### Qué copia
+
+`apply` escribe estos ficheros en el proyecto, con la rama base, la rama predeterminada, el repositorio y los revisores mínimos ya rellenados:
+
+- `.github/workflows/discord-pr-trigger.yml`, `.github/workflows/discord-pr-confirmation-trigger.yml` y `.github/workflows/discord-pr-publish.yml`.
+- Los ficheros de la acción, en `.github/actions/discord-pr-notifications/`.
+
+La primera línea de cada fichero lleva una marca con el hash SHA-256 del resto. No hace commit, push ni PR: los workflows solo actúan cuando están en la rama predeterminada, así que el commit y el merge son tuyos.
+
+### Qué crea en GitHub
+
+Con `gh`, `apply` crea el entorno protegido `discord-pr-notifications`, limitado a la rama predeterminada, y fija en él:
+
+- Secretos: `DISCORD_BOT_TOKEN`, que toma del `.env`, y `DISCORD_CACHE_KEY`, una clave aleatoria de 32 bytes en base64 que no se rota si ya existe.
+- Variables: `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`.
+
+Los valores de los secretos van a `gh` por la entrada estándar y no se imprimen. Cuando `DISCORD_BOT_TOKEN` ya está en el entorno, el `.env` puede no traerlo. `--guild-id` y `--channel-id` pueden omitirse si la variable ya existe. Con el token fijado, borra `DISCORD_BOT_TOKEN` del `.env`. `DISCORD_USER_MAP` queda como variable opcional: la skill no la pregunta ni la crea.
+
+### Actualizar y conservar lo editado
+
+`apply` da un resultado por fichero, entorno, secreto y variable: `creado`, `igual`, `actualizado` o `conservado`. Repetirlo es seguro y termina el trabajo si `gh` falló a mitad: el error lista qué quedó hecho y qué no.
+
+- Un fichero con la marca y el hash intacto se actualiza si la plantilla cambió.
+- Un fichero sin marca, o con el hash roto, cuenta como editado: se conserva y `apply` lo avisa.
+- Una variable que ya tiene ese valor queda `igual`; si cambia, `actualizado`.
+
+### Quitar los avisos
+
+`reset` quita los ficheros de Discord con la marca y el hash intactos. Los editados o sin marca se conservan con un aviso. El entorno, sus secretos y sus variables solo se borran con `--remove-environment`, y la skill lo lanza solo si lo confirmas. Sin esa opción, `reset` los lista como pendientes. Con `--remove-environment` hace falta `GITHUB_TOKEN` en el `.env`, y si `gh` no responde, no quita nada. `reset` no hace commit.
+
+### Pasos manuales
+
+Si `gh` no responde con el token del proyecto, la skill lo dice y para sin escribir nada. Un `403` significa que el token del `.env` no tiene permiso de administración sobre el repositorio; el mensaje es «El GITHUB_TOKEN del .env no tiene permiso de administración sobre OWNER/REPO (gh respondió 403)». Da ese permiso al token y repite, o sigue estos pasos con una cuenta administradora.
+
+Si el plan de GitHub no admite entornos protegidos, `gh` responde 404 o 403 al crear el entorno. `apply` para con código 5 sin fijar nada y no usa secretos de repositorio: los avisos necesitan el entorno protegido. Pasa el repositorio a un plan que lo admita o no actives los avisos.
+
+1. Copia de la carpeta `assets/` de la skill (`workflows/` y `discord-pr-notifications/`) los tres workflows a `.github/workflows/` y los ficheros de la acción a `.github/actions/discord-pr-notifications/`. Sustituye los marcadores `{{REPOSITORY}}` (`owner/repo`), `{{BASE_BRANCH}}`, `{{DEFAULT_BRANCH}}` y `{{MINIMUM_REVIEWERS}}`. Un fichero copiado sin la marca de la skill cuenta como editado: un `apply` posterior no lo pisa.
+2. En Settings, Environments, crea `discord-pr-notifications`. En Deployment branches and tags, elige «Selected branches and tags» y añade la rama predeterminada.
+3. En ese entorno, añade los secretos `DISCORD_BOT_TOKEN` y `DISCORD_CACHE_KEY` (por ejemplo, `openssl rand -base64 32`) y las variables `DISCORD_GUILD_ID` y `DISCORD_GIT_CHANNEL_ID`.
+4. Haz commit y merge a la rama predeterminada.
+
+### Mantener la copia de `assets/`
+
+La acción de `.apm/skills/setup-discord-notifications/assets/discord-pr-notifications/` es una copia de `.github/actions/discord-pr-notifications/` y debe mantenerse idéntica. Al cambiar una, cambia la otra. Los workflows de este repositorio en `.github/workflows/` no los gestiona la skill y siguen como están.
 
 ## Log de menciones fallidas
 
