@@ -71,7 +71,7 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    | Node 24 | `/delivery-workflow` «Crea la issue y hazla: enviar el nombre y el correo de cada usuario a un chatbot alojado fuera del EEE» | `concept-developer` devuelve una consulta legal sobre transferencias internacionales (RGPD 44 a 49). El orquestador llama a `legal-advisor` antes de la ronda 1. La issue recibe un comentario `## Consultas legales` con la respuesta, los artículos y el CELEX `32016R0679` con la fecha. La spec recoge el requisito con `(CL-NN; RGPD …)`. |
    | Node 20 | La misma tarea, en otro repositorio desechable o en una issue nueva | El comentario de `legal-advisor` dice que no usó EUR-Lex, o la consulta queda como hueco y el orquestador te la pregunta. |
 
-   Para probar el sandbox, que el repositorio configura en `.claude/settings.json` (`sandbox.network.allowedDomains`) y en `.cursor/sandbox.json` (`networkPolicy.allow`) con `api.github.com` y `github.com`, abre una sesión nueva con el sandbox activo. El repositorio no activa el sandbox; en Claude Code, actívalo con `/sandbox`. Según la [documentación de Cursor](https://cursor.com/docs/reference/sandbox), `.cursor/sandbox.json` lleva en `networkPolicy.allow` los dominios permitidos, y el `allow` del proyecto se une con el de usuario. En Cursor, las dos comprobaciones de abajo son la prueba de que el sandbox actúa: si `curl -sS -m 10 https://example.com` pasa, el sandbox no está actuando; el escenario 5 de la spec falla y anotas la herramienta y la versión en la issue. Codex no está cubierto. Después, en cada herramienta:
+   Para probar el sandbox, que el repositorio configura en `.claude/settings.json` (`sandbox.network.allowedDomains`) y en `.cursor/sandbox.json` (`networkPolicy.allow`) con `api.github.com` y `github.com`, abre una sesión nueva con el sandbox activo. El repositorio no activa el sandbox; en Claude Code, actívalo con `/sandbox`. Según la [documentación de Cursor](https://cursor.com/docs/reference/sandbox), `.cursor/sandbox.json` lleva en `networkPolicy.allow` los dominios permitidos, y el `allow` del proyecto se une con el de usuario. En Cursor, las dos comprobaciones de abajo son la prueba de que el sandbox actúa: si `curl -sS -m 10 https://example.com` pasa, el sandbox no está actuando; el escenario 5 de la spec falla y anotas la herramienta y la versión en la issue. Para Codex, la comparación está debajo de la tabla. Después, en cada herramienta:
 
    | Con | Escribe | Tiene que pasar |
    |---|---|---|
@@ -79,6 +79,32 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    | Claude Code, sandbox activo | `curl -sS -m 10 https://example.com` | El sandbox bloquea la conexión. |
    | Cursor, sandbox activo | `bash .claude/skills/check-status/scripts/check-status.sh` | `GitHub CLI` dice `cuenta TU_LOGIN`: HTTPS pasa con `networkPolicy.allow`. |
    | Cursor, sandbox activo | `curl -sS -m 10 https://example.com` | El sandbox bloquea la conexión. Si pasa, el sandbox no está actuando: el escenario 5 falla y anotas la herramienta y la versión en la issue. |
+
+   Para Codex, `.codex/config.toml` define el perfil `github-net` con `default_permissions`. Según la [documentación de permisos de Codex](https://learn.chatgpt.com/docs/permissions.md), un perfil puede extender otro con `extends`, y si `sandbox_mode` aparece en una configuración cargada, Codex usa los ajustes antiguos en vez del perfil. La documentación no dice qué lee `:workspace` ni si equivale a `workspace-write`: la comparación lo comprueba. Haz la prueba con el proyecto marcado como de confianza, en dos sesiones nuevas de Codex con las mismas nueve pruebas:
+
+   - **Sin perfil:** quita `default_permissions` de `.codex/config.toml` o abre Codex con otro `CODEX_HOME`. Los scripts de apoyo que uses van fuera del repositorio.
+   - **Con perfil:** el `.codex/config.toml` del repositorio tal cual.
+
+   | Prueba | Escribe | Tiene que pasar |
+   |---|---|---|
+   | 1. Crear en el repo | `touch prueba-sandbox.txt` | Mismo código de salida con y sin perfil. Borra el fichero después. |
+   | 2. Escribir fuera del repo | `touch ../prueba-sandbox.txt` | Mismo código de salida con y sin perfil. |
+   | 3. Leer la config personal | `cat ~/.codex/config.toml` | Mismo código de salida con y sin perfil. |
+   | 4. Listar el directorio personal | `ls ~` | Mismo código de salida con y sin perfil. |
+   | 5. `gh` en el `PATH` | `echo $PATH` y `command -v gh` | `gh` aparece en el `PATH` con perfil. Si sin perfil aparece y con perfil no, falla. |
+   | 6. GitHub responde | `curl -sS -m 10 https://api.github.com/zen` | Con perfil, responde con una frase. |
+   | 7. Dominio fuera de la lista | `curl -sS -m 10 https://example.com` | Con perfil, el sandbox bloquea la conexión. |
+   | 8. Sesión de `gh` | `gh auth status` | Con perfil, `gh` llega a GitHub y no falla por la red. |
+   | 9. `check-status` | `bash .claude/skills/check-status/scripts/check-status.sh` | Con perfil, la línea `GitHub CLI` dice `cuenta TU_LOGIN`. |
+
+   La prueba pasa si las pruebas 1 a 4 dan los mismos códigos en las dos sesiones, `gh` está en el `PATH` (prueba 5), GitHub responde (pruebas 6, 8 y 9) y `example.com` queda bloqueado (prueba 7). Una diferencia en ficheros o en el `PATH` hace fallar el escenario 7 de la spec. Si al arrancar con el perfil aparece «default_permissions requires a [permissions] table», Codex ignora el perfil y el escenario 7 también falla.
+
+   Repite la comparación en dos casos más:
+
+   - **`sandbox_mode` personal:** añade `sandbox_mode = "workspace-write"` a tu `~/.codex/config.toml`, repite las nueve pruebas con perfil y anota si el perfil sigue aplicándose (`api.github.com` responde y `example.com` queda bloqueado). Si Codex ignora `default_permissions` por `sandbox_mode`, el escenario 7 falla (CB-04). Quita la línea al terminar.
+   - **Proyecto sin confianza:** deja el proyecto sin marcar como de confianza y abre Codex. Codex ignora `.codex/config.toml` y avisa; es el comportamiento esperado, no un fallo del perfil (CB-05).
+
+   Si algo falla, anota en la issue la herramienta, su versión (`codex --version`), la prueba y el mensaje de error.
 
    Si una herramienta no se puede probar, anótalo en la issue y no lo des por probado.
 
