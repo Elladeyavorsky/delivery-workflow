@@ -37,6 +37,8 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_ASSIGNEE: ${{ github.event.pull_request.assignee != null && github.event.pull_request.assignee.login || '' }}
+          # En un fork nadie sin permiso de escritura puede asignar: la regla de la persona asignada no aplica
+          PR_FROM_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         run: node .github/scripts/review-pull-request.mjs
       # El emisor de Discord solo ve este número si la comprobación ha pasado y la base es staging.
       - name: Save PR number for Discord
