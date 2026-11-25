@@ -33,14 +33,14 @@ Con varias partes se decide por parte, con el mismo catálogo de `kind` y `code`
 | Capa | Qué hace |
 | --- | --- |
 | Dominio | Crea los errores con la fábrica. No los captura ni los traduce. |
-| Aplicación | Usa los mismos códigos (`session.missing` si no hay ficha). Deja subir el resto. |
+| Aplicación | Usa los mismos códigos (`session.missing` si no encuentra nada). Deja subir el resto. |
 | Infraestructura | Traduce los fallos del almacén con significado de negocio a los mismos códigos y conserva la causa. Sin mapeo: error técnico (R-INF-03). |
 | Presentación | Decide qué hacer con cada error según `kind` y `code`. La forma la define el proyecto. |
 
 ## Reglas
 
 - **R-ERR-02 (CONV)** El `code` DEBE tener la forma `etiqueta.razón`, salir del catálogo y ser estable. El texto de `message` puede cambiar en el catálogo; cambiar un `code` publicado es un cambio incompatible.
-- **R-ERR-07 (CONV)** NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `not_found`.
+- **R-ERR-07 (CONV)** NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `NOT_FOUND`.
 - **R-ERR-11 (CONV)** Las decisiones y los textos que ve el usuario final DEBEN basarse en `kind` y `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
 - **R-ERR-17 (DEF)** Un fallo de negocio DEBE crearse con la única fábrica del proyecto, que recibe etiqueta y razón y consulta el catálogo. NO DEBE escribirse el mensaje en el punto de fallo ni crearse un error ad hoc. Con excepciones PUEDE haber un atajo que construye y lanza, siempre a través de la fábrica.
 

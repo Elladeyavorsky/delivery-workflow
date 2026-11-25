@@ -6,7 +6,7 @@ Núcleo funcional, cáscara imperativa: reglas, cálculos, validaciones y *mappe
 
 Son efectos secundarios: E/S, leer el reloj, generar valores aleatorios o identificadores, estado global mutable y leer variables de entorno.
 
-Presentación: controladores inyectados, esquemas, efectos de protocolo. Aplicación: caso de uso con dependencias, `Result`, efectos solo por puertos. Dominio: entidades y value objects, sin efectos. Infraestructura: adaptadores y *mappers*. Shared: `DomainError`, `Result`, utilidades puras.
+Presentación: controladores inyectados, esquemas, efectos de protocolo. Aplicación: caso de uso con dependencias, `Result`, efectos solo por puertos. Dominio: entidades, value objects y errores, sin efectos. Infraestructura: adaptadores y *mappers*. Shared: `Result`, utilidades puras.
 
 Equivalencias: dato inmutable = `Readonly<T>` / `@dataclass(frozen=True)` / `record` / `data class` con `val` / `struct`. Puerto = `interface` / `Protocol`. `Result` = unión discriminada / `sealed class` / `(T, error)` / `{:ok, v} | {:error, e}`. Sin clases: el caso de uso es una fábrica que recibe dependencias y devuelve `execute`.
 

@@ -270,9 +270,9 @@ Dominio crea con la fábrica y no captura. Aplicación usa los mismos códigos (
 - **R-ERR-01 (INV)** — Todo fallo de negocio DEBE ser un error de dominio tomado del catálogo, con una categoría (`kind`) de un conjunto cerrado y un código (`code`) estable.
 - **R-ERR-02 (CONV)** — El `code` DEBE tener la forma `etiqueta.razón`, salir del catálogo y ser estable. El texto de `message` puede cambiar en el catálogo; cambiar un `code` publicado es un cambio incompatible.
 - **R-ERR-03 (INV)** — Cuando se crea un error a partir de otro, DEBE conservarse el original en `cause`.
-- **R-ERR-04 (INV)** — `details` NO DEBE contener secretos, contraseñas, *tokens* ni datos personales sensibles.
+- **R-ERR-04 (INV)** — Los datos de un error (`message` y cualquier campo extra) NO DEBEN contener secretos, contraseñas, *tokens* ni datos personales sensibles.
 - **R-ERR-05 (INV)** — El proyecto DEBE usar una única forma de entregar los errores de dominio en todos sus módulos y declararla en `docs/ARCHITECTURE.md`. Si no hay nada decidido, DEBE usar el mecanismo natural del lenguaje: excepciones donde son lo habitual y valores de error donde lo son.
-- **R-ERR-07 (CONV)** — NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `not_found`.
+- **R-ERR-07 (CONV)** — NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `NOT_FOUND`.
 - **R-ERR-09 (INV)** — NO DEBE haber bloques `catch` vacíos ni bloques que lo capturen todo sin traducir ni relanzar.
 - **R-ERR-10 (INV)** — El dominio NO DEBE conocer códigos HTTP, códigos de salida ni textos de interfaz.
 - **R-ERR-11 (CONV)** — Las decisiones y los textos que ve el usuario final DEBEN basarse en `kind` y `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
