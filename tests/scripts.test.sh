@@ -422,6 +422,37 @@ check "la plantilla tiene Herramienta, Comando y R-EST-06 (DEF)" bash -c "grep -
 check "layered-architecture-guideline no trae scripts ni .cjs de un stack" bash -c "! test -e '${lag}/scripts/check-boundaries.sh' && ! test -e '${lag}/assets/boundaries.typescript.cjs'"
 check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE '\\b(rust|nest|php|ruby|spring|django|fastapi|golang|kotlin|python|typescript|javascript)\\b|node\\.js|\\bnpm\\b|dependency-cruiser|depcruise|import-linter|archunit|c#' '${lag}/SKILL.md'"
 check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!tests/scripts.test.sh'"
+check "la guía condensada define las mismas reglas y etiquetas que la skill" node -e '
+  const fs = require("fs");
+  const path = require("path");
+  const dir = process.argv[1];
+  const re = /\*\*(R-[A-Z]{3}-\d{2}) \((INV|DEF|CONV)\)\*\*/g;
+  const collect = (files) => {
+    const found = new Map();
+    const repeated = [];
+    for (const file of files) {
+      for (const [, id, tag] of fs.readFileSync(file, "utf8").matchAll(re)) {
+        if (found.has(id)) repeated.push(id);
+        else found.set(id, tag);
+      }
+    }
+    return { found, repeated };
+  };
+  const refs = fs.readdirSync(path.join(dir, "references")).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(dir, "references", f));
+  const skill = collect([path.join(dir, "SKILL.md"), ...refs, path.join(dir, "assets", "ARCHITECTURE.template.md")]);
+  const guide = collect([path.join(dir, "assets", "layered-architecture-guide.md")]);
+  const problems = [];
+  const count = (tag) => [...skill.found.values()].filter((t) => t === tag).length;
+  if (count("INV") !== 39 || count("DEF") !== 25 || count("CONV") !== 28) problems.push(`cuentas ${count("INV")}/${count("DEF")}/${count("CONV")} (esperado 39/25/28)`);
+  if (skill.repeated.length) problems.push(`definidas dos veces en la skill: ${skill.repeated.join(", ")}`);
+  if (guide.repeated.length) problems.push(`definidas dos veces en la guía: ${guide.repeated.join(", ")}`);
+  for (const [id, tag] of skill.found) if (guide.found.get(id) !== tag) problems.push(`${id}: skill ${tag}, guía ${guide.found.get(id) ?? "ausente"}`);
+  for (const id of guide.found.keys()) if (!skill.found.has(id)) problems.push(`${id}: solo en la guía`);
+  if (problems.length) {
+    console.error(problems.join("\n"));
+    process.exit(1);
+  }
+' "$lag"
 check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
 
 echo
