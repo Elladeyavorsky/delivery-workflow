@@ -94,8 +94,6 @@ Todo funciona ya por defecto al instalar el paquete con APM. Llama al orquestado
 
 La prosa de issues, spec, pull requests y documentación del ciclo sigue la skill `say-it-straight` (español declarativo); los commits siguen en inglés con `commit-changes`.
 
-La protección de datos tiene su guía, orientativa: no certifica cumplimiento. Ver [docs/DATA-PROTECTION.md](docs/DATA-PROTECTION.md).
-
 ### Permisos
 
 La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, tu agente pide permiso. En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, solo en proyectos en los que confíes:
@@ -109,7 +107,8 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, tu agente pide p
 Tras instalar, estos pasos mejoran el resultado. Ninguno es necesario para que el flujo funcione.
 
 - **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. Repite el comando tras `apm install` y `apm update`. Ver [docs/MODELS.md](docs/MODELS.md).
-- **Documentación de las dependencias:** `/setup-context7` o `/setup-docs-rag`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas. Ver [docs/DEPENDENCY-DOCS.md](docs/DEPENDENCY-DOCS.md).
+- **Context7:** `/setup-context7`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas, sin instalar nada. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
+- **RAG local:** `/setup-docs-rag`, para lo mismo sin que tus consultas salgan de tu ordenador; necesita Docker, Ollama y `uv`. Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
 - **Docker:** la skill `docker-best-practices`, para que el `Dockerfile` y el `docker-compose.yml` fijen versiones y se comprueben antes de la pull request. Ver [docs/DOCKER.md](docs/DOCKER.md).
 - **Compliance:** `/setup-compliance`, para tener los documentos del AI Act y el RGPD del proyecto. Ver [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
