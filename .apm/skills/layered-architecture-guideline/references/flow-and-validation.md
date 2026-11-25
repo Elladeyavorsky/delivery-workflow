@@ -24,7 +24,7 @@ Fronteras: exterior→presentación, carga / DTO de petición; presentación→a
 - **R-FLU-14 (CONV)** La entrada NO DEBE corregirse en silencio para hacerla válida: se valida y, si no cumple, se rechaza. Solo PUEDEN aplicarse las normalizaciones declaradas en el esquema, como recortar espacios o pasar un email a minúsculas.
 - **R-PRE-03 (DEF)** Cada operación de presentación (endpoint, comando, acción de pantalla) DEBERÍA invocar exactamente un caso de uso.
 - **R-GEN-06 (DEF)** Dentro de una capa, una unidad (caso de uso, controlador, servicio, repositorio, cliente) NO DEBE llamar a otra unidad de la misma capa. Si dos necesitan lo mismo, se extrae una función general a shared (a platform si es técnica y la capa puede usarla) y ambas la usan; si es negocio, lo coordina la capa superior. Quedan fuera las piezas del modelo de dominio entre sí (una entidad usa sus value objects) y los métodos privados de la misma unidad.
-- **R-APL-04 (DEF)** Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable. Caso particular de R-GEN-06.
+- **R-APL-04 (DEF)** Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o, si es genérica, a shared. Caso particular de R-GEN-06.
 - **R-ERR-13 (CONV)** La validación de forma DEBE acumular todos los errores de campo y devolverlos juntos, no solo el primero.
 - **R-ERR-14 (DEF)** Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas. Véase R-PRE-02.
 

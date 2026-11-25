@@ -54,7 +54,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 | Infraestructura | Implementar puertos | Negocio, orquestación |
 | Shared | Piezas genéricas sin negocio | Negocio, entrada/salida, imports de otras capas |
 
-Platform registra el manejador. La raíz de composición crea y conecta; no es una capa.
+Platform registra el manejador. La raíz crea y conecta; no es una capa.
 
 | Desde \ Hacia | Presentación | Aplicación | Dominio | Infraestructura | Shared | Platform |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -66,7 +66,7 @@ Platform registra el manejador. La raíz de composición crea y conecta; no es u
 | Platform | No | Sí, puertos | No | No | Sí | — |
 | Raíz de composición | Sí | Sí | Sí | Sí | Sí | Sí |
 
-La primera afirmativa decide. El mapa da la ruta.
+¿En qué capa va esto? La primera afirmativa decide. El mapa da la ruta.
 
 1. Recibe el exterior o produce la salida del cliente → Presentación
 2. Habla con algo externo para leer o escribir → Infraestructura
@@ -101,9 +101,9 @@ Casos: `references/frameworks.md`.
 
 - Archivo nuevo en capa y ruta del mapa (**R-EST-07**, **R-AGT-03**).
 - Nada reorganizado sin petición (**R-EST-04**, **R-AGT-02**).
-- Archivos del framework, delgados (**R-EST-08**).
+- Archivos que impone el framework, delgados (**R-EST-08**).
 - Imports según la matriz; sin ciclos ni internos de otros módulos; sin llamadas entre unidades de una misma capa (**R-FLU-02**, **R-GEN-04**, **R-EST-02**, **R-DOM-01**, **R-PRE-04**, **R-SHR-01**, **R-GEN-06**).
-- Una operación, un caso de uso; comando inmutable, éxito o error esperado (**R-PRE-03**, **R-APL-02**).
+- Una operación de presentación, un caso de uso; comando inmutable, éxito o error esperado (**R-PRE-03**, **R-APL-02**).
 - Ni entidades ni persistencia salen de su capa; salida por lista blanca (**R-FLU-03**, **R-INF-02**, **R-FLU-12**).
 - Transacción en aplicación; dependencias solo en la raíz (**R-APL-05**, **R-FLU-08**).
 - Orden: parámetros, lógica de menor a mayor coste, saneamiento (**R-FLU-10**, **R-FLU-11**).
@@ -120,6 +120,6 @@ Casos: `references/frameworks.md`.
 - Sin `docs/ARCHITECTURE.md`, créalo desde la plantilla. Intensidad o framework sin decidir: hueco.
 - Si existe `docs/ARCHITECTURE.md`, completa lo que falte de la plantilla; no lo sustituyas.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
-- Sin herramienta de fronteras en el proyecto: dilo como «fronteras no comprobadas».
+- Sin herramienta de fronteras: dilo como «fronteras no comprobadas».
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.
 - Si SKILL y references no bastan: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.

@@ -134,7 +134,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 - **R-APL-01 (DEF)** — Cada caso de uso DEBE representar una intención del usuario o del sistema y nombrarse con un verbo: `AddOrderLine`, `RegisterUser`, `CancelReservation`.
 - **R-APL-02 (CONV)** — Un caso de uso DEBE recibir un único objeto de entrada inmutable (comando o consulta) y devolver un DTO o un `Result` con un DTO. El objeto de entrada sigue RORO (R-PAR-09).
 - **R-APL-03 (INV)** — La aplicación DEBE acceder a la infraestructura solo a través de interfaces (puertos o repositorios), recibidas por inyección.
-- **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable. Caso particular de R-GEN-06.
+- **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o, si es genérica, a shared. Caso particular de R-GEN-06.
 - **R-APL-05 (INV)** — La transacción DEBE abrirse y cerrarse en la aplicación, una por caso de uso, mediante una unidad de trabajo.
 - **R-APL-06 (INV)** — La autorización («¿puede este usuario hacer esto?») DEBE comprobarse en la aplicación. La autenticación («¿quién es?») se resuelve en la presentación.
 
