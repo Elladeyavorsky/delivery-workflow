@@ -60,7 +60,7 @@ Fila = quien importa. Entre módulos, solo la API pública (R-EST-02).
 
 | Desde \ Hacia       | Presentación | Aplicación   | Dominio                    | Infraestructura          | Shared | Platform |
 | ------------------- | ------------ | ------------ | -------------------------- | ------------------------ | ------ | -------- |
-| Presentación        | —            | Sí           | Tipos de lectura expuestos | **No**                   | Sí     | Sí       |
+| Presentación        | —            | Sí           | **No**                     | **No**                   | Sí     | Sí       |
 | Aplicación          | **No**       | —            | Sí                         | **No** (solo interfaces) | Sí     | **No**   |
 | Dominio             | **No**       | **No**       | —                          | **No**                   | Sí     | **No**   |
 | Infraestructura     | **No**       | Sí (puertos) | Sí                         | —                        | Sí     | Sí       |
@@ -98,10 +98,12 @@ Equivalencias: `references/frameworks.md`.
 
 ### 2.4 Variante e intensidad
 
-1. ¿Vivirá meses o lo mantendrá más de una persona? Si no → no uses capas formales.
-2. ¿El núcleo son reglas sobre entidades? Si no → esta guía no aplica (ETL, eventos, juegos, prototipos).
-3. ¿Reglas no triviales o más de una integración? Completa. Si no → ligera.
-4. ¿Varios subdominios? Módulos y, dentro, capas, sobre lo existente.
+La skill se aplica a cualquier proyecto que la use. La variante se elige por lo que hace el código, por módulo:
+
+- **Ligera:** CRUD sencillo, sin reglas de negocio (recibir, validar la forma, guardar y leer). Sin capa de dominio propia. Validar tipos, formatos u obligatorios es forma, no negocio.
+- **Completa:** en cuanto hay una regla de negocio, es decir, una comprobación que solo tiene sentido si se conoce el negocio («una sesión no se cierra antes de empezar»).
+- Si no está claro, pregunta a la persona. Si no puedes preguntar, usa la ligera y anótalo en `docs/ARCHITECTURE.md`; el módulo pasa a completa con su primera regla de negocio (**R-GEN-05**).
+- Varios subdominios con poco en común: módulos y, dentro, capas, sobre la estructura existente.
 
 
 | Aspecto                   | Ligera                                                          | Completa                            |
@@ -126,7 +128,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 - **R-PRE-01 (INV)** — La presentación DEBE validar la forma de la entrada (tipos, formatos, campos obligatorios, longitudes) antes de llamar a la aplicación.
 - **R-PRE-02 (INV)** — La presentación NO DEBE contener reglas de negocio. Una comprobación que solo tiene sentido si se conoce el negocio («un pedido confirmado no se puede editar») pertenece al dominio.
 - **R-PRE-03 (DEF)** — Cada operación de presentación (endpoint, comando, acción de pantalla) DEBERÍA invocar exactamente un caso de uso.
-- **R-PRE-04 (INV)** — La presentación NO DEBE importar nada de infraestructura ni del dominio, salvo los tipos de solo lectura que la aplicación exponga a propósito.
+- **R-PRE-04 (INV)** — La presentación NO DEBE importar nada de infraestructura ni del dominio.
 - **R-PRE-05 (INV)** — Los detalles del protocolo (códigos HTTP, cabeceras, códigos de salida de CLI, navegación de UI) DEBEN quedarse en la presentación.
 
 **Aplicación**
@@ -210,7 +212,7 @@ Exterior → presentación (forma) → aplicación (comando, transacción, autor
 3. Saneamiento: lista blanca, sin internos.
 
 - **R-FLU-10 (CONV)** — Toda operación DEBE ejecutar sus comprobaciones en tres fases y en este orden: (1) validar los parámetros, (2) validar la lógica, (3) sanear la respuesta. Una fase NO DEBE empezar si la anterior ha fallado.
-- **R-FLU-11 (CONV)** — Dentro de la validación de la lógica, las comprobaciones DEBERÍAN ordenarse de menor a mayor coste: en memoria, almacenamiento propio, servicios externos y, al final, escrituras. Si ese orden revelara información a quien no tiene permiso (por ejemplo, 404 frente a 403), la autorización DEBE ir primero.
+- **R-FLU-11 (CONV)** — Dentro de la validación de la lógica, las comprobaciones DEBERÍAN ordenarse de menor a mayor coste: en memoria, almacenamiento propio, servicios externos y, al final, escrituras. Si ese orden revelara información a quien no tiene permiso, la autorización DEBE ir primero.
 - **R-FLU-12 (CONV)** — La respuesta DEBE construirse por lista blanca: el DTO de salida enumera explícitamente cada campo. NO DEBE serializarse una entidad, un modelo de persistencia ni un objeto completo.
 - **R-FLU-13 (DEF)** — El escapado o la codificación de la salida (HTML, CSV, *shell*) DEBE hacerse en presentación, según el destino, y no al guardar los datos.
 - **R-FLU-14 (CONV)** — La entrada NO DEBE corregirse en silencio para hacerla válida: se valida y, si no cumple, se rechaza. Solo PUEDEN aplicarse las normalizaciones declaradas en el esquema, como recortar espacios o pasar un email a minúsculas.

@@ -1,20 +1,19 @@
 ---
 name: layered-architecture-guideline
-description: "Arquitectura en capas: invariantes, ubicación, nombres y separación de responsabilidades. Úsala al crear un proyecto, añadir una funcionalidad, decidir dónde va un archivo, cómo se nombra o cómo se separa algo. Fuera de alcance: scripts de un solo uso, ETL, sistemas por eventos, videojuegos, prototipos desechables."
+description: "Arquitectura en capas: invariantes, ubicación, nombres y separación de responsabilidades. Úsala al crear un proyecto, añadir una funcionalidad, decidir dónde va un archivo, cómo se nombra o cómo se separa algo."
 ---
 
 # Skill: Layered architecture guideline
 
 ## 1. Perfil y Rol
 
-- **Rol:** Estándar de arquitectura en capas para crear o cambiar un proyecto.
-- **Objetivo Principal:** Cada pieza tiene capa, ruta y frontera.
-- **Tono de Comunicación:** Neutro, en español.
+- **Rol:** Estándar de arquitectura en capas.
+- **Objetivo:** Cada pieza tiene capa, ruta y frontera.
+- **Tono:** Neutro, en español.
 
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** Crear un proyecto, añadir una funcionalidad, decidir capa, nombre o separación.
-- **Fuera de alcance:** Scripts de un solo uso, ETL, sistemas por eventos, videojuegos, prototipos desechables.
 - **Precedencia:** Petición de la persona > `docs/ARCHITECTURE.md` y `docs/STYLE.md` > framework > esta skill. Un INV solo se salta con excepción escrita en `docs/ARCHITECTURE.md`.
 
 Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layered-architecture-guideline`.
@@ -24,8 +23,8 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 1. **Leer el mapa.** `docs/ARCHITECTURE.md` y `docs/STYLE.md`. Si falta el primero, créalo desde `<carpeta de esta skill>/assets/ARCHITECTURE.template.md` (infiere con `references/names-and-folders.md`). Si existe, completa las secciones que falten; no lo sustituyas. **R-AGT-01 (INV)**. El proyecto declara mapa y decisiones en `docs/ARCHITECTURE.md`. **R-EST-01 (INV)**.
 2. **Decidir la capa** con la tabla de la sección 4. El archivo nuevo va donde el mapa indica (**R-EST-07 (INV)**) e imita a los vecinos (**R-AGT-03 (DEF)**). No reorganices lo existente ni crees una estructura paralela, salvo petición explícita (**R-AGT-02 (INV)**, **R-EST-04 (INV)**).
 3. **Frameworks.** Protocolo de la sección 4 (**R-AGT-07 (INV)**, **R-EST-08 (INV)**).
-4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flow-and-validation.md`, `references/paradigm-and-signatures.md`, `references/errors.md`, `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone alternativa (**R-AGT-05 (INV)**).
-5. **Comprobar** con la checklist. Al revisar, cita las reglas por su ID (**R-AGT-06 (CONV)**). Fronteras: ejecuta el `Comando` de `docs/ARCHITECTURE.md`.
+4. **Implementar** de dentro hacia fuera: dominio, aplicación, infraestructura, presentación, raíz de composición. Detalle: `references/flow-and-validation.md`, `references/errors.md` y `references/tests.md`. No añadas librerías que el proyecto ya cubre (**R-AGT-04 (DEF)**). Si la petición obliga a incumplir un DEBE, señálalo y propone una alternativa (**R-AGT-05 (INV)**).
+5. **Comprobar** con la checklist. Al revisar, cita las reglas por ID (**R-AGT-06 (CONV)**). Fronteras: el `Comando` del mapa.
 
 ## 4. Reglas
 
@@ -35,7 +34,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 2. Dependencias solo hacia dentro, sin ciclos (**R-GEN-04 (INV)**). Las cuatro capas son cerradas (**R-GEN-01 (INV)**); shared es la única abierta (**R-GEN-02 (INV)**). Flujo presentación → aplicación → dominio; la aplicación llama a la infraestructura solo por interfaces (**R-FLU-01 (INV)**). Una capa interior no conoce tipos de una exterior; los imports siguen la matriz (**R-FLU-02 (INV)**). Un módulo solo usa la API pública de otro (**R-EST-02 (INV)**).
 3. El dominio no hace entrada/salida ni importa frameworks (**R-DOM-01 (INV)**). Hora, azar e identificadores entran por parámetro o por puerto (**R-PAR-01 (INV)**).
 4. La infraestructura implementa interfaces de dominio o aplicación (**R-INF-01 (INV)**). La aplicación solo la usa a través de ellas, inyectadas (**R-APL-03 (INV)**).
-5. La presentación valida la forma (**R-PRE-01 (INV)**), traduce y no contiene negocio (**R-PRE-02 (INV)**; no se reimplementan ahí, **R-ERR-14**) ni importa infraestructura ni dominio, salvo tipos de solo lectura que la aplicación exponga (**R-PRE-04 (INV)**).
+5. La presentación valida la forma (**R-PRE-01 (INV)**), traduce y no contiene negocio (**R-PRE-02 (INV)**; no se reimplementan ahí, **R-ERR-14**) ni importa infraestructura ni dominio (**R-PRE-04 (INV)**).
 6. La aplicación orquesta el caso de uso y controla transacción (**R-APL-05 (INV)**) y autorización (**R-APL-06 (INV)**). La autenticación se resuelve en la presentación.
 7. Nada cruza una frontera sin mapeo: ni entidades (**R-FLU-03 (INV)**) ni modelos de persistencia (**R-INF-02 (INV)**).
 8. Las dependencias concretas se crean solo en la raíz de composición (**R-FLU-08 (INV)**).
@@ -58,7 +57,7 @@ La raíz crea y conecta; no es una capa.
 
 | Desde \ Hacia | Presentación | Aplicación | Dominio | Infraestructura | Shared | Platform |
 | --- | --- | --- | --- | --- | --- | --- |
-| Presentación | — | Sí | Tipos de lectura expuestos | No | Sí | Sí |
+| Presentación | — | Sí | No | No | Sí | Sí |
 | Aplicación | No | — | Sí | No, solo interfaces | Sí | No |
 | Dominio | No | No | — | No | Sí | No |
 | Infraestructura | No | Sí, puertos | Sí | — | Sí | Sí |
@@ -77,10 +76,12 @@ La raíz crea y conecta; no es una capa.
 
 ### Intensidad y variante
 
-1. ¿Vivirá meses o lo mantendrá más de una persona? Si no, no uses capas formales.
-2. ¿El núcleo son reglas sobre entidades? Si no, esta skill no aplica.
-3. ¿Reglas no triviales o más de una integración externa? Sí → completa. No → ligera.
-4. ¿Varios subdominios con poco en común? Sí → módulos y, dentro, capas, sobre la estructura existente.
+La skill se aplica a cualquier proyecto que la use. La variante se elige por lo que hace el código, por módulo:
+
+- **Ligera:** CRUD sencillo, sin reglas de negocio (recibir, validar la forma, guardar y leer). Sin capa de dominio propia. Validar tipos, formatos u obligatorios es forma, no negocio.
+- **Completa:** en cuanto hay una regla de negocio, es decir, una comprobación que solo tiene sentido si se conoce el negocio («una sesión no se cierra antes de empezar»).
+- Si no está claro, pregunta a la persona. Si no puedes preguntar, usa la ligera y anótalo en `docs/ARCHITECTURE.md`; el módulo pasa a completa con su primera regla de negocio (**R-GEN-05**).
+- Varios subdominios con poco en común: módulos y, dentro, capas, sobre la estructura existente.
 
 Ligera: presentación, servicios (aplicación + dominio) e infraestructura; repositorios opcionales; datos y funciones; transferencias solo en la frontera exterior. Completa: las cuatro capas; repositorios obligatorios; entidades y value objects; transferencias en todas las fronteras.
 
@@ -93,7 +94,6 @@ Señales: reenvíos, un campo en seis archivos, entidades sin comportamiento, sa
 1. Identifica lo que impone (rutas, pantallas, migraciones, arranque).
 2. Clasifícalo como capa exterior.
 3. Dominio y aplicación no importan nada del framework.
-4. Si fusiona capas, variante ligera y excepción en `docs/ARCHITECTURE.md`.
 
 Casos: `references/frameworks.md`.
 
@@ -117,9 +117,8 @@ Casos: `references/frameworks.md`.
 
 ## 5. Manejo de Errores y Excepciones
 
-- Sin mapa, créalo. Intensidad o framework sin decidir: hueco.
-- Si existe, completa; no lo sustituyas.
-- Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
+- Sin mapa, créalo; si existe, completa. Hueco: intensidad, framework o fronteras.
+- Framework que fusiona capas: ligera y excepción en el mapa.
 - Sin herramienta de fronteras: «fronteras no comprobadas».
-- Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.
-- Si SKILL y references no bastan: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.
+- Un DEBERÍA desviado se anota en el mapa.
+- Guía: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.
