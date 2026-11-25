@@ -1,3 +1,18 @@
+default_permissions = "github-net"
+
+[features]
+network_proxy = true
+
+[permissions.github-net]
+extends = ":workspace"
+
+[permissions.github-net.network]
+enabled = true
+
+[permissions.github-net.network.domains]
+"api.github.com" = "allow"
+"github.com" = "allow"
+
 [mcp_servers.eur-lex]
 command = "npx"
 args = ["-y", "@cyanheads/eur-lex-mcp-server@0.21.0"]

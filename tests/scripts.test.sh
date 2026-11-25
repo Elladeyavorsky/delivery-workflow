@@ -401,6 +401,75 @@ check "el paso 1 recorre las letras a) a h) del art. 5.1 con sus excepciones" ba
 check "el paso 4 recorre las condiciones a) a d) del art. 6.3 y el registro del 6.4" bash -c "step=\$(sed -n '/^### 4\\. Excepciones/,/^### 5\\./p' '${sc}/assets/ai-act-classification.md'); for l in a b c d; do grep -qF -- \"- **\$l)**\" <<<\"\$step\" || exit 1; done; grep -qF 'art. 49.2' <<<\"\$step\" && grep -qF 'puesta en servicio' <<<\"\$step\" || grep -qF 'ponerlo en servicio' <<<\"\$step\""
 check "el paso del art. 50 no se salta en alto riesgo" bash -c "grep -qF 'El paso 5 se evalúa además' '${sc}/assets/ai-act-classification.md' && ! grep -qF 'pasos en este orden y para en el primero' '${sc}/assets/ai-act-classification.md'"
 
+# layered-architecture-guideline: skill, plantilla y precarga; sin verificador de un stack.
+lag="${skills}/layered-architecture-guideline"
+tpl="${lag}/assets/ARCHITECTURE.template.md"
+check "layered-architecture-guideline existe" test -f "${lag}/SKILL.md"
+for ref in errors flow-and-validation paradigm-and-signatures tests names-and-folders frameworks; do
+  check "layered-architecture-guideline trae references/${ref}.md" test -f "${lag}/references/${ref}.md"
+done
+check "layered-architecture-guideline trae assets/ARCHITECTURE.template.md" test -f "$tpl"
+check "layered-architecture-guideline trae assets/layered-architecture-guide.md" test -f "${lag}/assets/layered-architecture-guide.md"
+check "SKILL.md nombra la guía condensada como último recurso" grep -q 'layered-architecture-guide.md' "${lag}/SKILL.md"
+check "docs/research no duplica la guía de capas" bash -c "! test -e '${package}/docs/research/arquitectura-en-capas.md'"
+for agent in concept-developer code-developer; do
+  check "${agent} precarga layered-architecture-guideline" bash -c "$(declare -f frontmatter); frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -qx '  - layered-architecture-guideline'"
+done
+for agent in code-tester concept-tester; do
+  check "${agent} no precarga layered-architecture-guideline" bash -c "$(declare -f frontmatter); ! frontmatter '${package}/.apm/agents/${agent}.agent.md' | grep -q 'layered-architecture-guideline'"
+done
+check "la plantilla tiene Herramienta, Comando y R-EST-06 (DEF)" bash -c "grep -q 'Herramienta:' '$tpl' && grep -q 'Comando:' '$tpl' && grep -qF 'R-EST-06 (DEF)' '$tpl'"
+check "layered-architecture-guideline no trae scripts ni .cjs de un stack" bash -c "! test -e '${lag}/scripts/check-boundaries.sh' && ! test -e '${lag}/assets/boundaries.typescript.cjs'"
+check "SKILL.md no nombra lenguajes ni herramientas concretas" bash -c "! grep -qiE '\\b(rust|nest|php|ruby|spring|django|fastapi|golang|kotlin|python|typescript|javascript)\\b|node\\.js|\\bnpm\\b|dependency-cruiser|depcruise|import-linter|archunit|c#' '${lag}/SKILL.md'"
+check "ningún fichero versionado cita check-boundaries.sh ni boundaries.typescript.cjs" bash -c "! git -C '${package}' grep -l -E 'check-boundaries\\.sh|boundaries\\.typescript\\.cjs' -- ':!tests/scripts.test.sh'"
+check "la guía condensada define las mismas reglas y etiquetas que la skill" node -e '
+  const fs = require("fs");
+  const path = require("path");
+  const dir = process.argv[1];
+  const re = /\*\*(R-[A-Z]{3}-\d{2}) \((INV|DEF|CONV)\)\*\*/g;
+  const collect = (files) => {
+    const found = new Map();
+    const repeated = [];
+    for (const file of files) {
+      for (const [, id, tag] of fs.readFileSync(file, "utf8").matchAll(re)) {
+        if (found.has(id)) repeated.push(id);
+        else found.set(id, tag);
+      }
+    }
+    return { found, repeated };
+  };
+  const refs = fs.readdirSync(path.join(dir, "references")).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(dir, "references", f));
+  const skill = collect([path.join(dir, "SKILL.md"), ...refs, path.join(dir, "assets", "ARCHITECTURE.template.md")]);
+  const guide = collect([path.join(dir, "assets", "layered-architecture-guide.md")]);
+  const problems = [];
+  const count = (tag) => [...skill.found.values()].filter((t) => t === tag).length;
+  if (count("INV") !== 39 || count("DEF") !== 26 || count("CONV") !== 25) problems.push(`cuentas ${count("INV")}/${count("DEF")}/${count("CONV")} (esperado 39/26/25)`);
+  if (skill.repeated.length) problems.push(`definidas dos veces en la skill: ${skill.repeated.join(", ")}`);
+  if (guide.repeated.length) problems.push(`definidas dos veces en la guía: ${guide.repeated.join(", ")}`);
+  for (const [id, tag] of skill.found) if (guide.found.get(id) !== tag) problems.push(`${id}: skill ${tag}, guía ${guide.found.get(id) ?? "ausente"}`);
+  for (const id of guide.found.keys()) if (!skill.found.has(id)) problems.push(`${id}: solo en la guía`);
+  if (problems.length) {
+    console.error(problems.join("\n"));
+    process.exit(1);
+  }
+' "$lag"
+check "la guía condensada repite el texto de las reglas de references" node -e '
+  const fs = require("fs");
+  const path = require("path");
+  const dir = process.argv[1];
+  const norm = (s) => s.replace(/\*\*|`|—/g, "").replace(/\s+/g, " ").trim();
+  const ruleLines = (file) => fs.readFileSync(file, "utf8").split("\n").filter((l) => /^- \*\*R-[A-Z]{3}-\d{2} \((?:INV|DEF|CONV)\)\*\*/.test(l)).map(norm);
+  const refDir = path.join(dir, "references");
+  const refLines = fs.readdirSync(refDir).filter((f) => f.endsWith(".md")).sort().flatMap((f) => ruleLines(path.join(refDir, f)).map((l) => [f, l]));
+  const guide = new Set(ruleLines(path.join(dir, "assets", "layered-architecture-guide.md")));
+  const diff = refLines.filter(([, l]) => !guide.has(l));
+  if (diff.length) {
+    console.error(diff.map(([f, l]) => `${f}: ${l.slice(0, 70)}…`).join("\n"));
+    process.exit(1);
+  }
+' "$lag"
+check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
+
 echo
 if [[ $failures -eq 0 ]]; then
   echo "Todo bien."
