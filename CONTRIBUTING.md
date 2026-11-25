@@ -10,14 +10,30 @@ delivery-workflow es un paquete [APM](https://github.com/microsoft/apm) con skil
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.
 3. La issue del cambio: qué cambia y por qué.
 
-Necesitas `git`, [GitHub CLI](https://cli.github.com), Node, APM y un `.env` con tu token de GitHub. Para instalar el paquete en este repositorio, sigue [Trabajar en este repositorio](README.md#trabajar-en-este-repositorio).
+Necesitas `git`, [GitHub CLI](https://cli.github.com), Node, APM y un `.env` con tu token de GitHub. Para instalar el paquete en este repositorio, sigue [Trabajar en este repositorio](#trabajar-en-este-repositorio).
+
+## Trabajar en este repositorio
+
+Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así tienes los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) y trabajas en este repositorio con la misma herramienta que lo usa.
+
+1. Clona el repositorio y entra en su raíz.
+2. Instala el paquete para tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
+
+   ```bash
+   apm install --target claude
+   ```
+
+3. Crea el `.env` con tu token, como explica [El token de GitHub](README.md#el-token-de-github).
+4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`) para abrir la issue, la rama y la pull request de tu cambio.
+
+`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta. No los edites a mano.
 
 ## Reglas
 
 - Trabaja siempre a partir de una issue.
 - Abre la pull request contra `staging`. `main` recibe cambios solo desde `staging`, en el release.
 - No uses `git push --force` ni `--no-verify`.
-- No commitees el `.env`, tu token ni la línea `model` de los agentes: es personal ([Modelos de los agentes](README.md#modelos-de-los-agentes)).
+- No commitees el `.env`, tu token ni la línea `model` de los agentes: es personal ([Modelos de los agentes](docs/MODELS.md)).
 - No edites a mano lo que genera `apm` (`apm_modules/`, `apm.lock.yaml`) ni cambies `version` en `apm.yml`: la versión sale de la etiqueta del release.
 - Di que algo funciona solo después de probarlo.
 
