@@ -453,6 +453,21 @@ check "la guía condensada define las mismas reglas y etiquetas que la skill" no
     process.exit(1);
   }
 ' "$lag"
+check "la guía condensada repite el texto de las reglas de references" node -e '
+  const fs = require("fs");
+  const path = require("path");
+  const dir = process.argv[1];
+  const norm = (s) => s.replace(/\*\*|`|—/g, "").replace(/\s+/g, " ").trim();
+  const ruleLines = (file) => fs.readFileSync(file, "utf8").split("\n").filter((l) => /^- \*\*R-[A-Z]{3}-\d{2} \((?:INV|DEF|CONV)\)\*\*/.test(l)).map(norm);
+  const refDir = path.join(dir, "references");
+  const refLines = fs.readdirSync(refDir).filter((f) => f.endsWith(".md")).sort().flatMap((f) => ruleLines(path.join(refDir, f)).map((l) => [f, l]));
+  const guide = new Set(ruleLines(path.join(dir, "assets", "layered-architecture-guide.md")));
+  const diff = refLines.filter(([, l]) => !guide.has(l));
+  if (diff.length) {
+    console.error(diff.map(([f, l]) => `${f}: ${l.slice(0, 70)}…`).join("\n"));
+    process.exit(1);
+  }
+' "$lag"
 check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
 
 echo

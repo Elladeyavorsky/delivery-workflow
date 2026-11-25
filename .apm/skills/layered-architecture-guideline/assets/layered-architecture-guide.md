@@ -114,7 +114,7 @@ Equivalencias: `references/frameworks.md`.
 Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas, tocar todas las capas de todos los módulos.
 
 - **R-GEN-03 (DEF)** — Un proyecto nuevo DEBERÍA usar la variante invertida. Si usa la clásica (dominio → persistencia), DEBE documentarlo y aplicar el resto de reglas sustituyendo «interfaz de repositorio» por «repositorio concreto».
-- **R-GEN-05 (INV)** — La variante ligera DEBE mantener separadas, al menos, la presentación y la infraestructura, y DEBE aplicar íntegro el manejo de errores de la sección 5. El paso de la variante ligera a la completa PUEDE hacerse módulo a módulo.
+- **R-GEN-05 (INV)** — La variante ligera DEBE mantener separadas, al menos, la presentación y la infraestructura, y DEBE aplicar las reglas de errores INV. El paso de la variante ligera a la completa PUEDE hacerse módulo a módulo.
 
 
 
@@ -131,7 +131,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 **Aplicación**
 
 - **R-APL-01 (DEF)** — Cada caso de uso DEBE representar una intención del usuario o del sistema y nombrarse con un verbo: `AddOrderLine`, `RegisterUser`, `CancelReservation`.
-- **R-APL-02 (CONV)** — Un caso de uso DEBE recibir un único objeto de entrada inmutable (comando o consulta) y devolver un DTO o un `Result` con un DTO.
+- **R-APL-02 (CONV)** — Un caso de uso DEBE recibir un único objeto de entrada inmutable (comando o consulta) y devolver un DTO o un `Result` con un DTO. El objeto de entrada sigue RORO (R-PAR-09).
 - **R-APL-03 (INV)** — La aplicación DEBE acceder a la infraestructura solo a través de interfaces (puertos o repositorios), recibidas por inyección.
 - **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable.
 - **R-APL-05 (INV)** — La transacción DEBE abrirse y cerrarse en la aplicación, una por caso de uso, mediante una unidad de trabajo.
@@ -140,10 +140,10 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 **Dominio**
 
 - **R-DOM-01 (INV)** — El dominio NO DEBE importar código de presentación, aplicación ni infraestructura, ni tampoco frameworks o librerías de entrada y salida.
-- **R-DOM-02 (DEF)** — Las invariantes de una entidad DEBEN protegerse dentro de la propia entidad: no puede existir una instancia en estado inválido.
+- **R-DOM-02 (DEF)** — Las invariantes de una entidad DEBEN protegerse dentro de la propia entidad: no puede existir una instancia en estado inválido. Aplica a la variante completa.
 - **R-DOM-03 (CONV)** — Las entidades NO DEBEN exponer *setters* públicos. El estado cambia solo mediante métodos con nombre de negocio (`confirm()`, `addLine()`).
 - **R-DOM-04 (CONV)** — Los conceptos con reglas propias (dinero, email, cantidad, rango de fechas) DEBERÍAN modelarse como value objects en lugar de como primitivos.
-- **R-DOM-05 (DEF)** — El dominio DEBE definir las interfaces de repositorio de sus agregados, expresadas en términos de dominio y no de tablas.
+- **R-DOM-05 (DEF)** — En la variante completa, el dominio DEBE definir las interfaces de repositorio de sus agregados, expresadas en términos de dominio y no de tablas. En la ligera son opcionales (tabla 2.4).
 
 **Infraestructura**
 
@@ -229,7 +229,7 @@ Exterior → presentación (forma) → aplicación (comando, transacción, autor
 
 
 - **R-FLU-03 (INV)** — Las entidades de dominio NO DEBERÍAN salir de la capa de aplicación. La presentación recibe DTO de salida.
-- **R-FLU-04 (CONV)** — Los comandos, las consultas y los DTO DEBEN ser inmutables y contener solo datos, sin comportamiento.
+- **R-FLU-04 (CONV)** **R-PAR-03 (CONV)** — Los comandos, las consultas, los DTO, los value objects y los eventos DEBEN ser inmutables y contener solo datos, sin comportamiento. Una operación sobre ellos devuelve una instancia nueva.
 - **R-FLU-05 (DEF)** — Cada *mapper* DEBE vivir en la capa exterior de la frontera que traduce y DEBE ser una función pura.
 
 
@@ -284,7 +284,7 @@ Dominio produce y no captura. Aplicación: no encontrado, prohibido, conflicto; 
 - **R-ERR-11 (CONV)** — Los textos que ve el usuario final DEBEN resolverse en presentación a partir del `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
 - **R-ERR-12 (INV)** — Las respuestas de error de tipo `infrastructure` y `unexpected` NO DEBEN incluir trazas de pila, SQL, nombres de tablas, *hosts* ni mensajes de librerías. Solo un texto genérico y el `requestId`.
 - **R-ERR-13 (CONV)** — La validación de forma DEBE acumular todos los errores de campo y devolverlos juntos, no solo el primero.
-- **R-ERR-14 (DEF)** — Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas.
+- **R-ERR-14 (DEF)** — Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas. Véase R-PRE-02.
 - **R-ERR-15 (DEF)** — Todo error registrado DEBE incluir el `requestId`, y el mismo identificador DEBE devolverse al cliente.
 - **R-ERR-16 (INV)** — Los logs NO DEBEN contener contraseñas, *tokens*, números de tarjeta ni datos personales sin enmascarar.
 
@@ -302,12 +302,11 @@ Reglas y *mappers* puros; coordinación e I/O inyectadas. Efectos (E/S, reloj, a
 
 - **R-PAR-01 (INV)** — El dominio DEBE estar libre de efectos secundarios. La hora, los identificadores y los valores aleatorios DEBEN llegar como parámetros o a través de puertos inyectados.
 - **R-PAR-02 (CONV)** — Los cálculos, las reglas sin estado, las validaciones y los mapeos DEBEN implementarse como funciones puras.
-- **R-PAR-03 (CONV)** — Los value objects, comandos, consultas, DTO y eventos DEBEN ser inmutables. Una operación sobre ellos devuelve una instancia nueva.
 - **R-PAR-04 (CONV)** — Las entidades PUEDEN tener estado mutable, pero ese estado solo DEBE cambiar a través de métodos que comprueben sus invariantes. Sus colecciones internas NO DEBEN exponerse de forma mutable.
 - **R-PAR-05 (CONV)** — Los componentes con dependencias (controladores, casos de uso, repositorios, clientes) DEBEN recibirlas desde fuera: por constructor si son objetos, o como argumento de una función fábrica si son funciones. NO DEBEN usar *singletons* globales ni localizadores de servicios.
 - **R-PAR-06 (CONV)** — La herencia DEBERÍA limitarse a la jerarquía de errores y a lo que exija el framework. Para reutilizar comportamiento se prefieren la composición o las funciones.
 - **R-PAR-07 (DEF)** — El estado compartido mutable (cachés, *pools*, contadores) solo PUEDE existir en infraestructura o en platform, y DEBE ser seguro ante la concurrencia.
-- **R-PAR-08 (CONV)** — Un proyecto DEBE elegir un estilo único para construir los casos de uso (clases o funciones fábrica) y aplicarlo en todos los módulos.
+- **R-PAR-08 (CONV)** — Un proyecto DEBE elegir un estilo único para construir los casos de uso (clases o funciones fábrica) y aplicarlo en todos los módulos. El estilo se registra en `docs/ARCHITECTURE.md`.
 
 RORO: un objeto de entrada; varios valores de salida, un objeto con nombre.
 
