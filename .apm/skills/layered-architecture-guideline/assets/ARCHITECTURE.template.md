@@ -41,13 +41,14 @@ Si el proyecto tiene varias partes (por ejemplo backend y frontend), repite esta
 
 Por decidir (clases o funciones fábrica). El estilo es único en todos los módulos (R-PAR-08).
 
-## Política de errores y trazabilidad
+## Errores de dominio
 
-- Errores esperados: Por decidir
-- Dónde se traduce y se registra: Por decidir
-- Cómo se propaga el `requestId`: Por decidir
+- Cómo se entregan (excepciones o valores de error): Por decidir
+- Dónde vive el catálogo: Por decidir
+- `kind` además de VALIDATION, NOT_FOUND y CONFLICT: Por decidir
+- Qué se hace fuera del dominio (protocolo, logs, trazabilidad): Por decidir
 
-La política es única en todos los módulos (R-ERR-05).
+Una sola forma en todos los módulos (R-ERR-05). Si no hay nada decidido, la natural del lenguaje.
 
 ## Verificación de fronteras
 

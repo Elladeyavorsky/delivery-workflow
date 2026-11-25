@@ -10,7 +10,7 @@ Exterior → presentación (carga sin tipar) → valida forma → `execute`(coma
 
 Fases: (1) parámetros en presentación, sin E/S; (2) lógica en aplicación y dominio (memoria → almacenamiento propio → servicios externos → escrituras); (3) saneamiento por lista blanca.
 
-Fronteras: exterior→presentación, carga / DTO de petición; presentación→aplicación, comando / `Result<DTO, AppError>`; aplicación↔dominio, entidades; aplicación↔infraestructura, tipos de dominio; presentación→exterior, DTO o `AppError` / protocolo. El *mapper* vive en la capa exterior.
+Fronteras: exterior→presentación, carga / DTO de petición; presentación→aplicación, comando / `Result<DTO, DomainError>`; aplicación↔dominio, entidades; aplicación↔infraestructura, tipos de dominio; presentación→exterior, DTO o `DomainError` / protocolo. El *mapper* vive en la capa exterior.
 
 ## Reglas
 
@@ -25,7 +25,6 @@ Fronteras: exterior→presentación, carga / DTO de petición; presentación→a
 - **R-PRE-03 (DEF)** Cada operación de presentación (endpoint, comando, acción de pantalla) DEBERÍA invocar exactamente un caso de uso.
 - **R-GEN-06 (DEF)** Dentro de una capa, una unidad (caso de uso, controlador, servicio, repositorio, cliente) NO DEBE llamar a otra unidad de la misma capa. Si dos necesitan lo mismo, se extrae una función general a shared (a platform si es técnica y la capa puede usarla) y ambas la usan; si es negocio, lo coordina la capa superior. Quedan fuera las piezas del modelo de dominio entre sí (una entidad usa sus value objects) y los métodos privados de la misma unidad.
 - **R-APL-04 (DEF)** Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o, si es genérica, a shared. Caso particular de R-GEN-06.
-- **R-ERR-13 (CONV)** La validación de forma DEBE acumular todos los errores de campo y devolverlos juntos, no solo el primero.
 - **R-ERR-14 (DEF)** Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas. Véase R-PRE-02.
 
 Las consultas de solo lectura (R-FLU-07) se resuelven con un *query service*: interfaz en aplicación, implementación en infraestructura, DTO directo, sin entidades. Las escrituras no usan este atajo.
@@ -45,7 +44,7 @@ export class AddOrderLine {
   execute(cmd: AddOrderLineCommand): Promise<Result<OrderSummary>> {
     return this.uow.run(async () => {
       const order = await this.orders.findById(OrderId(cmd.orderId));
-      if (!order) return err(OrderErrors.notFound(cmd.orderId));
+      if (!order) return err(domainError("order", "missing"));
       const added = order.addLine({ productId: ProductId(cmd.productId), quantity: cmd.quantity });
       if (!added.ok) return added;
       await this.orders.save(order);
@@ -60,7 +59,7 @@ export class AddOrderLine {
 const parsed = validate(AddLineRequestSchema, req.body);
 if (!parsed.ok) throw new ValidationError(parsed.error);
 const result = await this.addOrderLine.execute({ orderId: req.params.orderId, ...parsed.value });
-// política Result: relanza el error esperado para que el manejador global lo traduzca (R-ERR-08)
+// política Result: el error de dominio sube; cómo se traduce al protocolo lo decide el proyecto
 if (!result.ok) throw result.error;
 return { status: 200, body: presentOrderSummary(result.value) };
 ```

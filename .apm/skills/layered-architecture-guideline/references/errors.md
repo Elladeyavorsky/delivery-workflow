@@ -1,80 +1,94 @@
 # Errores
 
-Se lee para la taxonomía, la jerarquía `AppError`, la política de los errores esperados y el manejador global.
+Se lee para el modelo de errores de dominio y los mínimos de seguridad. Lo demás (protocolo, formato, logs, trazabilidad y errores técnicos) lo decide el proyecto en `docs/ARCHITECTURE.md`.
 
-La política única y la trazabilidad se declaran en `docs/ARCHITECTURE.md` (R-ERR-05). El error que cruza una frontera es un error propio del sistema, con tipo y código estables (R-ERR-01).
+## Modelo
 
-## Taxonomía
+Un fallo de negocio es un error de dominio con estos campos:
 
-| `kind` | Esperado | Origen | HTTP | Log |
-| --- | --- | --- | --- | --- |
-| `validation` | Sí | Presentación | 400 | `debug` |
-| `unauthorized` | Sí | Presentación | 401 | `info` |
-| `forbidden` | Sí | Aplicación | 403 | `warn` |
-| `not_found` | Sí | Aplicación | 404 | `info` |
-| `conflict` | Sí | Aplicación o infraestructura | 409 | `info` |
-| `domain_rule` | Sí | Dominio | 422 | `info` |
-| `infrastructure` | No | Infraestructura | 503 | `error` |
-| `unexpected` | No | Cualquiera | 500 | `error` |
+| Campo | Qué es | Ejemplo |
+| --- | --- | --- |
+| `kind` | Categoría, de un conjunto cerrado | `VALIDATION` |
+| `code` | Identificador estable `etiqueta.razón` | `session.end_at.order` |
+| `message` | Texto del catálogo; puede cambiar | `session.end_at debe ser posterior a session.start_at` |
+| `entity`, `field` | Opcionales, salen de la etiqueta | `session`, `end_at` |
+| `cause` | Error original, si lo hay | — |
 
-HTTP solo si la presentación es HTTP. Formato: Problem Details (RFC 9457) con `code`, `requestId` y, en `validation`, `errors: [{ path, code, message }]`.
+`kind` base: `VALIDATION` (un dato o una regla no se cumple), `NOT_FOUND` (no existe lo que se pide) y `CONFLICT` (choca con el estado actual: duplicado, tiene dependientes). El proyecto puede añadir otros en `docs/ARCHITECTURE.md`.
 
-Recomendación para los errores esperados: `Result`. Si el lenguaje o el equipo prefieren excepciones tipadas, la jerarquía sigue siendo `AppError` y la decisión se escribe en «Excepciones y decisiones» de `docs/ARCHITECTURE.md`.
+El catálogo vive en el dominio, uno por módulo si hay módulos. Tiene las etiquetas (`entidad` o `entidad.campo`), las razones (`missing`, `taken`, `order`…) con su `kind` y su plantilla de mensaje, y los mensajes propios de un `code` cuando la plantilla no basta. Etiquetas y razones son listas cerradas: no se inventan en el punto de fallo.
+
+## Cómo se entregan
+
+Una sola forma en todo el proyecto (R-ERR-05). Orden para decidirla:
+
+1. Lo que digan `docs/ARCHITECTURE.md` o `docs/STYLE.md`.
+2. Si no dicen nada, lo que ya hace el código.
+3. Si no hay nada, el mecanismo natural del lenguaje: excepciones o valores de error, según lo habitual. Se anota en `docs/ARCHITECTURE.md` y, si el flujo es interactivo, se confirma.
+
+Con varias partes se decide por parte, con el mismo catálogo de `kind` y `code`.
 
 ## Qué hace cada capa
 
-| Capa | Produce | Captura | Traduce |
-| --- | --- | --- | --- |
-| Dominio | `DomainError` | Nada | Nada |
-| Aplicación | `NotFoundError`, `ForbiddenError`, `ConflictError`; propaga el dominio | Solo las excepciones de su contrato | Nada |
-| Infraestructura | `InfrastructureError`, `ConflictError` (lanzados) | Excepciones de librería | Librería → `AppError` con `cause` (R-INF-03) |
-| Presentación | `ValidationError`, `UnauthorizedError` | Todo, en el manejador global | `AppError` → protocolo; el resto → `UnexpectedError` (R-ERR-08) |
+| Capa | Qué hace |
+| --- | --- |
+| Dominio | Crea los errores con la fábrica. No los captura ni los traduce. |
+| Aplicación | Usa los mismos códigos (`session.missing` si no hay ficha). Deja subir el resto. |
+| Infraestructura | Traduce los fallos del almacén con significado de negocio a los mismos códigos y conserva la causa. Sin mapeo: error técnico (R-INF-03). |
+| Presentación | Decide qué hacer con cada error según `kind` y `code`. La forma la define el proyecto. |
 
-La lógica de traducción vive en presentación. Platform solo registra el manejador en el servidor. Si el framework ofrece un enganche global, se registra ahí.
+## Reglas
 
-## Trazabilidad y reglas
-
-Reutiliza el `requestId` si llega en una cabecera; si no, genéralo. Propágalo en logs y en llamadas salientes. Logs JSON: `timestamp`, `level`, `requestId`, `kind`, `code`, `module`.
-
-- **R-ERR-02 (CONV)** Los `code` DEBEN ser estables, estar escritos en SCREAMING_SNAKE_CASE, llevar el prefijo del módulo (`ORDER_`, `USER_`) y estar definidos en un catálogo por módulo. Cambiar un código publicado es un cambio incompatible.
-- **R-ERR-06 (CONV)** Los errores de tipo `infrastructure` y `unexpected` DEBEN propagarse como excepciones, con cualquier política.
+- **R-ERR-02 (CONV)** El `code` DEBE tener la forma `etiqueta.razón`, salir del catálogo y ser estable. El texto de `message` puede cambiar en el catálogo; cambiar un `code` publicado es un cambio incompatible.
 - **R-ERR-07 (CONV)** NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `not_found`.
-- **R-ERR-09 (CONV)** NO DEBE haber bloques `catch` vacíos ni bloques que lo capturen todo sin traducir ni relanzar.
-- **R-ERR-11 (CONV)** Los textos que ve el usuario final DEBEN resolverse en presentación a partir del `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
-- **R-ERR-15 (DEF)** Todo error registrado DEBE incluir el `requestId`, y el mismo identificador DEBE devolverse al cliente.
+- **R-ERR-11 (CONV)** Las decisiones y los textos que ve el usuario final DEBEN basarse en `kind` y `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
+- **R-ERR-17 (DEF)** Un fallo de negocio DEBE crearse con la única fábrica del proyecto, que recibe etiqueta y razón y consulta el catálogo. NO DEBE escribirse el mensaje en el punto de fallo ni crearse un error ad hoc. Con excepciones PUEDE haber un atajo que construye y lanza, siempre a través de la fábrica.
+
+Mínimos de seguridad, para toda la arquitectura (`SKILL.md`, invariante 11): R-ERR-03, R-ERR-04, R-ERR-09, R-ERR-12 y R-ERR-16.
 
 ## Plantillas
 
-Los ejemplos de código usan TypeScript como notación. Los nombres como `HttpRequest`, `Database`, `schema` o `validate` son marcadores: sustitúyelos por lo que ya use el proyecto y adapta la sintaxis a su lenguaje. Subclases: `ValidationError`, `NotFoundError`, `DomainError`, `InfrastructureError`, `UnexpectedError`.
+TypeScript es notación. `REASONS`, `domainError`, `fail` e `isUniqueViolation` son marcadores: sustitúyelos y adapta la sintaxis al proyecto.
 
 ```typescript
-// [shared] AppError y Result
-export abstract class AppError extends Error {
-  abstract readonly kind: ErrorKind;
-  constructor(readonly code: string, message: string,
-    readonly details: Readonly<Record<string, unknown>> = {},
-    options?: { cause?: unknown }) {
-    super(message, options); this.name = new.target.name;
+// [dominio] catálogo (extracto)
+export type Kind = "VALIDATION" | "NOT_FOUND" | "CONFLICT";
+export const REASONS = {
+  missing: { kind: "NOT_FOUND", message: (l: string) => `${l} no existe` },
+  taken: { kind: "CONFLICT", message: (l: string) => `${l} ya existe` },
+  order: { kind: "VALIDATION", message: (l: string) => `${l} va fuera de orden` },
+} as const;
+export type Label = "session" | "session.end_at";
+export type Reason = keyof typeof REASONS;
+```
+
+```typescript
+// [dominio] el error y la única fábrica (R-ERR-17)
+export class DomainError extends Error {
+  constructor(readonly kind: Kind, readonly code: string, message: string,
+    readonly entity?: string, readonly field?: string, options?: { cause?: unknown }) {
+    super(message, options);
   }
 }
-export type Result<T, E = AppError> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly error: E };
-```
-
-```typescript
-// [infraestructura] traduce y conserva cause (R-INF-03)
-try { return row ? OrderMapper.toDomain(row) : null; }
-catch (e) {
-  throw new InfrastructureError("DB_READ_FAILED", "No se pudo leer", { orderId: id }, { cause: e });
+export function domainError(label: Label, reason: Reason, cause?: unknown): DomainError {
+  const [entity, field] = label.split(".");
+  const spec = REASONS[reason];
+  return new DomainError(spec.kind, `${label}.${reason}`, spec.message(label), entity, field, { cause });
 }
+// atajo para la política de excepciones
+export const fail = (label: Label, reason: Reason, cause?: unknown): never => {
+  throw domainError(label, reason, cause);
+};
 ```
 
-`LOG_LEVEL` y `HTTP_STATUS` son tablas `kind` → valor, tomadas de la taxonomía.
-
 ```typescript
-// [presentación] traduce y registra (R-ERR-08); platform solo lo registra
-const e = error instanceof AppError ? error : new UnexpectedError(error);
-logger[LOG_LEVEL[e.kind]]("request_failed", { requestId: req.id, kind: e.kind, code: e.code });
-return { status: HTTP_STATUS[e.kind], body: { code: e.code, requestId: req.id } };
+// [dominio] punto de fallo
+if (endAt <= startAt) fail("session.end_at", "order");
+
+// [infraestructura] mismo vocabulario y causa conservada (R-INF-03, R-ERR-03)
+try { await db.insert(row); }
+catch (e) {
+  if (isUniqueViolation(e)) throw domainError("session", "taken", e);
+  throw e; // técnico: el proyecto decide su forma
+}
 ```

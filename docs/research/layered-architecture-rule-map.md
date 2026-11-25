@@ -2,7 +2,7 @@
 
 Índice del corte ya aplicado. Lo usa quien edite `layered-architecture-guideline`. Los agentes no lo leen; `apm install` no lo copia.
 
-Fuente: `.apm/skills/layered-architecture-guideline/assets/layered-architecture-guide.md` (v1.3, 93 reglas). Destino: skill, `references/` y `assets/ARCHITECTURE.template.md`.
+Fuente: `.apm/skills/layered-architecture-guideline/assets/layered-architecture-guide.md` (v1.3, 90 reglas). Destino: skill, `references/` y `assets/ARCHITECTURE.template.md`.
 
 Cada ID apunta a un fichero y a una etiqueta INV/DEF/CONV. No reclasifiques. Si una regla no encaja, pregunta en la issue.
 
@@ -53,8 +53,8 @@ Son 12 enunciados. En `SKILL.md` cada uno es una frase que cita sus IDs. Las reg
 | 7 | Nada cruza una frontera sin mapeo: ni entidades ni modelos de persistencia | R-FLU-03, R-INF-02 |
 | 8 | Las dependencias concretas se crean en un único sitio, la raíz de composición | R-FLU-08 |
 | 9 | El protocolo (HTTP, CLI, interfaz) se queda en la presentación. El dominio no lo conoce | R-PRE-05, R-ERR-10 |
-| 10 | Cada frontera traduce sus errores y conserva la causa. Nada interno ni sensible llega al cliente ni a los logs. Un único punto traduce y registra | R-INF-03, R-ERR-01, R-ERR-03, R-ERR-04, R-ERR-08, R-ERR-12, R-ERR-16 |
-| 11 | El proyecto declara su política de errores y su trazabilidad en `docs/ARCHITECTURE.md` | R-ERR-05 |
+| 10 | Todo fallo de negocio es un error de dominio con categoría y código estables. La infraestructura traduce a esos códigos. Una sola forma de entregarlos | R-ERR-01, R-INF-03, R-ERR-05 |
+| 11 | Mínimos de seguridad: causa conservada, nada interno al cliente, sin secretos en detalles ni logs, ningún fallo silenciado | R-ERR-03, R-ERR-04, R-ERR-09, R-ERR-12, R-ERR-16 |
 | 12 | Shared no tiene negocio ni importa de otras capas | R-SHR-01, R-SHR-02 |
 
 Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R-EST-01, R-EST-04, R-EST-07, R-EST-08 y R-GEN-05 (esta, en SKILL-INT).
@@ -73,6 +73,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 10. **Anexo.** La plantilla gana dos secciones: «Política de errores y trazabilidad» y «Excepciones y decisiones». La ruta del mapa en un proyecto es `docs/ARCHITECTURE.md`, no `.apm/instructions/`.
 11. **Cabecera de la fuente.** `applyTo: "**"` no pasa a la skill. El frontmatter de `SKILL.md` es `name` y `description`.
 12. **Sección 10 (antipatrones).** No se migra: cada antipatrón es la negación de una regla. Las «señales de mal uso» de 2.4 van a SKILL-INT.
+13. **Errores centrados en el dominio (revisión).** La skill define solo los errores de dominio (catálogo, fábrica, `kind` y `code`) y cinco mínimos de seguridad (R-ERR-03, R-ERR-04, R-ERR-09, R-ERR-12, R-ERR-16). R-ERR-06, R-ERR-08, R-ERR-13 y R-ERR-15 se retiran: lo decide el proyecto. R-ERR-09 pasa a INV. Entra R-ERR-17 (DEF). La recomendación de `Result` se sustituye por el mecanismo natural del lenguaje. Sustituye a las correcciones 1, 6, 7 y 8.
 
 ## Reglas: etiqueta y destino
 
@@ -184,22 +185,23 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 
 | ID | Etiqueta | Destino | Nota |
 | --- | --- | --- | --- |
-| R-ERR-01 | INV | SKILL-INV 10 | Ver corrección 6 |
+| R-ERR-01 | INV | SKILL-INV 10 | Ver corrección 13 |
 | R-ERR-02 | CONV | REF-ERR | |
-| R-ERR-03 | INV | SKILL-INV 10 | |
-| R-ERR-04 | INV | SKILL-INV 10 | Agrupar con R-ERR-16: sin secretos en `details` ni en logs |
-| R-ERR-05 | INV | SKILL-INV 11 | Ver corrección 7 |
-| R-ERR-06 | CONV | REF-ERR | |
+| R-ERR-03 | INV | SKILL-INV 11 | |
+| R-ERR-04 | INV | SKILL-INV 11 | Agrupar con R-ERR-16: sin secretos en `details` ni en logs |
+| R-ERR-05 | INV | SKILL-INV 10 | Ver corrección 13 |
+| R-ERR-06 | — | Retirada | Fuera de alcance: lo decide el proyecto (corrección 13) |
 | R-ERR-07 | CONV | REF-ERR | |
-| R-ERR-08 | INV | SKILL-INV 10 | |
-| R-ERR-09 | CONV | REF-ERR | |
+| R-ERR-08 | — | Retirada | Fuera de alcance: lo decide el proyecto (corrección 13) |
+| R-ERR-09 | INV | SKILL-INV 11 | |
 | R-ERR-10 | INV | SKILL-INV 9 | |
 | R-ERR-11 | CONV | REF-ERR | |
-| R-ERR-12 | INV | SKILL-INV 10 | |
-| R-ERR-13 | CONV | REF-FLU | Validación de forma |
+| R-ERR-12 | INV | SKILL-INV 11 | |
+| R-ERR-13 | — | Retirada | Fuera de alcance: lo decide el proyecto (corrección 13) |
 | R-ERR-14 | DEF | REF-FLU | Consecuencia de R-PRE-02 |
-| R-ERR-15 | DEF | REF-ERR | `requestId`. En `SKILL.md` basta con que la política declare la trazabilidad (invariante 11) |
-| R-ERR-16 | INV | SKILL-INV 10 | Agrupar con R-ERR-04 |
+| R-ERR-15 | — | Retirada | Fuera de alcance: lo decide el proyecto (corrección 13) |
+| R-ERR-16 | INV | SKILL-INV 11 | Agrupar con R-ERR-04 |
+| R-ERR-17 | DEF | REF-ERR | Fábrica única de errores de dominio (corrección 13) |
 
 ### PAR · Paradigmas
 
@@ -257,7 +259,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | --- | --- |
 | INV | 39 (30 en los 12 invariantes y 9 de protocolo) |
 | DEF | 26 |
-| CONV | 28 |
-| Total | 93 |
+| CONV | 25 |
+| Total | 90 |
 
 Al terminar, comprueba que cada ID de la v1.3 aparece en la skill exactamente una vez y que las cuentas coinciden.

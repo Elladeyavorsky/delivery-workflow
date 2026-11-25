@@ -2,7 +2,7 @@
 
 # Arquitectura en capas · Guía (v1.3)
 
-93 reglas. Plantillas en las references; mapa en `ARCHITECTURE.template.md`.
+90 reglas. Plantillas en las references; mapa en `ARCHITECTURE.template.md`.
 
 **Núcleo (INV).** Cuatro capas, dependencias hacia dentro, dominio sin E/S, puertos, presentación sin negocio, mapeo, raíz de composición. Sin eso, no es esta skill.
 
@@ -38,7 +38,7 @@ Orden: mapa → vecinos → clasificar (2.3) → ubicar → de dentro hacia fuer
 
 ### 2.1 Capas
 
-Núcleo. Invertida: `presentación → aplicación → dominio ← infraestructura`. Shared es transversal. La raíz de composición conecta; no es capa. Traducción de errores en presentación; platform solo registra el manejador.
+Núcleo. Invertida: `presentación → aplicación → dominio ← infraestructura`. Shared es transversal. La raíz de composición conecta; no es capa.
 
 
 | Capa            | Responsabilidad                                                               | No contiene                          |
@@ -150,7 +150,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 
 - **R-INF-01 (INV)** — Toda clase de infraestructura que se use desde capas interiores DEBE implementar una interfaz definida en el dominio o en la aplicación.
 - **R-INF-02 (INV)** — Los modelos de persistencia (filas, entidades ORM, documentos) NO DEBEN salir de la infraestructura. Se convierten a tipos de dominio con un *mapper*.
-- **R-INF-03 (INV)** — La infraestructura DEBE traducir las excepciones de las librerías externas a errores de la jerarquía común (sección 5), conservando la causa original.
+- **R-INF-03 (INV)** — La infraestructura DEBE traducir los fallos del almacén que tienen significado de negocio (duplicado, clave ajena) a los códigos del catálogo de dominio, conservando la causa original. Los demás fallos salen como error técnico, sin inventar códigos de dominio.
 - **R-INF-04 (DEF)** — Los reintentos, los *timeouts*, los *circuit breakers* y la caché DEBEN implementarse en infraestructura, de forma transparente para el resto.
 
 **Shared**
@@ -247,49 +247,39 @@ Exterior → presentación (forma) → aplicación (comando, transacción, autor
 
 ## 5. Errores
 
-Traducir en cada frontera y no filtrar internos es núcleo (INV). `Result` u excepciones, `code` y Problem Details son DEF/CONV.
+Alcance: errores de dominio, más cinco mínimos de seguridad que valen en toda la arquitectura. La traducción a HTTP u otro protocolo, el formato de respuesta, los logs, la trazabilidad y los errores técnicos los decide el proyecto en `docs/ARCHITECTURE.md`.
 
-### 5.1 Taxonomía
+### 5.1 Modelo
 
+| Campo | Qué es | Ejemplo |
+| --- | --- | --- |
+| `kind` | Categoría, de un conjunto cerrado | `VALIDATION` |
+| `code` | Identificador estable `etiqueta.razón` | `session.end_at.order` |
+| `message` | Texto del catálogo; puede cambiar | `session.end_at debe ser posterior a session.start_at` |
+| `entity`, `field` | Opcionales, salen de la etiqueta | `session`, `end_at` |
+| `cause` | Error original, si lo hay | — |
 
-| `kind`           | Esperado | Origen                       | HTTP | Log     |
-| ---------------- | -------- | ---------------------------- | ---- | ------- |
-| `validation`     | Sí       | Presentación                 | 400  | `debug` |
-| `unauthorized`   | Sí       | Presentación                 | 401  | `info`  |
-| `forbidden`      | Sí       | Aplicación                   | 403  | `warn`  |
-| `not_found`      | Sí       | Aplicación                   | 404  | `info`  |
-| `conflict`       | Sí       | Aplicación o infraestructura | 409  | `info`  |
-| `domain_rule`    | Sí       | Dominio                      | 422  | `info`  |
-| `infrastructure` | No       | Infraestructura              | 503  | `error` |
-| `unexpected`     | No       | Cualquiera                   | 500  | `error` |
-
-
-HTTP solo si la presentación es HTTP. Formato: Problem Details (RFC 9457) con `code`, `requestId` y, en `validation`, `errors: [{ path, code, message }]`.
+`kind` base: `VALIDATION`, `NOT_FOUND` y `CONFLICT`; el proyecto puede añadir otros. Catálogo en el dominio (uno por módulo si hay módulos), con etiquetas y razones cerradas. Una sola fábrica construye el error; con excepciones puede haber un atajo que construye y lanza. Forma de entregarlos: la del proyecto; si no hay nada, la natural del lenguaje.
 
 ### 5.2 Qué hace cada capa
 
-Dominio produce y no captura. Aplicación: no encontrado, prohibido, conflicto; deja subir lo técnico. Infraestructura traduce con `cause`. Presentación valida, autentica y, en un único manejador (platform lo registra), traduce y registra.
+Dominio crea con la fábrica y no captura. Aplicación usa los mismos códigos (`session.missing`). Infraestructura traduce los fallos del almacén con significado de negocio a esos códigos y conserva la causa; el resto es técnico. Presentación decide según `kind` y `code`; la forma la define el proyecto.
 
-### 5.3 Reglas de errores
+### 5.3 Reglas
 
-- **R-ERR-01 (INV)** — Todo error que cruce una frontera de capa DEBE ser una instancia de `AppError` (o de una subclase), con `kind` y `code`.
-- **R-ERR-02 (CONV)** — Los `code` DEBEN ser estables, estar escritos en SCREAMING_SNAKE_CASE, llevar el prefijo del módulo (`ORDER`_, `USER_`) y estar definidos en un catálogo por módulo. Cambiar un código publicado es un cambio incompatible.
+- **R-ERR-01 (INV)** — Todo fallo de negocio DEBE ser un error de dominio tomado del catálogo, con una categoría (`kind`) de un conjunto cerrado y un código (`code`) estable.
+- **R-ERR-02 (CONV)** — El `code` DEBE tener la forma `etiqueta.razón`, salir del catálogo y ser estable. El texto de `message` puede cambiar en el catálogo; cambiar un `code` publicado es un cambio incompatible.
 - **R-ERR-03 (INV)** — Cuando se crea un error a partir de otro, DEBE conservarse el original en `cause`.
 - **R-ERR-04 (INV)** — `details` NO DEBE contener secretos, contraseñas, *tokens* ni datos personales sensibles.
-- **R-ERR-05 (INV)** — El proyecto DEBE aplicar una única política para los errores esperados en todos sus módulos. La política recomendada es `Result`. Si el lenguaje o el equipo prefieren excepciones tipadas, PUEDEN usarlas, siempre con la misma jerarquía `AppError` y documentando la decisión.
-- **R-ERR-06 (CONV)** — Los errores de tipo `infrastructure` y `unexpected` DEBEN propagarse como excepciones, con cualquier política.
+- **R-ERR-05 (INV)** — El proyecto DEBE usar una única forma de entregar los errores de dominio en todos sus módulos y declararla en `docs/ARCHITECTURE.md`. Si no hay nada decidido, DEBE usar el mecanismo natural del lenguaje: excepciones donde son lo habitual y valores de error donde lo son.
 - **R-ERR-07 (CONV)** — NO DEBE devolverse `null`, `undefined`, `-1` ni `false` para indicar un error. `null` solo significa ausencia legítima (por ejemplo, `findById` sin resultado), y la capa que lo recibe decide si eso es un `not_found`.
-- **R-ERR-08 (INV)** — La traducción de los errores al protocolo y su registro en los logs DEBEN hacerse en un único manejador global de presentación. Las capas interiores NO DEBEN registrar un error y además relanzarlo, porque así se duplica en los logs.
-- **R-ERR-09 (CONV)** — NO DEBE haber bloques `catch` vacíos ni bloques que lo capturen todo sin traducir ni relanzar.
+- **R-ERR-09 (INV)** — NO DEBE haber bloques `catch` vacíos ni bloques que lo capturen todo sin traducir ni relanzar.
 - **R-ERR-10 (INV)** — El dominio NO DEBE conocer códigos HTTP, códigos de salida ni textos de interfaz.
-- **R-ERR-11 (CONV)** — Los textos que ve el usuario final DEBEN resolverse en presentación a partir del `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
-- **R-ERR-12 (INV)** — Las respuestas de error de tipo `infrastructure` y `unexpected` NO DEBEN incluir trazas de pila, SQL, nombres de tablas, *hosts* ni mensajes de librerías. Solo un texto genérico y el `requestId`.
-- **R-ERR-13 (CONV)** — La validación de forma DEBE acumular todos los errores de campo y devolverlos juntos, no solo el primero.
+- **R-ERR-11 (CONV)** — Las decisiones y los textos que ve el usuario final DEBEN basarse en `kind` y `code`, mediante un catálogo de mensajes o i18n. NO DEBEN depender del texto de `message`.
+- **R-ERR-12 (INV)** — Ningún error que llegue al cliente DEBE incluir trazas de pila, SQL, nombres de tablas, *hosts* ni mensajes de librerías.
 - **R-ERR-14 (DEF)** — Las reglas de negocio NO DEBEN reimplementarse en presentación. Si la interfaz las repite para dar una respuesta inmediata al usuario, el dominio sigue siendo la fuente de verdad y siempre vuelve a comprobarlas. Véase R-PRE-02.
-- **R-ERR-15 (DEF)** — Todo error registrado DEBE incluir el `requestId`, y el mismo identificador DEBE devolverse al cliente.
 - **R-ERR-16 (INV)** — Los logs NO DEBEN contener contraseñas, *tokens*, números de tarjeta ni datos personales sin enmascarar.
-
-Trazabilidad: reutiliza o genera `requestId`; propágalo; logs JSON con `timestamp`, `level`, `requestId`, `kind`, `code`, `module`.
+- **R-ERR-17 (DEF)** — Un fallo de negocio DEBE crearse con la única fábrica del proyecto, que recibe etiqueta y razón y consulta el catálogo. NO DEBE escribirse el mensaje en el punto de fallo ni crearse un error ad hoc. Con excepciones PUEDE haber un atajo que construye y lanza, siempre a través de la fábrica.
 
 ---
 
@@ -366,7 +356,7 @@ De dentro hacia fuera. Cada paso compila y tiene pruebas. Cada archivo, donde di
 4. Presentación: esquema, operación delgada, *presenter*. El framework manda la ruta.
 5. Composición: conectar en la raíz.
 
-Proyecto nuevo, antes del 1: variante, organización, política de errores y estilo de casos de uso en `docs/ARCHITECTURE.md`; mapa; shared y platform; fronteras. Después: `requestId`, logs, métricas.
+Proyecto nuevo, antes del 1: variante, organización, política de errores y estilo de casos de uso en `docs/ARCHITECTURE.md`; mapa; shared y platform; fronteras. Después: lo que el proyecto decida para logs y métricas.
 
 Checklist: `SKILL.md`.
 
@@ -389,9 +379,7 @@ Checklist: `SKILL.md`.
 | Servicio dios                 | Decenas de métodos                            | Un caso de uso por unidad (R-EST-03)      |
 | Configuración dispersa        | `env` por todo el código                      | Validar al arrancar (R-SHR-04)            |
 | Dominio con reloj             | `new Date()` en entidades                     | Parámetro o puerto (R-PAR-01)             |
-| Log y relanzar                | El mismo error dos veces                      | Solo el manejador global (R-ERR-08)       |
-| Decidir por `message`         | Lógica según el texto                         | Decidir por `code` (R-ERR-02)             |
-| 200 con error o 500 para todo | Protocolo roto                                | Estado según el `kind`                    |
+| Decidir por `message`         | Lógica según el texto                         | Decidir por `code` (R-ERR-11)             |
 | Reestructuración por la guía  | Carpetas movidas para imitar ejemplos         | Mapa sobre lo existente (R-EST-04)        |
 | Lógica en el framework        | Negocio en la ruta o la pantalla              | Delgado y delegar (R-EST-08)              |
 

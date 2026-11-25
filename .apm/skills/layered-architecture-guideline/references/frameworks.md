@@ -30,6 +30,6 @@ La correspondencia de cada ruta impuesta con su rol se declara en el mapa.
 - Módulos con controlador, servicio y repositorio (por ejemplo, un framework de API con inyección): el controlador es presentación; el servicio, aplicación si orquesta y no mezcla SQL; el repositorio, infraestructura. Si el «servicio» mezcla las tres, se extrae dominio y se deja el servicio delgado, o se declara variante ligera.
 - MVC clásico (controlador + modelo + plantilla): el controlador y la plantilla son presentación. El modelo del framework no es el dominio: las reglas salen a entidades o funciones, y la persistencia queda en infraestructura.
 - Anotaciones o decoradores de persistencia sobre entidades de negocio: incumplen R-DOM-01. El modelo de persistencia vive en infraestructura y se mapea (R-INF-02).
-- Arranque y contenedor de inyección: raíz de composición. El *middleware* o filtro global de errores se registra en platform; la función que traduce vive en presentación (R-ERR-08).
+- Arranque y contenedor de inyección: raíz de composición. Si el proyecto usa un *middleware* o filtro global de errores, se registra en platform y la traducción vive en presentación.
 
 En todos los casos, `docs/ARCHITECTURE.md` nombra la ruta impuesta, su rol y la restricción. Si hace falta saltarse un INV, la excepción se escribe ahí.

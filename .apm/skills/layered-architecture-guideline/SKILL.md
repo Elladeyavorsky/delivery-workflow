@@ -31,7 +31,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 
 ### Invariantes
 
-1. Cuatro capas —presentación, aplicación, dominio e infraestructura—, cada una con una sola responsabilidad, más shared transversal.
+1. Cuatro capas —presentación, aplicación, dominio e infraestructura—, cada una con una responsabilidad, más shared transversal.
 2. Dependencias solo hacia dentro, sin ciclos (**R-GEN-04 (INV)**). Las cuatro capas son cerradas (**R-GEN-01 (INV)**); shared es la única abierta (**R-GEN-02 (INV)**). Flujo presentación → aplicación → dominio; la aplicación llama a la infraestructura solo por interfaces (**R-FLU-01 (INV)**). Una capa interior no conoce tipos de una exterior; los imports siguen la matriz (**R-FLU-02 (INV)**). Un módulo solo usa la API pública de otro (**R-EST-02 (INV)**).
 3. El dominio no hace entrada/salida ni importa frameworks (**R-DOM-01 (INV)**). Hora, azar e identificadores entran por parámetro o por puerto (**R-PAR-01 (INV)**).
 4. La infraestructura implementa interfaces de dominio o aplicación (**R-INF-01 (INV)**). La aplicación solo la usa a través de ellas, inyectadas (**R-APL-03 (INV)**).
@@ -40,8 +40,8 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 7. Nada cruza una frontera sin mapeo: ni entidades (**R-FLU-03 (INV)**) ni modelos de persistencia (**R-INF-02 (INV)**).
 8. Las dependencias concretas se crean solo en la raíz de composición (**R-FLU-08 (INV)**).
 9. El protocolo se queda en la presentación (**R-PRE-05 (INV)**). El dominio no lo conoce (**R-ERR-10 (INV)**).
-10. Cada frontera traduce a un error propio del sistema, con tipo y código estables (**R-ERR-01 (INV)**), y conserva la causa (**R-ERR-03 (INV)**). Nada interno ni sensible llega al cliente (**R-ERR-12 (INV)**) ni a los logs (**R-ERR-04 (INV)**, **R-ERR-16 (INV)**). Un único punto en presentación traduce y registra (**R-ERR-08 (INV)**). La infraestructura traduce excepciones externas (**R-INF-03 (INV)**). Platform solo registra ese manejador.
-11. El proyecto declara en `docs/ARCHITECTURE.md` una política única para los errores esperados y la trazabilidad (**R-ERR-05 (INV)**).
+10. Todo fallo de negocio es un error de dominio del catálogo, con categoría y código estables (**R-ERR-01 (INV)**). La infraestructura traduce los fallos del almacén a esos mismos códigos y el resto sale como error técnico (**R-INF-03 (INV)**). El proyecto declara una única forma de entregarlos; si no hay nada, la natural del lenguaje (**R-ERR-05 (INV)**).
+11. Mínimos de seguridad en toda la arquitectura: toda traducción conserva la causa (**R-ERR-03 (INV)**); nada interno llega al cliente (**R-ERR-12 (INV)**); ni los detalles de un error ni los logs llevan secretos (**R-ERR-04 (INV)**, **R-ERR-16 (INV)**); ningún fallo se silencia (**R-ERR-09 (INV)**). El resto del manejo de errores fuera del dominio lo decide el proyecto.
 12. Shared no tiene negocio (**R-SHR-02 (INV)**) ni importa de otras capas (**R-SHR-01 (INV)**).
 
 ### Capas y dónde va cada cosa
@@ -54,7 +54,7 @@ Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layer
 | Infraestructura | Implementar puertos | Negocio, orquestación |
 | Shared | Piezas genéricas sin negocio | Negocio, entrada/salida, imports de otras capas |
 
-Platform registra el manejador. La raíz crea y conecta; no es una capa.
+La raíz crea y conecta; no es una capa.
 
 | Desde \ Hacia | Presentación | Aplicación | Dominio | Infraestructura | Shared | Platform |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -84,9 +84,9 @@ Platform registra el manejador. La raíz crea y conecta; no es una capa.
 
 Ligera: presentación, servicios (aplicación + dominio) e infraestructura; repositorios opcionales; datos y funciones; transferencias solo en la frontera exterior. Completa: las cuatro capas; repositorios obligatorios; entidades y value objects; transferencias en todas las fronteras.
 
-La ligera separa al menos presentación e infraestructura y aplica las reglas de errores INV (**R-GEN-05 (INV)**). En la completa, el dominio define las interfaces de repositorio de sus agregados, en términos de dominio (**R-DOM-05 (DEF)**). Un proyecto nuevo usa la variante invertida. Si usa la clásica, lo documenta en el mapa (**R-GEN-03 (DEF)**). Las consultas de solo lectura pueden devolver objetos de transferencia sin entidades; las escrituras no (**R-FLU-07 (DEF)**). Única excepción a **R-GEN-01**.
+La ligera separa presentación e infraestructura y aplica las reglas de errores INV (**R-GEN-05 (INV)**). En la completa, el dominio define las interfaces de repositorio de sus agregados (**R-DOM-05 (DEF)**). Proyecto nuevo: variante invertida. La clásica se documenta en el mapa (**R-GEN-03 (DEF)**). Consultas de solo lectura: transferencias sin entidades; las escrituras no (**R-FLU-07 (DEF)**). Única excepción a **R-GEN-01**.
 
-Señales: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas, tocar todas las capas de todos los módulos.
+Señales: reenvíos, un campo en seis archivos, entidades sin comportamiento, saltar capas.
 
 ### Frameworks
 
@@ -107,9 +107,9 @@ Casos: `references/frameworks.md`.
 - Ni entidades ni persistencia salen de su capa; salida por lista blanca (**R-FLU-03**, **R-INF-02**, **R-FLU-12**).
 - Transacción en aplicación; dependencias solo en la raíz (**R-APL-05**, **R-FLU-08**).
 - Orden: parámetros, lógica de menor a mayor coste, saneamiento (**R-FLU-10**, **R-FLU-11**).
-- Errores con tipo y código; esperados según política; técnicos lanzados (**R-ERR-01**, **R-ERR-02**, **R-ERR-05**, **R-ERR-06**).
-- Infraestructura traduce y conserva la causa; sin capturas vacías ni registros duplicados (**R-INF-03**, **R-ERR-03**, **R-ERR-08**, **R-ERR-09**).
-- Error al cliente sin internos, con `requestId` (**R-ERR-12**, **R-ERR-15**).
+- Fallos de negocio con la fábrica y el catálogo de dominio; entregados según la política (**R-ERR-01**, **R-ERR-17**, **R-ERR-05**).
+- Infraestructura traduce a los códigos del catálogo y conserva la causa; sin capturas vacías (**R-INF-03**, **R-ERR-03**, **R-ERR-09**).
+- Nada interno ni sensible al cliente ni a los logs (**R-ERR-12**, **R-ERR-04**, **R-ERR-16**).
 - Dominio sin efectos; value objects, transferencias y comandos inmutables; entidades sin mutadores públicos (**R-PAR-01**, **R-PAR-03**, **R-DOM-03**).
 - Objeto único de entrada donde es obligatorio (**R-PAR-09**).
 - Pruebas de cada regla nueva y código de error esperado (**R-TST-01**, **R-TST-04**).
@@ -117,9 +117,9 @@ Casos: `references/frameworks.md`.
 
 ## 5. Manejo de Errores y Excepciones
 
-- Sin `docs/ARCHITECTURE.md`, créalo desde la plantilla. Intensidad o framework sin decidir: hueco.
-- Si existe `docs/ARCHITECTURE.md`, completa lo que falte de la plantilla; no lo sustituyas.
+- Sin mapa, créalo. Intensidad o framework sin decidir: hueco.
+- Si existe, completa; no lo sustituyas.
 - Framework que fusiona capas: variante ligera y excepción en `docs/ARCHITECTURE.md`.
-- Sin herramienta de fronteras: dilo como «fronteras no comprobadas».
+- Sin herramienta de fronteras: «fronteras no comprobadas».
 - Un DEBERÍA desviado se registra en `docs/ARCHITECTURE.md`.
 - Si SKILL y references no bastan: `<carpeta de esta skill>/assets/layered-architecture-guide.md`; no de entrada.

@@ -443,7 +443,7 @@ check "la guía condensada define las mismas reglas y etiquetas que la skill" no
   const guide = collect([path.join(dir, "assets", "layered-architecture-guide.md")]);
   const problems = [];
   const count = (tag) => [...skill.found.values()].filter((t) => t === tag).length;
-  if (count("INV") !== 39 || count("DEF") !== 26 || count("CONV") !== 28) problems.push(`cuentas ${count("INV")}/${count("DEF")}/${count("CONV")} (esperado 39/26/28)`);
+  if (count("INV") !== 39 || count("DEF") !== 26 || count("CONV") !== 25) problems.push(`cuentas ${count("INV")}/${count("DEF")}/${count("CONV")} (esperado 39/26/25)`);
   if (skill.repeated.length) problems.push(`definidas dos veces en la skill: ${skill.repeated.join(", ")}`);
   if (guide.repeated.length) problems.push(`definidas dos veces en la guía: ${guide.repeated.join(", ")}`);
   for (const [id, tag] of skill.found) if (guide.found.get(id) !== tag) problems.push(`${id}: skill ${tag}, guía ${guide.found.get(id) ?? "ausente"}`);
