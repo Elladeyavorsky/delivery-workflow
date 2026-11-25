@@ -2,7 +2,7 @@
 
 # Arquitectura en capas · Guía (v1.3)
 
-92 reglas. Plantillas en las references; mapa en `ARCHITECTURE.template.md`.
+93 reglas. Plantillas en las references; mapa en `ARCHITECTURE.template.md`.
 
 **Núcleo (INV).** Cuatro capas, dependencias hacia dentro, dominio sin E/S, puertos, presentación sin negocio, mapeo, raíz de composición. Sin eso, no es esta skill.
 
@@ -72,6 +72,7 @@ Fila = quien importa. Entre módulos, solo la API pública (R-EST-02).
 - **R-GEN-01 (INV)** — Las capas de presentación, aplicación, dominio e infraestructura DEBEN ser cerradas. La única excepción permitida es la de las consultas de solo lectura descritas en R-FLU-07.
 - **R-GEN-02 (INV)** — El código común (shared) es la única capa abierta: cualquier capa PUEDE usarlo.
 - **R-GEN-04 (INV)** — Las dependencias NO DEBEN formar ciclos, ni entre capas ni entre módulos.
+- **R-GEN-06 (DEF)** — Dentro de una capa, una unidad (caso de uso, controlador, servicio, repositorio, cliente) NO DEBE llamar a otra unidad de la misma capa. Si dos necesitan lo mismo, se extrae una función general a shared (a platform si es técnica y la capa puede usarla) y ambas la usan; si es negocio, lo coordina la capa superior. Quedan fuera las piezas del modelo de dominio entre sí (una entidad usa sus value objects) y los métodos privados de la misma unidad.
 - **R-FLU-01 (INV)** — El flujo de llamadas DEBE ser presentación → aplicación → dominio. La aplicación llama a la infraestructura solo a través de interfaces.
 - **R-FLU-02 (INV)** — Una capa interior NO DEBE conocer el tipo concreto de una capa exterior. Los `import` solo DEBEN apuntar a las capas permitidas por la matriz de la sección 2.2.
 - **R-FLU-08 (INV)** — Las dependencias concretas DEBEN crearse y conectarse solo en la raíz de composición (o en el contenedor de inyección del framework). Las capas NO DEBEN instanciar sus propias dependencias.
@@ -133,7 +134,7 @@ Mal uso: reenvíos, un campo en seis archivos, entidades sin comportamiento, sal
 - **R-APL-01 (DEF)** — Cada caso de uso DEBE representar una intención del usuario o del sistema y nombrarse con un verbo: `AddOrderLine`, `RegisterUser`, `CancelReservation`.
 - **R-APL-02 (CONV)** — Un caso de uso DEBE recibir un único objeto de entrada inmutable (comando o consulta) y devolver un DTO o un `Result` con un DTO. El objeto de entrada sigue RORO (R-PAR-09).
 - **R-APL-03 (INV)** — La aplicación DEBE acceder a la infraestructura solo a través de interfaces (puertos o repositorios), recibidas por inyección.
-- **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable.
+- **R-APL-04 (DEF)** — Un caso de uso NO DEBERÍA llamar a otro caso de uso. La lógica compartida se extrae a un servicio de dominio o a una función de aplicación reutilizable. Caso particular de R-GEN-06.
 - **R-APL-05 (INV)** — La transacción DEBE abrirse y cerrarse en la aplicación, una por caso de uso, mediante una unidad de trabajo.
 - **R-APL-06 (INV)** — La autorización («¿puede este usuario hacer esto?») DEBE comprobarse en la aplicación. La autenticación («¿quién es?») se resuelve en la presentación.
 

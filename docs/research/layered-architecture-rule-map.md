@@ -2,7 +2,7 @@
 
 Índice del corte ya aplicado. Lo usa quien edite `layered-architecture-guideline`. Los agentes no lo leen; `apm install` no lo copia.
 
-Fuente: `.apm/skills/layered-architecture-guideline/assets/layered-architecture-guide.md` (v1.3, 92 reglas). Destino: skill, `references/` y `assets/ARCHITECTURE.template.md`.
+Fuente: `.apm/skills/layered-architecture-guideline/assets/layered-architecture-guide.md` (v1.3, 93 reglas). Destino: skill, `references/` y `assets/ARCHITECTURE.template.md`.
 
 Cada ID apunta a un fichero y a una etiqueta INV/DEF/CONV. No reclasifiques. Si una regla no encaja, pregunta en la issue.
 
@@ -97,6 +97,7 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | R-GEN-03 | DEF | SKILL-INT | La variante clásica se documenta en el mapa |
 | R-GEN-04 | INV | SKILL-INV 2 + ASSET-MAPA | |
 | R-GEN-05 | INV | SKILL-INT | Ver corrección 3 |
+| R-GEN-06 | DEF | REF-FLU | Añadida en la revisión de la v1.3 (revisor): no hay llamadas entre unidades de una misma capa; lo común va a shared |
 
 ### FLU · Flujo entre capas
 
@@ -255,8 +256,8 @@ Reglas INV de protocolo (SKILL-PROTO): R-AGT-01, R-AGT-02, R-AGT-05, R-AGT-07, R
 | Etiqueta | Reglas |
 | --- | --- |
 | INV | 39 (30 en los 12 invariantes y 9 de protocolo) |
-| DEF | 25 |
+| DEF | 26 |
 | CONV | 28 |
-| Total | 92 |
+| Total | 93 |
 
 Al terminar, comprueba que cada ID de la v1.3 aparece en la skill exactamente una vez y que las cuentas coinciden.

@@ -66,7 +66,7 @@ Platform registra el manejador. La raíz de composición crea y conecta; no es u
 | Platform | No | Sí, puertos | No | No | Sí | — |
 | Raíz de composición | Sí | Sí | Sí | Sí | Sí | Sí |
 
-¿En qué capa va esto? La primera afirmativa decide. El mapa da la ruta.
+La primera afirmativa decide. El mapa da la ruta.
 
 1. Recibe el exterior o produce la salida del cliente → Presentación
 2. Habla con algo externo para leer o escribir → Infraestructura
@@ -100,20 +100,20 @@ Casos: `references/frameworks.md`.
 ### Checklist final
 
 - Archivo nuevo en capa y ruta del mapa (**R-EST-07**, **R-AGT-03**).
-- Nada existente reorganizado sin petición (**R-EST-04**, **R-AGT-02**).
-- Archivos que impone el framework, delgados (**R-EST-08**).
-- Imports según la matriz; sin ciclos ni internos de otros módulos (**R-FLU-02**, **R-GEN-04**, **R-EST-02**, **R-DOM-01**, **R-PRE-04**, **R-SHR-01**).
-- Una operación de presentación, un caso de uso; comando inmutable, éxito o error esperado (**R-PRE-03**, **R-APL-02**).
+- Nada reorganizado sin petición (**R-EST-04**, **R-AGT-02**).
+- Archivos del framework, delgados (**R-EST-08**).
+- Imports según la matriz; sin ciclos ni internos de otros módulos; sin llamadas entre unidades de una misma capa (**R-FLU-02**, **R-GEN-04**, **R-EST-02**, **R-DOM-01**, **R-PRE-04**, **R-SHR-01**, **R-GEN-06**).
+- Una operación, un caso de uso; comando inmutable, éxito o error esperado (**R-PRE-03**, **R-APL-02**).
 - Ni entidades ni persistencia salen de su capa; salida por lista blanca (**R-FLU-03**, **R-INF-02**, **R-FLU-12**).
-- Transacción en la aplicación; dependencias solo en la raíz (**R-APL-05**, **R-FLU-08**).
+- Transacción en aplicación; dependencias solo en la raíz (**R-APL-05**, **R-FLU-08**).
 - Orden: parámetros, lógica de menor a mayor coste, saneamiento (**R-FLU-10**, **R-FLU-11**).
 - Errores con tipo y código; esperados según política; técnicos lanzados (**R-ERR-01**, **R-ERR-02**, **R-ERR-05**, **R-ERR-06**).
 - Infraestructura traduce y conserva la causa; sin capturas vacías ni registros duplicados (**R-INF-03**, **R-ERR-03**, **R-ERR-08**, **R-ERR-09**).
 - Error al cliente sin internos, con `requestId` (**R-ERR-12**, **R-ERR-15**).
 - Dominio sin efectos; value objects, transferencias y comandos inmutables; entidades sin mutadores públicos (**R-PAR-01**, **R-PAR-03**, **R-DOM-03**).
-- Un único objeto de entrada donde es obligatorio (**R-PAR-09**).
-- Pruebas de cada regla nueva y cada código de error esperado (**R-TST-01**, **R-TST-04**).
-- Sin librerías que el proyecto ya cubría (**R-AGT-04**).
+- Objeto único de entrada donde es obligatorio (**R-PAR-09**).
+- Pruebas de cada regla nueva y código de error esperado (**R-TST-01**, **R-TST-04**).
+- Sin librerías que el proyecto cubría (**R-AGT-04**).
 
 ## 5. Manejo de Errores y Excepciones
 
