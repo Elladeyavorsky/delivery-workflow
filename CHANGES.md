@@ -29,7 +29,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 | — | `.apm/skills/say-it-straight/` | Nueva: prosa en español declarativa para issue, spec, PR y docs; sin copiar skills externas. |
 | — | `.apm/skills/setup-context7/` | Nueva: sugiere para qué dependencias usar Context7 y deja el MCP en la config de usuario y la regla del proyecto. |
 | — | `.apm/skills/setup-docs-rag/` | Nueva: RAG local de la documentación de las dependencias y runtimes, en su versión exacta, con su propio MCP (`docs-rag`), instalado y registrado en cada proyecto. Alternativa a Context7. Sus datos y su MCP (`resolve_package`, `query_docs`) van en inglés. |
-| — | `docs/research/` | Nueva: el informe con la receta del RAG local, y el mapa de reglas de la guía de arquitectura en capas. La guía condensada está en la skill. |
+| — | `docs/research/` | Nueva: el informe con la receta del RAG local. La guía condensada de arquitectura en capas está en la skill. |
 | — | `.apm/skills/setup-compliance/` | Nueva: genera en `docs/` del proyecto la clasificación AI Act, una DPIA mínima, el threat model y las fichas de sistema, modelo y datos que aplican, con la fuente de cada afirmación, huecos para lo que no deduce y sin pisar un documento que la persona editó. Lleva el texto oficial de los arts. 5, 6 y 50 y del anexo III del Reglamento de IA. No certifica cumplimiento. |
 | — | `.apm/skills/docker-best-practices/` | Nueva: reglas para el Docker de un proyecto (versiones fijas, caché de capas, volúmenes, Dev Container, hooks, apps gráficas) y un script que revisa el `Dockerfile`. |
 | — | `.apm/skills/data-protection-guideline/` | Nueva: checklist orientativo del RGPD y la LOPDGDD con los artículos citados empaquetados. |
