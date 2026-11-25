@@ -71,6 +71,17 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
    | Node 24 | `/delivery-workflow` «Crea la issue y hazla: enviar el nombre y el correo de cada usuario a un chatbot alojado fuera del EEE» | `concept-developer` devuelve una consulta legal sobre transferencias internacionales (RGPD 44 a 49). El orquestador llama a `legal-advisor` antes de la ronda 1. La issue recibe un comentario `## Consultas legales` con la respuesta, los artículos y el CELEX `32016R0679` con la fecha. La spec recoge el requisito con `(CL-NN; RGPD …)`. |
    | Node 20 | La misma tarea, en otro repositorio desechable o en una issue nueva | El comentario de `legal-advisor` dice que no usó EUR-Lex, o la consulta queda como hueco y el orquestador te la pregunta. |
 
+   Para probar el sandbox, que el repositorio configura en `.claude/settings.json` (`sandbox.network.allowedDomains`) y en `.cursor/sandbox.json` (`networkPolicy.allow`) con `api.github.com` y `github.com`, abre una sesión nueva con el sandbox activo. El repositorio no activa el sandbox; en Claude Code, actívalo con `/sandbox`. Según la [documentación de Cursor](https://cursor.com/docs/reference/sandbox), `.cursor/sandbox.json` lleva en `networkPolicy.allow` los dominios permitidos, y el `allow` del proyecto se une con el de usuario. En Cursor, las dos comprobaciones de abajo son la prueba de que el sandbox actúa: si `curl -sS -m 10 https://example.com` pasa, el sandbox no está actuando; el escenario 5 de la spec falla y anotas la herramienta y la versión en la issue. Codex no está cubierto. Después, en cada herramienta:
+
+   | Con | Escribe | Tiene que pasar |
+   |---|---|---|
+   | Claude Code, sandbox activo | `bash .claude/skills/check-status/scripts/check-status.sh` | La línea `GitHub CLI` dice `cuenta TU_LOGIN`, no «GitHub rechaza el token del .env». Si falla, el escenario 5 de la spec falla: anota la herramienta y la versión en la issue. Fuente: [Sandboxing de Claude Code](https://code.claude.com/docs/en/sandboxing). |
+   | Claude Code, sandbox activo | `curl -sS -m 10 https://example.com` | El sandbox bloquea la conexión. |
+   | Cursor, sandbox activo | `bash .claude/skills/check-status/scripts/check-status.sh` | `GitHub CLI` dice `cuenta TU_LOGIN`: HTTPS pasa con `networkPolicy.allow`. |
+   | Cursor, sandbox activo | `curl -sS -m 10 https://example.com` | El sandbox bloquea la conexión. Si pasa, el sandbox no está actuando: el escenario 5 falla y anotas la herramienta y la versión en la issue. |
+
+   Si una herramienta no se puede probar, anótalo en la issue y no lo des por probado.
+
 6. Anota lo que falle: la herramienta, el paso, lo que escribiste y el error. Ábrelo como issue en [este repositorio](https://github.com/venturars/delivery-workflow/issues) con el tipo `fix`.
 
 7. Borra el repositorio de prueba: `gh auth refresh -s delete_repo` y después `gh repo delete delivery-test --yes`.
