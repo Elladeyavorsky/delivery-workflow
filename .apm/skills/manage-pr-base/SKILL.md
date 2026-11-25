@@ -8,7 +8,7 @@ description: "Abre la pull request de la rama de trabajo contra la rama base, en
 - **Descripción**: Úsala desde el subagente `manage-pr` para abrir la pull request contra la rama base, directamente en draft, asignada a la cuenta del token y con la etiqueta del tipo, en una misma invocación. Para enlazar la issue, usa `link-pr-to-issue`.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/manage-pr-base.sh" "[RAMA]" "[TITULO]" "[CUERPO]" "[TIPO]" "[BASE]"`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/manage-pr-base`. Requiere GitHub CLI y el `GITHUB_TOKEN` del `.env` del proyecto: la cuenta del token será el autor de la PR y `--assignee "@me"` la persona asignada. El script usa el token del `.env`, no la sesión de `gh`.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-pr-base`; en Claude Code, `${CLAUDE_SKILL_DIR}`. Requiere GitHub CLI y el `GITHUB_TOKEN` del `.env` del proyecto: la cuenta del token será el autor de la PR y `--assignee "@me"` la persona asignada. El script usa el token del `.env`, no la sesión de `gh`.
 
 Fuente de la forma del cuerpo: [github-pr](https://www.skills.sh/gentleman-programming/gentleman-skills/github-pr), adaptada a este paquete.
 

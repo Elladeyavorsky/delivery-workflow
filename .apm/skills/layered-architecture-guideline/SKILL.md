@@ -16,7 +16,7 @@ description: "Arquitectura en capas: invariantes, ubicación, nombres y separaci
 - **Cuándo actuar:** Crear un proyecto, añadir una funcionalidad, decidir capa, nombre o separación.
 - **Precedencia:** Petición de la persona > `docs/ARCHITECTURE.md` y `docs/STYLE.md` > framework > esta skill. Un INV solo se salta con excepción escrita en `docs/ARCHITECTURE.md`.
 
-Carpeta: Claude Code `${CLAUDE_SKILL_DIR}`; Cursor y Codex `.agents/skills/layered-architecture-guideline`.
+Carpeta: opencode, Cursor y Codex `.agents/skills/layered-architecture-guideline`; Claude Code `${CLAUDE_SKILL_DIR}`.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 

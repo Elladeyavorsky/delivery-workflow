@@ -8,7 +8,7 @@ description: "Adelanta la rama base local a su remoto con un fast-forward, sin c
 - **Descripción**: Úsala para adelantar la rama base con un fast-forward desde `origin`. El orquestador la actualiza siempre, esté en la rama que esté. Si la rama base necesita un merge o un rebase, la integración la decide la persona.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/pull-changes.sh"`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/pull-changes`.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/pull-changes`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

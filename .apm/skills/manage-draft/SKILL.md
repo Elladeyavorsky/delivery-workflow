@@ -9,7 +9,7 @@ description: "Pasa a draft una pull request que ya existe. La usa manage-pr al a
 - **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la acción queda a nombre de la cuenta del token.
 - **Comando**: `bash "<carpeta de esta skill>/scripts/gh.sh" pr ready N --undo`. Para saber si ya está en draft: `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json isDraft`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/manage-draft`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-draft`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 
