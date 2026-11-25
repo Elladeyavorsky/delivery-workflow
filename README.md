@@ -131,7 +131,7 @@ En Claude Code, la carpeta es `.claude/skills/docker-best-practices/`.
 
 ## Arquitectura en capas
 
-La skill `layered-architecture-guideline` fija cuatro capas (presentación, aplicación, dominio e infraestructura) más shared, las dependencias hacia dentro y el manejo de errores. Decide dónde va cada pieza y cómo se separa. Respeta la estructura que impone un framework. Fuera de alcance: scripts de un solo uso, ETL, sistemas por eventos, videojuegos y prototipos desechables.
+La skill `layered-architecture-guideline` fija cuatro capas (presentación, aplicación, dominio e infraestructura) más shared, las dependencias hacia dentro y los errores de dominio, con mínimos de seguridad para toda la arquitectura. Decide dónde va cada pieza y cómo se separa. Respeta la estructura que impone un framework. Fuera de alcance: scripts de un solo uso, ETL, sistemas por eventos, videojuegos y prototipos desechables.
 
 La usan `concept-developer` y `code-developer`. `code-tester` y `concept-tester` siguen el plan, no la precargan.
 
