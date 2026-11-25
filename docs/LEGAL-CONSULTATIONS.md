@@ -1,6 +1,6 @@
 # Consultas legales con EUR-Lex
 
-La guía `data-protection-guideline` ([Protección de datos](../README.md#protección-de-datos)) resuelve las dudas de protección de datos que cubren su checklist y los artículos que trae. Las demás son consultas legales, y las responde el agente `legal-advisor`. Sus respuestas no certifican cumplimiento.
+La guía `data-protection-guideline` ([Protección de datos](DATA-PROTECTION.md)) resuelve las dudas de protección de datos que cubren su checklist y los artículos que trae. Las demás son consultas legales, y las responde el agente `legal-advisor`. Sus respuestas no certifican cumplimiento.
 
 ## Flujo
 

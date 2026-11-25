@@ -64,7 +64,7 @@ Una prueba de unos veinte minutos en un repositorio desechable, para comprobar e
 
    Compruébalo también fuera del chat: `git log --oneline`, `gh issue view 1 --comments` y `gh pr view --web`.
 
-   Para probar las consultas legales, añade a `docs/CONSTITUTION.md` la sección `## Datos personales` con sus cuatro campos rellenos ([Protección de datos](../README.md#protección-de-datos)) y ejecuta `apm install`, que escribe el MCP `eur-lex`. Después, con un gestor de versiones de Node:
+   Para probar las consultas legales, añade a `docs/CONSTITUTION.md` la sección `## Datos personales` con sus cuatro campos rellenos ([Protección de datos](DATA-PROTECTION.md)) y ejecuta `apm install`, que escribe el MCP `eur-lex`. Después, con un gestor de versiones de Node:
 
    | Con | Escribe | Tiene que pasar |
    |---|---|---|
