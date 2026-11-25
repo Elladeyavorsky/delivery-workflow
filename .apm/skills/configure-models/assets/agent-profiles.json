@@ -44,6 +44,33 @@
     }
   },
   "tools": {
+    "opencode": {
+      "name": "opencode",
+      "agentsDir": ".opencode/agents",
+      "extension": "md",
+      "providers": true,
+      "stripSkills": true,
+      "patterns": {
+        "heavy": [
+          "/(.*/)?claude-[^/]*opus[^/]*$",
+          "/(.*/)?gpt-[\\d.]+-codex$",
+          "/(.*/)?gpt-[\\d.]+$",
+          "/(.*/)?claude-[^/]*sonnet[^/]*$"
+        ],
+        "standard": [
+          "/(.*/)?claude-[^/]*sonnet[^/]*$",
+          "/(.*/)?gpt-[\\d.]+-codex$",
+          "/(.*/)?gpt-[\\d.]+$",
+          "/(.*/)?claude-[^/]*opus[^/]*$"
+        ],
+        "light": [
+          "/(.*/)?claude-[^/]*haiku[^/]*$",
+          "/.*(^|[-_./])mini($|[-_.])",
+          "/(.*/)?gemini-[^/]*flash[^/]*$",
+          "/(.*/)?claude-[^/]*sonnet[^/]*$"
+        ]
+      }
+    },
     "cursor": {
       "name": "Cursor",
       "agentsDir": ".cursor/agents",
