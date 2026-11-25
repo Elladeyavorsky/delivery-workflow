@@ -1,6 +1,6 @@
 ---
 name: setup-docs-rag
-description: "Configura el RAG local de documentación en este proyecto: inventaría las dependencias y runtimes con su versión exacta, indexa su documentación oficial en Qdrant e instala y registra el MCP docs-rag en la config del proyecto de Cursor, Claude Code y Codex. Úsala cuando la persona quiera que las consultas de documentación no salgan de su ordenador, o para reindexar tras cambiar dependencias."
+description: "Configura el RAG local de documentación en este proyecto: inventaría las dependencias y runtimes con su versión exacta, indexa su documentación oficial en Qdrant e instala y registra el MCP docs-rag en la config del proyecto de opencode, Claude Code, Cursor y Codex. Úsala cuando la persona quiera que las consultas de documentación no salgan de su ordenador, o para reindexar tras cambiar dependencias."
 ---
 
 ### Herramienta: SETUP_DOCS_RAG
@@ -11,17 +11,18 @@ description: "Configura el RAG local de documentación en este proyecto: inventa
   - La indexa en un Qdrant local con `nomic-embed-text` (Ollama).
   - Instala el MCP `docs-rag` en `.docs-rag/` y lo registra en la config del proyecto de cada herramienta.
 
-  La receta está en `docs/research/rag-documentacion-python-3.15.pdf` del repositorio de delivery-workflow. Funciona con Cursor, Claude Code y Codex.
+  La receta está en `docs/research/rag-documentacion-python-3.15.pdf` del repositorio de delivery-workflow. Funciona con opencode, Cursor, Claude Code y Codex.
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/setup-docs-rag.mjs" ORDEN [OPCIONES]`, desde la raíz del repositorio.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/setup-docs-rag`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/setup-docs-rag`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Todo vive en el proyecto
 
 - El código del MCP, su entorno Python y el índice van en `.docs-rag/` (`app/`, `venv/`, `inventory.json`, `request.json` y `docs/`). La carpeta trae su propio `.gitignore` con `*`.
-- El registro va en la config del proyecto: `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor) y `.codex/config.toml` (Codex). La entrada usa rutas relativas al proyecto, sin rutas de este ordenador. La skill no toca el `.gitignore` del proyecto: cada proyecto decide si sube esos ficheros.
+- El registro va en la config del proyecto: `opencode.json` (opencode), `.mcp.json` (Claude Code), `.cursor/mcp.json` (Cursor) y `.codex/config.toml` (Codex). La entrada usa rutas relativas al proyecto, sin rutas de este ordenador. La de opencode arranca con `bash` y va antes a la raíz del repositorio git, porque opencode lanza el servidor en la carpeta desde la que se abre. La skill no toca el `.gitignore` del proyecto: cada proyecto decide si sube esos ficheros.
 - Solo hay un canal de documentación. `apply` quita `context7` de la config de usuario y la regla «Context7» de `AGENTS.md` o `CLAUDE.md`. Esa config es de usuario: la herramienta deja de usar Context7 también en los demás proyectos del ordenador. Para volver, `/setup-context7`, que quita `docs-rag` del proyecto.
 - `apply` quita el `docs-rag` que versiones anteriores dejaban en `~/.claude.json`, `~/.cursor/mcp.json` y `~/.codex/config.toml`. `~/.docs-rag/` ya no se usa y no se borra solo.
+- Un `opencode.jsonc` que declare `context7` o `docs-rag` no se modifica: `apply` lo avisa en las `notes`.
 - `apm install` no lee ni cambia nada de esto.
 
 #### Especificación de Argumentos
@@ -48,7 +49,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
    - `reset`: quita el MCP `docs-rag` de la config del proyecto (y de la de usuario, si queda de una versión anterior). Con `--drop-index` borra también la colección de Qdrant y la carpeta `.docs-rag/` entera.
 2. **`--libs a,b,c`** _(Opcional)_: solo esas dependencias. Sin la opción, todas las del inventario con versión. Lo que ya estaba indexado y no se pide se borra del índice.
 3. **`--no-runtimes`** _(Opcional)_: no indexa la documentación de los runtimes.
-4. **`--target cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
+4. **`--target opencode|cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
 5. **`--drop-index`** _(Opcional, solo con `reset`)_.
 
 #### Reglas de Invocación Críticas
@@ -69,7 +70,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
      - Una tabla con herramienta, archivo de configuración y `result`.
      - El resumen del `index`: `indexed`, `reindexed`, `deleted`, `unchanged`, `no_docs` con su `reason`, y `chunks`.
      - Las `notes` y los `warnings`.
-  6. Recuerda recargar el editor, o la sesión de Claude Code o Codex, para que cargue el MCP.
+  6. Recuerda recargar el editor, o la sesión de opencode, Claude Code o Codex, para que cargue el MCP.
 - **Qué sale del ordenador**: solo la descarga de la documentación, desde PyPI, Read the Docs, npm, GitHub, gitlab.com, codeberg.org, api.bitbucket.org, el host del remoto git de un paquete autogestionado (GitLab o Gitea/Forgejo), docs.rs, crates.io, proxy.golang.org, go.dev, nodejs.org o docs.python.org. Las preguntas de los agentes y los fragmentos se quedan en local.
 - **`GITHUB_TOKEN`**: si está en el `.env` del proyecto o en la terminal, se usa solo para subir el límite de la API de GitHub (`api.github.com` y `raw.githubusercontent.com`); GitLab, Gitea, Forgejo y Bitbucket no lo reciben. Nunca se escribe en ningún archivo.
 - **Cuándo repetirla**: tras cambiar dependencias o el lockfile, vuelve a lanzar `/setup-docs-rag`; solo se reindexa lo que cambió. Con `apm install` o `apm update` no hace falta.
