@@ -97,13 +97,13 @@ else
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node: no instalado. Hace falta Node 20 o superior."
+  echo "Node: no instalado. Hace falta Node 24 o superior."
 else
   node_version=$(node -p 'process.versions.node')
-  if (( ${node_version%%.*} >= 20 )); then
+  if (( ${node_version%%.*} >= 24 )); then
     echo "Node: ${node_version}"
   else
-    echo "Node: ${node_version}. Hace falta Node 20 o superior."
+    echo "Node: ${node_version}. Hace falta Node 24 o superior."
   fi
 fi
 
