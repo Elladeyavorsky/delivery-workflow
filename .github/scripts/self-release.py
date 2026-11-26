@@ -297,6 +297,16 @@ def command_select(args):
         print(chosen)
 
 
+def command_latest(args):
+    payload = sys.stdin.read()
+    tags = stable_tags(payload)
+    if not tags:
+        raise SystemExit(
+            "No hay ninguna GitHub Release estable válida con tag vX.Y.Z."
+        )
+    print(tags[0])
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -322,6 +332,9 @@ def main():
     select.add_argument("repo")
     select.add_argument("--manifests")
     select.set_defaults(func=command_select)
+
+    latest = sub.add_parser("latest")
+    latest.set_defaults(func=command_latest)
 
     args = parser.parse_args()
     args.func(args)

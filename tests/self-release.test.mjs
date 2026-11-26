@@ -171,6 +171,42 @@ test('set conserva el comentario y rechaza ref, ausencia y duplicado sin escribi
   assert.equal(readFileSync(duplicate, 'utf8'), beforeDuplicate);
 });
 
+test('latest elige la release estable más alta sin mirar el manifiesto', () => {
+  const releases = JSON.stringify([
+    { tag_name: 'v1.2.3', draft: false, prerelease: false },
+    { tag_name: 'v1.3.0', draft: false, prerelease: false },
+    { tag_name: 'v1.4.0', draft: false, prerelease: false },
+  ]);
+  const newest = run(['latest'], releases);
+  assert.equal(newest.status, 0);
+  assert.equal(newest.stdout, 'v1.4.0\n');
+
+  const onlySelfPinned = JSON.stringify([
+    { tag_name: 'v1.4.0', draft: false, prerelease: false },
+    { tag_name: 'v1.3.0', draft: false, prerelease: false },
+    { tag_name: 'v1.2.3', draft: false, prerelease: false },
+  ]);
+  const stillNewest = run(['latest'], onlySelfPinned);
+  assert.equal(stillNewest.status, 0);
+  assert.equal(stillNewest.stdout, 'v1.4.0\n');
+});
+
+test('select y latest difieren cuando las releases nuevas traen autodependencia', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'self-release-latest-vs-select-'));
+  writeFileSync(join(dir, 'v1.4.0.yml'), manifest);
+  writeFileSync(join(dir, 'v1.3.0.yml'), manifest);
+  writeFileSync(join(dir, 'v1.2.3.yml'), withoutSelf);
+  const releases = JSON.stringify([
+    { tag_name: 'v1.2.3', draft: false, prerelease: false },
+    { tag_name: 'v1.3.0', draft: false, prerelease: false },
+    { tag_name: 'v1.4.0', draft: false, prerelease: false },
+  ]);
+  const newest = run(['latest'], releases);
+  assert.equal(newest.stdout, 'v1.4.0\n');
+  const installable = run(['select', '--manifests', dir, repo], releases);
+  assert.equal(installable.stdout, 'v1.2.3\n');
+});
+
 test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () => {
   const dir = mkdtempSync(join(tmpdir(), 'self-release-pin-'));
   const file = join(dir, 'apm.yml');
@@ -180,9 +216,10 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.equal(pin.stdout, 'venturars/delivery-workflow#v1.1.2\n');
 
   const workflow = readFileSync(new URL('../.github/workflows/update-apm-dependency.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
-  assert.match(workflow, /steps\.compatible\.outputs\.ref/);
+  assert.match(workflow, /self-release\.py latest/);
+  assert.match(workflow, /steps\.release\.outputs\.ref/);
   assert.match(workflow, /dependencies\.apm ya apunta a \$\{REF\}/);
   assert.match(workflow, /self-release\.py set "\$DEPENDENCY_REPO" "\$REF"/);
-  assert.doesNotMatch(workflow, /steps\.release\.outputs\.ref/);
+  assert.doesNotMatch(workflow, /steps\.compatible\.outputs\.ref/);
+  assert.doesNotMatch(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
 });

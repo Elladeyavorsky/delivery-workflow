@@ -50,57 +50,14 @@ jobs:
             --paginate \
             --slurp \
             "repos/$DEPENDENCY_REPO/releases?per_page=100")
-          tag=$(jq -r '
-            [
-              .[]
-              | if type == "array" then .[] else . end
-              | select(
-                  (if has("draft") then .draft else .isDraft end) == false
-                  and (if has("prerelease") then .prerelease else .isPrerelease end) == false
-                )
-              | select(
-                  (if has("tag_name") then .tag_name else .tagName end)
-                  | test("^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
-                )
-            ]
-            | sort_by(
-                (if has("tag_name") then .tag_name else .tagName end)
-                | ltrimstr("v")
-                | split(".")
-                | map([length, .])
-              )
-            | last
-            | .tag_name // .tagName // empty
-          ' <<<"$releases")
-          [[ -n "$tag" ]] || {
-            echo "No hay ninguna GitHub Release estable válida con tag vX.Y.Z para $DEPENDENCY_REPO." >&2
-            exit 1
-          }
+          tag=$(python3 .github/scripts/self-release.py latest <<<"$releases")
           echo "ref=$tag" >>"$GITHUB_OUTPUT"
           echo "Última release estable: $tag"
-
-      - name: Elegir una release instalable
-        id: compatible
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEPENDENCY_REPO: venturars/delivery-workflow
-        run: |
-          releases=$(gh api \
-            --paginate \
-            --slurp \
-            "repos/$DEPENDENCY_REPO/releases?per_page=100")
-          tag=$(python3 .github/scripts/self-release.py select "$DEPENDENCY_REPO" <<<"$releases")
-          [[ -n "$tag" ]] || {
-            echo "Ninguna release estable se puede instalar: su apm.yml depende de $DEPENDENCY_REPO." >&2
-            exit 1
-          }
-          echo "ref=$tag" >>"$GITHUB_OUTPUT"
-          echo "Release instalable: $tag"
 
       - name: Actualizar la dependencia y regenerar los archivos de APM
         env:
           DEPENDENCY_REPO: venturars/delivery-workflow
-          REF: ${{ steps.compatible.outputs.ref }}
+          REF: ${{ steps.release.outputs.ref }}
         run: |
           actual=$(python3 .github/scripts/self-release.py pin "$DEPENDENCY_REPO")
           if [[ "$actual" == "${DEPENDENCY_REPO}#${REF}" ]]; then
@@ -128,9 +85,9 @@ jobs:
           base: staging
           draft: true
           delete-branch: true
-          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.compatible.outputs.ref }}"
-          title: "Update delivery-workflow to ${{ steps.compatible.outputs.ref }}"
+          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.release.outputs.ref }}"
+          title: "Update delivery-workflow to ${{ steps.release.outputs.ref }}"
           body: |
-            Actualiza `venturars/delivery-workflow` a `${{ steps.compatible.outputs.ref }}`.
+            Actualiza `venturars/delivery-workflow` a `${{ steps.release.outputs.ref }}`.
 
             Incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
