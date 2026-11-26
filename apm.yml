@@ -7,7 +7,7 @@ keywords: [git, github, workflow, spec, agents, opencode, claude-code, cursor, c
 targets: [opencode, claude, cursor, codex]
 dependencies:
   apm:
-    - venturars/delivery-workflow#v1.2.3
+    - venturars/delivery-workflow#v1.4.2
   mcp:
     - name: eur-lex
       registry: false

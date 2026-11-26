@@ -297,6 +297,26 @@ def command_select(args):
         print(chosen)
 
 
+def command_latest(args):
+    payload = sys.stdin.read()
+    tags = stable_tags(payload)
+    if not tags:
+        raise SystemExit(
+            "No hay ninguna GitHub Release estable válida con tag vX.Y.Z."
+        )
+    print(tags[0])
+
+
+def command_nested(args):
+    require_repo(args.repo)
+    if not TAG_RE.fullmatch(args.ref):
+        raise SystemExit("La release no tiene un tag vX.Y.Z válido.")
+    text = manifest_text(args.repo, args.ref, args.manifests)
+    pin = self_pin(text.splitlines(keepends=True), args.repo)
+    if pin:
+        print(pin)
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -322,6 +342,15 @@ def main():
     select.add_argument("repo")
     select.add_argument("--manifests")
     select.set_defaults(func=command_select)
+
+    latest = sub.add_parser("latest")
+    latest.set_defaults(func=command_latest)
+
+    nested = sub.add_parser("nested")
+    nested.add_argument("repo")
+    nested.add_argument("ref")
+    nested.add_argument("--manifests")
+    nested.set_defaults(func=command_nested)
 
     args = parser.parse_args()
     args.func(args)
