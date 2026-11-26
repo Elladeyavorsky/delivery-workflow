@@ -47,7 +47,9 @@ looks_like_gitlab() {
   git remote get-url origin 2>/dev/null | grep -qiE '^([a-z+]+://)?([^/@]*@)?(altssh\.)?gitlab\.com[:/]'
 }
 
-if command -v node >/dev/null 2>&1; then
+if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
+  : # Fuera de un repositorio no hay forge que consultar: responde gh.sh, con su código 3.
+elif command -v node >/dev/null 2>&1; then
   forge=$(node "${here}/gitlab.mjs" forge) || exit $?
   case "$forge" in
     github) ;;

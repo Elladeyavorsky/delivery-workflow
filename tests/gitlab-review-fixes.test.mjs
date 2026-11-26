@@ -357,3 +357,15 @@ test("reviews fecha cada comentario general", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /2026-11-01: Renombra X[\s\S]*2026-11-20: Añade tests/);
 });
+
+test("fuera de un repositorio, manage-issue sale con 3 como antes, también con GitLab declarado", () => {
+  const folder = mkdtempSync(join(tmpdir(), "sin-repo-"));
+  writeFileSync(join(folder, "body.md"), "cuerpo\n");
+  for (const extra of [{}, { GIT_WORKFLOW_FORGE: "gitlab" }]) {
+    const env = { ...process.env, GIT_CEILING_DIRECTORIES: dirname(folder), ...extra };
+    const script = join(root, ".apm/skills/manage-issue/scripts/manage-issue.sh");
+    const result = spawnSync("bash", [script, ...ISSUE], { cwd: folder, env, encoding: "utf8" });
+    assert.equal(result.status, 3, result.stderr);
+    assert.equal(result.stderr, "No es un repositorio git.\n");
+  }
+});
