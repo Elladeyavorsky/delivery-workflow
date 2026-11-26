@@ -155,16 +155,20 @@ Los cambios entran en `staging` por pull request desde su rama de trabajo. Para 
 2. Quien mantiene el paquete abre la pull request de `staging` a `main` y la fusiona.
 3. El push a `main` dispara `release-create-version.yml` («Release: create version»). El workflow busca la última etiqueta `vX.Y.Z`, reúne los commits y los ficheros cambiados desde ella y se los envía a la IA de Groq. La IA decide si el cambio es `major`, `minor` o `patch` y escribe el resumen. El workflow calcula la versión nueva, crea la etiqueta y la release con ese resumen y la lista de PR. No hace falta etiquetar a mano. Si el commit ya tiene etiqueta, no crea otra.
 
+Este paquete no se lista a sí mismo en `dependencies.apm`. El `apm.yml` publicado es como `v1.2.3`: `mcp` (eur-lex) y nada de `venturars/delivery-workflow#…`. Quien mantiene el repo trabaja con `.apm/` local (`apm install --target …`), no con una etiqueta de GitHub.
+
+Si un merge a `main` volviera a traer esa autodependencia, `self-release.py align` la quita y la etiqueta apunta a ese commit, **sin** empujarlo a `main` (otro push a `main` sería otro release).
+
 El workflow necesita el secreto `GROQ_API_KEY` en el repositorio. Si falta, si la IA no responde o si su respuesta no es válida, el workflow falla y no crea etiqueta ni release.
 
-El workflow no cambia `version` en `apm.yml` ni hace commits en `main`: la versión publicada es la etiqueta.
+El workflow no cambia `version` en `apm.yml`. La versión publicada es la etiqueta.
 
 Las releases estables usan etiquetas `vX.Y.Z`. Una IA decide el tipo de cambio, así que dos ejecuciones sobre los mismos commits pueden dar un resumen distinto.
 
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
 
-## Mantener este repositorio con su propia release
+## Autodependencia
 
-El workflow `APM: update dependency` solo corre en este repositorio. Hace checkout de `staging` y abre la pull request contra esa rama. La instalación de APM y `apm update` usan el token de Actions (`GITHUB_TOKEN`), para no pedir los metadatos de release de forma anónima. El instalador no añade su directorio al PATH cuando detecta CI; el paso lo publica en `GITHUB_PATH`. Cada día a las 08:17 UTC, y también a mano, elige la GitHub Release estable más alta de `venturars/delivery-workflow` con `self-release.py latest`. Aquí no aplica el criterio de `select`, que omite etiquetas cuyo manifiesto trae autodependencia: esa regla sirve para otros consumidores, no para alinear `staging` con la etiqueta publicada. Si `dependencies.apm` ya apunta a esa release, no ejecuta `apm update`. Si apunta a una anterior, escribe la entrada con la referencia nueva. Si esa release aún depende de otra etiqueta de este repositorio, `apm update` no puede resolver dos commits del mismo paquete: el workflow deja solo el pin en `apm.yml`. Si no hay esa autodependencia, ejecuta `apm update --force` para los targets que declare la release. `--force` hace falta porque el runner no guarda recibos de despliegue y el paquete local (`.apm/`) publica los mismos ficheros que la dependencia: sin esa opción, APM rechaza la escritura con `no trustworthy local deployment baseline` y no mueve el lock. La pull request se abre en draft, queda en la rama `chore/update-delivery-workflow` e incluye `apm.yml`, `apm.lock.yaml` y los archivos generados por APM.
+El workflow `APM: update dependency` solo corre en este repositorio. Hace checkout de `staging`. Si `apm.yml` pide `venturars/delivery-workflow`, lo quita con `self-release.py align` y abre una PR en draft. Si no hay autodependencia, no hace nada. No pinnea este paquete a una etiqueta ni ejecuta `apm update` de sí mismo.
 
-No es un workflow reutilizable: otro repositorio no puede llamarlo. Tampoco se engancha al evento `release`, porque esa release la crea `GITHUB_TOKEN` y GitHub no arrancaría el workflow. La pull request la abre el mismo token, así que no dispara `PR: check rules`.
+No es un workflow reutilizable: otro repositorio no puede llamarlo. La pull request la abre `GITHUB_TOKEN`, así que no dispara `PR: check rules`.

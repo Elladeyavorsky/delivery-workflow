@@ -138,7 +138,33 @@ jobs:
           echo "Nueva versión: ${LAST_TAG:-ninguna} → $NEXT"
           echo "next=$NEXT" >> "$GITHUB_OUTPUT"
 
-      # 6. Crea el tag y la release: resumen + tipo de cambio + lista de PRs de GitHub
+      # 6. Si staging trajo un pin a este repo, se quita solo para la etiqueta.
+      #    El commit no se empuja a main: si se fusionara ahí, este workflow volvería a correr.
+      - name: Quitar la autodependencia antes de etiquetar
+        id: align
+        if: steps.ultima.outputs.saltar != 'si'
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          estado=$(python3 .github/scripts/self-release.py align --check "$REPO")
+          if [[ "$estado" == absent ]]; then
+            echo "sha=$GITHUB_SHA" >>"$GITHUB_OUTPUT"
+            echo "apm.yml no pide $REPO: la etiqueta apunta al merge."
+            exit 0
+          fi
+          if [[ "$estado" != changed ]]; then
+            echo "No se pudo revisar la autodependencia de apm.yml (estado: $estado)." >&2
+            exit 1
+          fi
+          python3 .github/scripts/self-release.py align "$REPO"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apm.yml
+          git commit -m "chore: drop self-dependency for the release"
+          echo "sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+          echo "Se quita $REPO de dependencies.apm. Ese commit solo lo apunta la etiqueta, no main."
+
+      # 7. Crea el tag y la release: resumen + tipo de cambio + lista de PRs de GitHub
       - name: Crear el tag y la release
         if: steps.ultima.outputs.saltar != 'si'
         env:
@@ -146,6 +172,7 @@ jobs:
           NEXT: ${{ steps.version.outputs.next }}
           LAST_TAG: ${{ steps.ultima.outputs.tag }}
           TIPO: ${{ steps.decidir.outputs.tipo }}
+          TARGET: ${{ steps.align.outputs.sha }}
         run: |
           {
             echo "## Resumen"
@@ -155,8 +182,9 @@ jobs:
             echo "**Tipo de cambio:** $TIPO, decidido por la IA. $(cat motivo.txt)"
             echo
           } > notas.md
+          git tag "$NEXT" "$TARGET"
+          git push origin "refs/tags/$NEXT"
           gh release create "$NEXT" \
-            --target "$GITHUB_SHA" \
             --title "$NEXT" \
             --notes-file notas.md \
             --generate-notes \

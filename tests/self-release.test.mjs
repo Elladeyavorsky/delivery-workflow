@@ -233,12 +233,25 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.equal(pin.stdout, 'venturars/delivery-workflow#v1.1.2\n');
 
   const workflow = readFileSync(new URL('../.github/workflows/update-apm-dependency.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /self-release\.py latest/);
-  assert.match(workflow, /steps\.release\.outputs\.ref/);
-  assert.match(workflow, /dependencies\.apm ya apunta a \$\{REF\}/);
-  assert.match(workflow, /self-release\.py set "\$DEPENDENCY_REPO" "\$REF"/);
-  assert.match(workflow, /self-release\.py nested "\$DEPENDENCY_REPO" "\$REF"/);
-  assert.match(workflow, /Solo se actualiza el pin en apm\.yml/);
-  assert.doesNotMatch(workflow, /steps\.compatible\.outputs\.ref/);
+  assert.match(workflow, /self-release\.py pin "\$DEPENDENCY_REPO"/);
+  assert.match(workflow, /self-release\.py align "\$DEPENDENCY_REPO"/);
+  assert.match(workflow, /Este paquete no se autodepende/);
+  assert.doesNotMatch(workflow, /self-release\.py set /);
+  assert.doesNotMatch(workflow, /self-release\.py latest/);
   assert.doesNotMatch(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
+  assert.doesNotMatch(workflow, /apm update /);
+});
+
+test('el release quita la autodependencia y etiqueta ese commit, no main', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/release-create-version.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /self-release\.py align --check "\$REPO"/);
+  assert.match(workflow, /self-release\.py align "\$REPO"/);
+  assert.match(workflow, /git tag "\$NEXT" "\$TARGET"/);
+  assert.match(workflow, /git push origin "refs\/tags\/\$NEXT"/);
+  assert.match(workflow, /steps\.align\.outputs\.sha/);
+  assert.doesNotMatch(workflow, /git push origin "HEAD:/);
+  assert.doesNotMatch(workflow, /--target "\$GITHUB_SHA"/);
 });

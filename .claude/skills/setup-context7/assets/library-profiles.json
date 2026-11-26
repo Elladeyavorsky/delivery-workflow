@@ -1,6 +1,0 @@
-{
-  "skip": [
-    { "why": "Tipos: no tienen documentación que consultar.", "match": ["^@types/.+", "^types-.+", "^typescript$"] },
-    { "why": "Utilidad de build o de scripts.", "match": ["^rimraf$", "^cross-env$", "^dotenv(-cli)?$", "^nodemon$", "^ts-node$", "^tsx$", "^concurrently$", "^npm-run-all2?$", "^wheel$", "^setuptools$", "^pip$", "^twine$", "^build$", "^pip-tools$"] }
-  ]
-}
