@@ -146,15 +146,6 @@ test("el cuerpo se edita desde un fichero y un comando de GitLab lo bloquea", ()
   assert.equal(gl.state().mergeRequests[1].description, "Nuevo\n\nCloses #7\n");
 });
 
-test("findQuickAction ignora código, citas y rutas", () => {
-  assert.equal(findQuickAction("hola\n/close\n"), "/close");
-  assert.equal(findQuickAction("/assign @ada"), "/assign");
-  for (const text of ["```\n/close\n```", "~~~~\n```\n/close\n~~~~", "> /close", "usa `/close`", "/usr/bin/env", "/delivery-workflow", "  texto /close"]) {
-    assert.equal(findQuickAction(text), null, text);
-  }
-  assert.equal(findQuickAction("```\ncódigo\n```\n/merge"), "/merge");
-});
-
 test("assign-me en un merge request añade sin quitar", () => {
   const gl = project({ mergeRequests: { 1: mergeRequest() } });
   assert.equal(gl.gitlab("mr", "assign-me", "1").stdout, "Merge request #1: asignado a ada.\n");

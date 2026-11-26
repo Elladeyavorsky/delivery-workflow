@@ -108,6 +108,12 @@ export async function readToken(root) {
 
 // Admite git@host:grupo/proyecto.git, ssh://, https:// y http://. Una ruta local no tiene host.
 export function parseRemote(remote) {
+  const found = splitRemote(remote);
+  // altssh.gitlab.com es el SSH de gitlab.com por el puerto 443.
+  return found?.host === "altssh.gitlab.com" ? { ...found, host: "gitlab.com", webHost: "gitlab.com" } : found;
+}
+
+function splitRemote(remote) {
   const text = (remote ?? "").trim();
   if (/^[a-z][a-z\d+.-]*:\/\//i.test(text)) {
     let url;
@@ -326,41 +332,10 @@ const QUICK_ACTIONS = new Set((
   "type unapprove unassign unassign_reviewer unlabel unlink unlock unsubscribe weight zoom"
 ).split(" "));
 
-// El cierre de un comentario HTML que empieza en esa línea, o -1 si no se cierra.
-function commentEnd(lines, start) {
-  if (!/^ {0,3}<!--/.test(lines[start])) return -1;
-  for (let i = start; i < lines.length; i++) if (lines[i].includes("-->")) return i;
-  return -1;
-}
-
-// La primera línea que GitLab ejecutaría: un comando al principio, fuera de un bloque de código y de un
-// comentario HTML. Ante la duda cuenta como comando.
+// La primera línea que empieza por un comando de GitLab, o null. No se interpreta el Markdown: tampoco se
+// libran los bloques de código ni los comentarios, y así ningún formato puede esconder un comando.
 export function findQuickAction(text) {
-  const lines = String(text ?? "").replace(/\r/g, "").split("\n");
-  let fence = null;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (!fence) {
-      const end = commentEnd(lines, i);
-      if (end >= 0) {
-        i = end;
-        continue;
-      }
-      // Tras las comillas invertidas de apertura no puede haber otra: sería código en línea.
-      const open = line.match(/^( {0,3})(`{3,}(?=[^`]*$)|~{3,})/);
-      if (open) {
-        fence = { mark: open[2], indented: open[1].length > 0 };
-        continue;
-      }
-    } else {
-      const close = line.match(/^ {0,3}(`{3,}|~{3,})[ \t]*$/)?.[1];
-      if (close && close[0] === fence.mark[0] && close.length >= fence.mark.length) {
-        fence = null;
-        continue;
-      }
-      // Un bloque sangrado puede estar dentro de una lista, y una línea sin sangrar la termina.
-      if (!fence.indented) continue;
-    }
+  for (const line of String(text ?? "").replace(/\r/g, "").split("\n")) {
     const command = line.match(/^\/([a-z_]+)(?=\s|$)/i);
     if (command && QUICK_ACTIONS.has(command[1].toLowerCase())) return command[0];
   }
@@ -370,7 +345,7 @@ export function findQuickAction(text) {
 function checkText(text) {
   const command = findQuickAction(text);
   if (command) {
-    throw new GitLabError(`GitLab ejecutaría «${command}» como un comando. Ponlo entre comillas invertidas o en un bloque de código. No se escribe nada.`);
+    throw new GitLabError(`GitLab ejecutaría «${command}» como un comando. Pon un espacio delante de la barra, también dentro de un bloque de código. No se escribe nada.`);
   }
 }
 
@@ -479,8 +454,12 @@ async function assignSelf(client, what, read, write) {
   const after = ids(await write([...before, me.id]));
   const lost = before.filter((id) => !after.includes(id));
   if (lost.length) await write(before);
-  if (lost.length || !after.includes(me.id)) {
+  if (lost.length) {
     throw new GitLabError(`${what} no admite añadir a ${me.username} sin quitar a quien ya estaba. La asignación queda pendiente.`);
+  }
+  if (!after.includes(me.id)) {
+    const limit = before.length ? "el proyecto admite una sola persona asignada o " : "";
+    throw new GitLabError(`${what}: GitLab no asignó a ${me.username}, quizá porque ${limit}la cuenta no tiene permiso. La asignación queda pendiente.`);
   }
   return me.username;
 }
@@ -514,8 +493,21 @@ export async function findMergeRequest(client, branch, base) {
   return found.find((item) => item.source_project_id === item.target_project_id) ?? null;
 }
 
+// El aviso para un proyecto que es un fork, o null. Si no se puede consultar, no hay aviso.
+export async function forkWarning(client) {
+  let origin;
+  await problemOf(async () => {
+    origin = (await client.request("GET", client.scoped())).data?.forked_from_project?.path_with_namespace;
+  });
+  return origin
+    ? `Aviso: este proyecto es un fork de ${origin}. El flujo no admite forks en GitLab: no ve ni abre merge requests hacia el proyecto original.`
+    : null;
+}
+
 export async function createMergeRequest(client, { branch, base, title, body, type }, warn = console.error) {
   checkText(body);
+  const fork = await forkWarning(client);
+  if (fork) warn(fork);
   const lines = [];
   const label = await typeLabel(client, type, lines, warn);
   const me = await whoami(client);
@@ -579,7 +571,8 @@ export async function reviewSummary(client, mergeRequest) {
   let decision = "CHANGES_REQUESTED";
   if (!askers.length) {
     const { data } = await client.request("GET", mrPath(client, number, "/approvals"));
-    decision = data?.approved_by?.length ? "APPROVED" : "—";
+    // approvals_left solo llega donde el proyecto puede exigir varias aprobaciones.
+    decision = data?.approved_by?.length && !(data.approvals_left > 0) ? "APPROVED" : "—";
   }
   return { decision, requested, askers, threads, notes, statesAvailable: Boolean(states) };
 }
@@ -703,11 +696,13 @@ export async function status(options = {}) {
 
 // La línea de check-status sobre el merge request de la rama.
 export async function statusLine(client, branch) {
+  const fork = await forkWarning(client);
+  const lines = (line) => [fork, line].filter(Boolean).join("\n");
   const found = await findMergeRequest(client, branch);
-  if (!found) return "Pull request: ninguna abierta en esta rama";
+  if (!found) return lines("Pull request: ninguna abierta en esta rama");
   const { decision } = await reviewSummary(client, found);
   const issue = (found.description ?? "").match(/(?:closes|close|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/i);
-  return `Pull request: #${found.iid} ${decision}${issue ? ` issue #${issue[1]}` : ""}`;
+  return lines(`Pull request: #${found.iid} ${decision}${issue ? ` issue #${issue[1]}` : ""}`);
 }
 
 function issueNumber(value) {
@@ -719,6 +714,23 @@ function mergeRequestNumber(value) {
   const match = String(value ?? "").match(/^(?:!?|https:\/\/\S+\/-\/merge_requests\/)([1-9]\d*)\/?$/);
   if (!match) throw new GitLabError("Indica el número o la dirección del merge request.");
   return match[1];
+}
+
+// El cliente y el número. Una dirección de otro proyecto no vale: se actuaría sobre el merge request de este.
+async function mergeRequestTarget(value, options) {
+  const number = mergeRequestNumber(value);
+  const client = await connect(options);
+  if (/^https:/.test(value)) {
+    // GitLab no distingue mayúsculas en las rutas.
+    const plain = (address) => {
+      const url = new URL(address);
+      return `${url.host}${decodeURIComponent(url.pathname)}`.replace(/\/+$/, "").toLowerCase();
+    };
+    if (plain(value) !== plain(`${client.url}/${client.project}/-/merge_requests/${number}`)) {
+      throw new GitLabError(`Esa dirección no es de un merge request de ${client.project}. No se hace nada.`);
+    }
+  }
+  return { client, number };
 }
 
 async function readBody(file, options) {
@@ -739,7 +751,7 @@ async function runMergeRequest(action, rest, options) {
   }
   const [value, ...extra] = rest;
   if (action === "edit") {
-    const number = mergeRequestNumber(value);
+    mergeRequestNumber(value);
     const changes = {};
     for (let i = 0; i < extra.length; i += 2) {
       if (extra[i] === "--title" && extra[i + 1]) changes.title = extra[i + 1];
@@ -747,16 +759,16 @@ async function runMergeRequest(action, rest, options) {
       else throw new GitLabError(USAGE);
     }
     if (!Object.keys(changes).length) throw new GitLabError("Indica --title o --body-file.");
-    await editMergeRequest(await connect(options), number, changes);
+    const { client, number } = await mergeRequestTarget(value, options);
+    await editMergeRequest(client, number, changes);
     return `Merge request #${number}: editado.`;
   }
   if (action === "request-review" && extra.length) {
-    const number = mergeRequestNumber(value);
-    return requestReview(await connect(options), number, extra);
+    const { client, number } = await mergeRequestTarget(value, options);
+    return requestReview(client, number, extra);
   }
   if (["view", "draft", "ready", "assign-me"].includes(action) && !extra.length) {
-    const number = mergeRequestNumber(value);
-    const client = await connect(options);
+    const { client, number } = await mergeRequestTarget(value, options);
     if (action === "view") {
       const item = await getMergeRequest(client, number);
       return JSON.stringify(viewMergeRequest(item, (await reviewSummary(client, item)).decision));

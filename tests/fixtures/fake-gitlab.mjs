@@ -33,7 +33,8 @@ function page(list) {
 if (token !== state.token) reply(401, { message: "401 Unauthorized" });
 const person = (id) => ({ id });
 // Un plan con una sola persona asignada se queda con la última que se pide.
-const assignees = (ids) => (state.singleAssignee ? ids.slice(-1) : ids).map(person);
+// Sin permiso, GitLab ignora la asignación sin dar error.
+const assignees = (ids) => (state.ignoreAssignees ? [] : state.singleAssignee ? ids.slice(-1) : ids).map(person);
 
 if (url.pathname === "/api/v4/user") reply(200, state.me);
 const users = state.users ?? [];
@@ -52,6 +53,11 @@ if (url.pathname === "/api/graphql") {
   if (body.variables.path !== state.project) reply(200, { data: { project: null } });
   const nodes = requests[body.variables.iid].reviewers.map((item) => ({ username: item.username, mergeRequestInteraction: { reviewState: item.state ?? "UNREVIEWED" } }));
   reply(200, { data: { project: { mergeRequest: { reviewers: { nodes } } } } });
+}
+
+const own = url.pathname.match(/^\/api\/v4\/projects\/([^/]+)$/);
+if (own && decodeURIComponent(own[1]) === state.project) {
+  reply(200, { path_with_namespace: state.project, ...(state.forkedFrom ? { forked_from_project: { path_with_namespace: state.forkedFrom } } : {}) });
 }
 
 const route = url.pathname.match(/^\/api\/v4\/projects\/([^/]+)\/(.*)$/);
@@ -94,7 +100,9 @@ if (mr) {
   const item = requests[mr[1]];
   if (!item) reply(404, { message: "404 Not found" });
   if (mr[2] === "discussions") page(item.discussions ?? []);
-  if (mr[2] === "approvals") reply(200, { approved_by: (item.approvedBy ?? []).map((user) => ({ user: { username: user } })) });
+  if (mr[2] === "approvals") {
+    reply(200, { approved_by: (item.approvedBy ?? []).map((user) => ({ user: { username: user } })), ...(item.approvalsLeft === undefined ? {} : { approvals_left: item.approvalsLeft }) });
+  }
   if (method === "PUT") {
     if (state.denyEdit) forbidden();
     if (body.title !== undefined) Object.assign(item, { title: body.title, draft: isDraft(body.title) });

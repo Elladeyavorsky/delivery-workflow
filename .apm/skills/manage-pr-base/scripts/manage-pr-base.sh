@@ -85,7 +85,8 @@ looks_like_gitlab() {
     grep -qix 'gitlab' <<<"$declared"
     return
   fi
-  git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'
+  # El host tiene que ser gitlab.com, no un nombre que lo contenga ni una ruta.
+  git remote get-url origin 2>/dev/null | grep -qiE '^([a-z+]+://)?([^/@]*@)?(altssh\.)?gitlab\.com[:/]'
 }
 
 forge=github

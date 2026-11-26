@@ -61,27 +61,22 @@ function project(state = {}, { origin = "git@gitlab.com:grupo/proyecto.git", env
 const ISSUE = ["Add notes", "body.md", "feat"];
 const PR = ["7-feat-add-notes", "Add notes", "body.md", "feat", "staging"];
 
-test("solo cuenta un comando de GitLab fuera de código y de comentarios", () => {
+test("cuenta toda línea que empieza por un comando de GitLab, y solo esas", () => {
   for (const text of [
-    "## Problema\n\n/login devuelve 500", "<!--\n/close\n-->", "<!-- nota --> /close", "/etc", "/etc/hosts",
-    "```\n/close\n```", "```js\n/close\n```", "  ```\n  x\n  ```", "~~~\n```\n/close\n~~~",
+    "## Problema\n\n/login devuelve 500", "/etc", "/etc/hosts", "/usr/bin/env", "/delivery-workflow", " /close",
+    "```\n /close\n```", "> /close", "usa `/close`", "texto /close", "/close: no es un comando",
   ]) {
     assert.equal(findQuickAction(text), null, JSON.stringify(text));
   }
-  for (const [text, command] of [["/CLOSE", "/CLOSE"], ["texto\n/weight 3", "/weight"], ["/shrug", "/shrug"]]) {
+  for (const [text, command] of [["/CLOSE", "/CLOSE"], ["texto\n/weight 3", "/weight"], ["/shrug", "/shrug"], ["/assign @ada\r\n", "/assign"]]) {
     assert.equal(findQuickAction(text), command, text);
   }
 });
 
-test("ni las comillas invertidas ni un comentario esconden un comando", () => {
+test("ningún formato esconde un comando", () => {
   for (const text of [
-    "```npm test``` falla\n/close\n",
-    "<!--\n```\n-->\n\n/close\n",
-    "<!--\n~~~\n-->\n/close",
-    "<!--\n/close",
-    "- paso\n\n  ```\n  x\n/close",
-    "  ```\nx\n```\n/close",
-    "```\nx\n```\n/close",
+    "```\n/close\n```", "~~~\n/close\n~~~", "<!--\n/close\n-->", "```npm test``` falla\n/close\n",
+    "<!--\n```\n-->\n\n/close\n", "- a\n  ```\n  x\nfin\n\n```\ny\n```\n\n/close", "- a\n\n  <!--\nfin\n\n/close\n-->",
   ]) {
     assert.equal(findQuickAction(text), "/close", JSON.stringify(text));
   }
@@ -200,4 +195,79 @@ test("si GitLab no deja añadir revisores, nadie cuenta como pedido", () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Sin pedir: bob \(.*403/);
   assert.doesNotMatch(result.stderr, /Revisión pedida/);
+});
+
+const gitlab = (gl, ...args) => gl.run("manage-draft/scripts/gitlab.mjs", args);
+
+test("una dirección de merge request de otro proyecto se rechaza sin tocar nada", () => {
+  const gl = project({ mergeRequests: mergeRequest() });
+  for (const address of [
+    "https://gitlab.com/otro/lib/-/merge_requests/1",
+    "https://otro.example.com/grupo/proyecto/-/merge_requests/1",
+    "https://gitlab.com/otro/grupo/proyecto/-/merge_requests/1",
+  ]) {
+    for (const args of [["edit", address, "--title", "X"], ["view", address], ["draft", address], ["ready", address], ["assign-me", address], ["request-review", address, "bob"]]) {
+      const result = gitlab(gl, "mr", ...args);
+      assert.equal(result.status, 1, `${args[0]} ${address}`);
+      assert.match(result.stderr, /no es de un merge request de grupo\/proyecto/);
+    }
+  }
+  assert.deepEqual(gl.state().calls, []);
+  const own = gitlab(gl, "mr", "edit", "https://GitLab.com/Grupo/Proyecto/-/merge_requests/1/", "--title", "Add notes");
+  assert.equal(own.status, 0, own.stderr);
+});
+
+test("con una aprobación pendiente, el merge request no está aprobado", () => {
+  const decision = (extra) => {
+    const gl = project({ mergeRequests: { 1: { ...mergeRequest()[1], approvedBy: ["bob"], ...extra } } });
+    return JSON.parse(gitlab(gl, "mr", "view", "1").stdout).reviewDecision;
+  };
+  assert.equal(decision({ approvalsLeft: 1 }), "—");
+  assert.equal(decision({ approvalsLeft: 0 }), "APPROVED");
+  assert.equal(decision({}), "APPROVED");
+});
+
+test("el SSH de gitlab.com por el puerto 443 es GitLab", () => {
+  const gl = project({}, { origin: "ssh://git@altssh.gitlab.com:443/grupo/proyecto.git" });
+  assert.equal(gitlab(gl, "forge").stdout, "gitlab\n");
+  assert.match(gl.run("check-status/scripts/check-status.sh").stdout, /^Forge: GitLab \(gitlab\.com\)$/m);
+});
+
+test("sin Node, solo el host gitlab.com cuenta como GitLab", () => {
+  const looks = (origin) => {
+    const gl = project({}, { origin, env: "GITHUB_TOKEN=a\n", node: false });
+    return /Hace falta Node 20/.test(gl.run("manage-issue/scripts/manage-issue.sh", ISSUE).stderr);
+  };
+  for (const origin of ["git@gitlab.com:g/p.git", "https://gitlab.com/g/p.git", "https://ada@gitlab.com/g/p", "ssh://git@altssh.gitlab.com:443/g/p.git", "gitlab.com:g/p.git"]) {
+    assert.equal(looks(origin), true, origin);
+  }
+  for (const origin of ["git@gitlab.company.com:g/p.git", "git@github.com:me/gitlab.com-tools.git", "https://github.com/gitlab.com/p.git", "git@notgitlab.com:g/p.git"]) {
+    assert.equal(looks(origin), false, origin);
+  }
+});
+
+test("los tres scripts detectan GitLab sin Node de la misma forma", () => {
+  const helper = (name) => readFileSync(join(root, ".apm/skills", name), "utf8").match(/^looks_like_gitlab\(\) \{[\s\S]*?^\}/m)[0];
+  const original = helper("check-status/scripts/check-status.sh");
+  assert.equal(helper("manage-issue/scripts/manage-issue.sh"), original);
+  assert.equal(helper("manage-pr-base/scripts/manage-pr-base.sh"), original);
+});
+
+test("una asignación que GitLab no aplica no culpa a quien no existe", () => {
+  const gl = project({ ignoreAssignees: true, mergeRequests: mergeRequest() });
+  const result = gitlab(gl, "mr", "assign-me", "1");
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /GitLab no asignó a ada, quizá porque la cuenta no tiene permiso/);
+  assert.doesNotMatch(result.stderr, /sin quitar|una sola persona/);
+});
+
+test("en un fork se avisa de que no se admite", () => {
+  const forked = project({ forkedFrom: "original/proyecto" });
+  const status = forked.run("check-status/scripts/check-status.sh");
+  assert.match(status.stdout, /^Aviso: este proyecto es un fork de original\/proyecto\. El flujo no admite forks/m);
+  assert.match(status.stdout, /^Pull request: ninguna abierta en esta rama$/m);
+  const created = forked.run("manage-pr-base/scripts/manage-pr-base.sh", PR);
+  assert.equal(created.status, 0, created.stderr);
+  assert.match(created.stderr, /no admite forks/);
+  assert.doesNotMatch(project().run("check-status/scripts/check-status.sh").stdout, /fork/);
 });

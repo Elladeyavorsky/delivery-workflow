@@ -32,5 +32,5 @@ La forma de las tres secciones está en `<carpeta de esta skill>/assets/spec.md`
 - **Código 4**: El texto parece contener un secreto. No se ha escrito nada. Para, nombra el fichero de donde salió y deja el valor fuera de cualquier respuesta.
 - **Código 5**: El cuerpo (o el comentario de revisión) pasaría del límite: 65 536 caracteres en GitHub; en GitLab, 1 048 576 en la issue y 1 000 000 en un comentario. Acorta el plan y vuelve a escribir. Acórtalo en la misma issue: el texto no se reparte en otras issues ni en comentarios.
 - **Código 6**: La cuenta no puede editar el cuerpo de la issue. No se ha escrito nada. Publica la spec con `revision` y sigue con `--revision`.
-- **Línea con un comando en GitLab**: GitLab ejecutaría una línea que empieza por uno de sus comandos, como `/close`, fuera de un bloque de código o de un comentario HTML. No se escribe nada y sale con 1: pon la línea entre comillas invertidas o en un bloque de código.
+- **Línea con un comando en GitLab**: GitLab ejecutaría una línea que empieza por uno de sus comandos, como `/close`. El script rechaza toda línea así, también en un bloque de código o un comentario HTML: no se escribe nada y sale con 1. Pon un espacio delante de la barra.
 - **Otro código distinto de 0**: Comunica el texto del error. Edita la issue solo con este script: es el que comprueba la huella.
