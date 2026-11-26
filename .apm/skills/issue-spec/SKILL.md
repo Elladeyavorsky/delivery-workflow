@@ -21,7 +21,7 @@ La forma de las tres secciones está en `<carpeta de esta skill>/assets/spec.md`
 - `tick N TASK-NN --expect-top HUELLA [--revision]`: marca esa task.
 - `state N Borrador|Implementada|Fallida --expect-top HUELLA [--revision]`: cambia la línea Estado de la spec y le pone la fecha de hoy.
 - `comment N F`: publica el fichero como comentario de la issue. Debe empezar por otra cosa que `<!-- Revisión`, que reserva la cabecera de los comentarios de revisión.
-- `reviews N`: escribe el texto de la revisión de la PR abierta que cierra la issue: decisión, cuerpos que piden cambios y comentarios de línea sin resolver. En GitLab añade quién pide cambios: quien lo marcó en su revisión y quien abrió un hilo sin resolver.
+- `reviews N`: escribe el texto de la revisión de la PR abierta que cierra la issue: decisión, cuerpos que piden cambios y comentarios de línea sin resolver. En GitLab añade quién pide cambios, que es quien lo marcó en su revisión y quien abrió un hilo sin resolver, y escribe también sus comentarios generales. Si la instancia no dice quién marcó cambios, escribe los comentarios generales de cualquiera que no sea el autor. Cada comentario general lleva su fecha: GitLab no los marca como resueltos, así que uno anterior a la última vuelta puede estar ya atendido.
 - `revision N F`: publica el fichero como comentario de revisión. Si no trae `<!-- Revisión N -->`, lo añade. Devuelve la huella de esa cabecera.
 
 #### Reglas de Invocación Críticas
@@ -32,5 +32,5 @@ La forma de las tres secciones está en `<carpeta de esta skill>/assets/spec.md`
 - **Código 4**: El texto parece contener un secreto. No se ha escrito nada. Para, nombra el fichero de donde salió y deja el valor fuera de cualquier respuesta.
 - **Código 5**: El cuerpo (o el comentario de revisión) pasaría del límite: 65 536 caracteres en GitHub; en GitLab, 1 048 576 en la issue y 1 000 000 en un comentario. Acorta el plan y vuelve a escribir. Acórtalo en la misma issue: el texto no se reparte en otras issues ni en comentarios.
 - **Código 6**: La cuenta no puede editar el cuerpo de la issue. No se ha escrito nada. Publica la spec con `revision` y sigue con `--revision`.
-- **Línea con un comando en GitLab**: GitLab ejecutaría una línea que empieza por uno de sus comandos, como `/close`. El script rechaza toda línea así, también en un bloque de código o un comentario HTML: no se escribe nada y sale con 1. Pon un espacio delante de la barra.
+- **Línea con un comando en GitLab**: GitLab ejecutaría una línea que empieza por uno de sus comandos, como `/close`. El script rechaza una línea así, también en un bloque de código o un comentario HTML: no se escribe nada y sale con 1. Pon un espacio delante de la barra. Se conserva la que ya estaba guardada sin cambios desde el principio del texto hasta la línea siguiente, como en la parte de arriba de la issue.
 - **Otro código distinto de 0**: Comunica el texto del error. Edita la issue solo con este script: es el que comprueba la huella.

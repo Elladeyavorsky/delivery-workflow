@@ -151,7 +151,12 @@ async function gitlabReviewNotes(api, number) {
     line: note.position?.new_line ?? note.position?.old_line,
     body: note.body,
   })));
-  const reviews = review.notes.map((note) => ({ state: "CHANGES_REQUESTED", author: note.author.username, body: note.body }));
+  const reviews = review.notes.map((note) => ({
+    state: review.askers.includes(note.author.username) ? "CHANGES_REQUESTED" : "COMMENTED",
+    author: note.author.username,
+    // Un comentario general no se resuelve: la fecha distingue lo de esta vuelta de lo anterior.
+    body: note.created_at ? `${note.created_at.slice(0, 10)}: ${note.body}` : note.body,
+  }));
   const text = formatReviewNotes({ reviewDecision: review.decision, reviews, lineComments });
   const extra = [`Piden cambios: ${review.askers.join(", ") || "nadie"}`];
   if (!review.statesAvailable) extra.push("Esta instancia no dice quién pidió cambios: la decisión sale de los hilos y las aprobaciones.");

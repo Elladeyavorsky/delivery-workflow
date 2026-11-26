@@ -149,11 +149,13 @@ if (method !== "GET" && state.denyEdit) forbidden();
 if (!rest.includes("/notes")) {
   if (method === "PUT") {
     if (body.description !== undefined) issue.description = body.description;
-    if (body.state_event) issue.state = body.state_event === "close" ? "closed" : "opened";
+    // Sin permiso, GitLab puede ignorar el cambio de estado sin dar error.
+    if (body.state_event && !state.ignoreState) issue.state = body.state_event === "close" ? "closed" : "opened";
     if (body.assignee_ids) issue.assignees = assignees(body.assignee_ids);
   }
   reply(200, issue);
 }
+if (method === "GET" && found[2]) reply(200, issue.notes.find((item) => item.id === Number(found[2])));
 if (method === "GET") {
   // Sin sort=asc, GitLab devuelve primero lo más nuevo.
   page(url.searchParams.get("sort") === "asc" ? issue.notes : [...issue.notes].reverse());

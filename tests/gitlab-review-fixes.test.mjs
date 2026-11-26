@@ -271,3 +271,89 @@ test("en un fork se avisa de que no se admite", () => {
   assert.match(created.stderr, /no admite forks/);
   assert.doesNotMatch(project().run("check-status/scripts/check-status.sh").stdout, /fork/);
 });
+
+const LIST = "## Qué hay\n\n```\n/status\n/merge\n```\n\nFin.";
+const savedIssue = (description, notes = []) => ({ 1: { iid: 1, state: "opened", description, author: { id: 1 }, assignees: [], notes } });
+const spec = (gl, ...args) => gl.run("issue-spec/scripts/issue-spec.mjs", args);
+
+test("una línea con un comando ya guardada en la parte de arriba no impide escribir", () => {
+  const description = `${LIST}\n\n## Spec\n\n> Estado: **Borrador** · x\n\n## Tasks\n\n- [ ] **TASK-01:** Uno\n`;
+  const gl = project({ issues: savedIssue(description) });
+  const top = hashTop(LIST);
+  writeFileSync(join(gl.repo, "plan.md"), "Pasos.");
+  for (const args of [["write", "1", "--plan", "plan.md"], ["tick", "1", "TASK-01"], ["state", "1", "Implementada"]]) {
+    const result = spec(gl, ...args, "--expect-top", top);
+    assert.equal(result.status, 0, result.stderr);
+  }
+  assert.ok(gl.state().issues[1].description.startsWith(LIST));
+  writeFileSync(join(gl.repo, "plan.md"), "```\n/close\n```");
+  const added = spec(gl, "write", "1", "--plan", "plan.md", "--expect-top", top);
+  assert.equal(added.status, 1);
+  assert.match(added.stderr, /«\/close»/);
+});
+
+test("solo se libra la línea que no ha cambiado ni lo que tiene delante", () => {
+  const saved = "intro\n```\n/close\n```\nfin";
+  assert.equal(findQuickAction(`${saved}\n\nmás`, saved), null);
+  assert.equal(findQuickAction(`\n\n${saved}`, saved), null);
+  for (const text of ["intro\n/close\n```\nfin", "otra\n```\n/close\n```\nfin", "intro\n```\n/close\notra", `${saved}\n/close`, "/close"]) {
+    assert.equal(findQuickAction(text, saved), "/close", text);
+  }
+  assert.equal(findQuickAction("a\n/close\n---", "a\n/close\n==="), "/close");
+});
+
+test("el cuerpo de un merge request y un comentario conservan sus líneas ya guardadas", () => {
+  const revision = "<!-- Revisión 1 -->\n\n```\n/merge\n```\n\n## Tasks\n\n- [ ] **TASK-01:** Uno";
+  const gl = project({
+    issues: savedIssue("x", [{ id: 1, body: revision, system: false }]),
+    mergeRequests: { 1: { ...mergeRequest()[1], description: "```\n/status\n```\n\nCambio." } },
+  });
+  const tick = spec(gl, "tick", "1", "TASK-01", "--revision", "--expect-top", hashTop("<!-- Revisión 1 -->\n\n```\n/merge\n```"));
+  assert.equal(tick.status, 0, tick.stderr);
+  writeFileSync(join(gl.repo, "mr.md"), "```\n/status\n```\n\nOtro cambio.\n\nCloses #1\n");
+  const edit = gitlab(gl, "mr", "edit", "1", "--body-file", "mr.md");
+  assert.equal(edit.status, 0, edit.stderr);
+  writeFileSync(join(gl.repo, "mr.md"), "```\n/status\n```\n\n/close\n");
+  assert.equal(gitlab(gl, "mr", "edit", "1", "--body-file", "mr.md").status, 1);
+});
+
+const note = (author, body, extra = {}) => ({ notes: [{ author, body, system: false, resolvable: false, ...extra }] });
+const openThread = (author) => note(author, "Cambia esta línea", { resolvable: true, resolved: false, position: { new_path: "a.js", new_line: 1 } });
+const reviewed = (state, discussions) => project({
+  ...state,
+  mergeRequests: { 1: { ...mergeRequest(state.reviewers ?? [])[1], description: "Closes #1", discussions } },
+});
+
+test("reviews incluye los comentarios generales de quien abre un hilo", () => {
+  const gl = reviewed({}, [openThread(BOB), note(BOB, "Añade tests del error"), note(CAM, "Bonito"), note(ADA, "Gracias")]);
+  const result = spec(gl, "reviews", "1");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /## bob \(CHANGES_REQUESTED\)\nAñade tests del error/);
+  assert.doesNotMatch(result.stdout, /Bonito|Gracias/);
+});
+
+test("sin estado de revisión, reviews incluye los comentarios generales de los demás", () => {
+  const gl = reviewed({ noReviewState: true }, [openThread(BOB), note(CAM, "Falta el caso vacío"), note(ADA, "Gracias"), note(BOB, "sistema", { system: true })]);
+  const result = spec(gl, "reviews", "1");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /## cam \(COMMENTED\)\nFalta el caso vacío/);
+  assert.doesNotMatch(result.stdout, /Gracias|sistema/);
+});
+
+test("cerrar o reabrir falla si GitLab no cambia el estado", () => {
+  for (const [action, state, expected] of [["close", "opened", "OPEN"], ["reopen", "closed", "CLOSED"]]) {
+    const gl = project({ ignoreState: true, issues: { 1: { ...savedIssue("x")[1], state } } });
+    const result = gitlab(gl, "issue", action, "1");
+    assert.equal(result.status, 1, action);
+    assert.match(result.stderr, new RegExp(`sigue en ${expected}`));
+    assert.equal(result.stdout, "");
+  }
+});
+
+test("reviews fecha cada comentario general", () => {
+  const dated = (body, day) => note(BOB, body, { created_at: `2026-11-${day}T10:00:00.000Z` });
+  const gl = reviewed({ reviewers: [{ ...BOB, state: "REQUESTED_CHANGES" }] }, [dated("Renombra X", "01"), dated("Añade tests", "20")]);
+  const result = spec(gl, "reviews", "1");
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /2026-11-01: Renombra X[\s\S]*2026-11-20: Añade tests/);
+});

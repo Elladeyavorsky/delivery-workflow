@@ -332,18 +332,30 @@ const QUICK_ACTIONS = new Set((
   "type unapprove unassign unassign_reviewer unlabel unlink unlock unsubscribe weight zoom"
 ).split(" "));
 
+// Las líneas del texto, sin las vacías del principio.
+function textLines(text) {
+  return String(text ?? "").replace(/\r/g, "").replace(/^(?:[ \t]*\n)+/, "").split("\n");
+}
+
 // La primera línea que empieza por un comando de GitLab, o null. No se interpreta el Markdown: tampoco se
 // libran los bloques de código ni los comentarios, y así ningún formato puede esconder un comando.
-export function findQuickAction(text) {
-  for (const line of String(text ?? "").replace(/\r/g, "").split("\n")) {
-    const command = line.match(/^\/([a-z_]+)(?=\s|$)/i);
-    if (command && QUICK_ACTIONS.has(command[1].toLowerCase())) return command[0];
+// Solo se libra una línea que ya estaba guardada en previous sin cambios desde el principio hasta la línea
+// siguiente: nada de lo que decide si es código ha cambiado, y GitLab ya la guardó sin ejecutarla.
+export function findQuickAction(text, previous) {
+  const lines = textLines(text);
+  const saved = previous ? textLines(previous) : [];
+  let same = 0;
+  while (same < saved.length && lines[same] === saved[same]) same++;
+  const untouched = (i) => i < same && lines[i + 1] === saved[i + 1];
+  for (let i = 0; i < lines.length; i++) {
+    const command = lines[i].match(/^\/([a-z_]+)(?=\s|$)/i);
+    if (command && QUICK_ACTIONS.has(command[1].toLowerCase()) && !untouched(i)) return command[0];
   }
   return null;
 }
 
-function checkText(text) {
-  const command = findQuickAction(text);
+function checkText(text, previous) {
+  const command = findQuickAction(text, previous);
   if (command) {
     throw new GitLabError(`GitLab ejecutaría «${command}» como un comando. Pon un espacio delante de la barra, también dentro de un bloque de código. No se escribe nada.`);
   }
@@ -356,7 +368,9 @@ export async function getIssue(client, number) {
 }
 
 export async function updateIssue(client, number, changes) {
-  checkText(changes.description);
+  if (changes.description !== undefined) {
+    checkText(changes.description, (await getIssue(client, number)).description);
+  }
   return (await client.request("PUT", issuePath(client, number), { body: changes })).data;
 }
 
@@ -372,7 +386,8 @@ export async function createNote(client, number, body) {
 }
 
 export async function updateNote(client, number, id, body) {
-  checkText(body);
+  const saved = (await client.request("GET", issuePath(client, number, `/notes/${id}`))).data;
+  checkText(body, saved?.body);
   return (await client.request("PUT", issuePath(client, number, `/notes/${id}`), { body: { body } })).data;
 }
 
@@ -442,7 +457,12 @@ export async function createIssue(client, { title, body, type }, warn = console.
 const stateName = (issue) => (issue.state === "closed" ? "CLOSED" : "OPEN");
 
 export async function setIssueState(client, number, event) {
-  return stateName(await updateIssue(client, number, { state_event: event }));
+  const state = stateName(await updateIssue(client, number, { state_event: event }));
+  // GitLab puede ignorar el cambio sin dar error.
+  if (state !== (event === "close" ? "CLOSED" : "OPEN")) {
+    throw new GitLabError(`La issue #${number} sigue en ${state}: GitLab no aplicó el cambio, quizá porque la cuenta no tiene permiso.`);
+  }
+  return state;
 }
 
 // Añade la cuenta del token sin quitar a nadie. Un plan con una sola persona asignada no lo permite.
@@ -479,7 +499,9 @@ export async function getMergeRequest(client, number) {
 }
 
 export async function updateMergeRequest(client, number, changes) {
-  checkText(changes.description);
+  if (changes.description !== undefined) {
+    checkText(changes.description, (await getMergeRequest(client, number)).description);
+  }
   return (await client.request("PUT", mrPath(client, number), { body: changes })).data;
 }
 
@@ -564,10 +586,11 @@ export async function reviewSummary(client, mergeRequest) {
   const requested = states ? [...states].filter(([, state]) => state === "REQUESTED_CHANGES").map(([name]) => name) : [];
   const threads = discussions.filter((thread) =>
     thread.notes.some((note) => note.resolvable && !note.resolved) && thread.notes[0].author.id !== mergeRequest.author.id);
-  // El texto general de una revisión no es un hilo: se recoge de quien pidió cambios.
-  const notes = discussions.flatMap((thread) => thread.notes)
-    .filter((note) => !note.resolvable && !note.system && requested.includes(note.author.username));
   const askers = [...new Set([...requested, ...threads.map((thread) => thread.notes[0].author.username)])];
+  // Un comentario general no es un hilo: se recoge de quien pide cambios. Si la instancia no dice quién los
+  // marcó en su revisión, de cualquiera que no sea el autor.
+  const notes = discussions.flatMap((thread) => thread.notes).filter((note) => !note.resolvable && !note.system
+    && note.author.id !== mergeRequest.author.id && (!states || askers.includes(note.author.username)));
   let decision = "CHANGES_REQUESTED";
   if (!askers.length) {
     const { data } = await client.request("GET", mrPath(client, number, "/approvals"));
