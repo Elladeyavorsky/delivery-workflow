@@ -5,7 +5,7 @@ El paquete sale de dos piezas de la rama `staging` del repositorio de origen, [v
 - **La plantilla de git**, [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template), con lo que entró hasta venturars/neoland-102026#1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
 - **El ciclo de agentes**, [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB) (`AGENTS.md`, `agents/` y `templates/specs/`).
 
-Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto, con Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
+Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto, con opencode, Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
 
 ## Estructura
 
@@ -54,9 +54,9 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto,
 - **Forma del título.** Nuevo. `check-title.sh` comprueba el título de la issue y de la pull request antes de crearlas: menos de 72 caracteres, verbo en mayúscula delante, sin tipo delante, sin número de issue y sin punto final. Solo acepta ASCII imprimible, así que no pasan acentos, eñes ni saltos de línea; que esté en inglés lo piden las skills, porque el script no puede comprobarlo. Las issues se crean con `create-issue.sh`, que lo comprueba antes de llamar a `gh`. En una PR que ya existía, `create-pr-base.sh` devuelve su URL sin mirar el título, y rechaza un cuerpo que nombre la issue. Antes la forma solo estaba en un comentario de la plantilla.
 - **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.
 - **Entrevistas.** Hacen las preguntas en tandas con respuesta recomendada, como en `staging` desde #925, pero esperan las respuestas en la conversación en vez de devolverlas al orquestador. Se llaman tandas para no confundirlas con las rondas del ciclo. Quitan la línea de instalación de las skills de Matt Pocock y la cambian por un enlace de inspiración.
-- **Rutas.** Las skills llaman a sus scripts y plantillas desde la carpeta de la skill (`<carpeta de esta skill>/…`) en vez de `./tools/…` o `exercises/git-workflow-agent-template/tools/…`, y dicen cuál es esa carpeta en cada herramienta: `${CLAUDE_SKILL_DIR}` en Claude Code y `.agents/skills/<skill>` en Cursor y Codex.
+- **Rutas.** Las skills llaman a sus scripts y plantillas desde la carpeta de la skill (`<carpeta de esta skill>/…`) en vez de `./tools/…` o `exercises/git-workflow-agent-template/tools/…`, y dicen cuál es esa carpeta en cada herramienta: `${CLAUDE_SKILL_DIR}` en Claude Code y `.agents/skills/<skill>` en opencode, Cursor y Codex.
 - **Scripts con `bash` y `node`.** Las skills lanzan cada script como `bash "<carpeta>/script.sh"` o `node "<carpeta>/script.mjs"`, no por su ruta. La ruta cambia en cada proyecto, así que una regla de permisos por ruta no sirve; `Bash(bash:*)` y `Bash(node:*)` sí.
-- **Frontmatter.** Cada skill y cada subagente lleva `name` y `description` en español. Los subagentes precargan sus skills con `skills:`. Codex descarta ese campo al instalar (APM lo avisa), pero sus subagentes heredan las skills igualmente.
+- **Frontmatter.** Cada skill y cada subagente lleva `name` y `description` en español. Los subagentes precargan sus skills con `skills:`. Codex descarta ese campo al instalar (APM lo avisa), pero sus subagentes heredan las skills igualmente. Cada subagente declara además `mode: all`, que opencode 2 exige para lanzarlo. En opencode, `/configure-models` quita `skills:` de los agentes: opencode no precarga esas skills y envía el campo al proveedor del modelo en las peticiones `openai-compatible`.
 
 ## Ciclo de ChromaDB
 
