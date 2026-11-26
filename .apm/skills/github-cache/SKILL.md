@@ -5,7 +5,7 @@ description: "Reutiliza alias y datos públicos de colaboradores al resolver los
 
 # Caché de revisores
 
-Sirve para los dos forges. Requiere Node 20+ y Git. En GitHub, además `gh` y el `GITHUB_TOKEN` del `.env` del proyecto; respeta `GH_HOST`. El script lanza `gh` con ese token, no con la sesión de `gh`, e identifica la cuenta del token para aislar sus datos.
+Sirve para los dos forges. Requiere Node 24+ y Git. En GitHub, además `gh` y el `GITHUB_TOKEN` del `.env` del proyecto; respeta `GH_HOST`. El script lanza `gh` con ese token, no con la sesión de `gh`, e identifica la cuenta del token para aislar sus datos.
 
 En GitLab requiere `curl` y el `GITLAB_TOKEN` del `.env`. Los comandos son los mismos: `OWNER/REPO` es la ruta completa del proyecto, con sus subgrupos, y el directorio son sus miembros, incluidos los heredados.
 

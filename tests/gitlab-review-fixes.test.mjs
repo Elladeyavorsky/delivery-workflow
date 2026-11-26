@@ -154,7 +154,7 @@ test("sin Node, un GitLab propio declarado no se trata como GitHub", () => {
     for (const [script, args] of [["manage-issue/scripts/manage-issue.sh", ISSUE], ["manage-pr-base/scripts/manage-pr-base.sh", PR]]) {
       const result = gl.run(script, args, extra);
       assert.equal(result.status, 1, script);
-      assert.match(result.stderr, /Hace falta Node 20/, `${script}: ${result.stderr}`);
+      assert.match(result.stderr, /Hace falta Node 24/, `${script}: ${result.stderr}`);
     }
     const status = gl.run("check-status/scripts/check-status.sh", [], extra);
     assert.match(status.stdout, /^Forge: GitLab\..*sin Node/m, status.stderr);
@@ -236,7 +236,7 @@ test("el SSH de gitlab.com por el puerto 443 es GitLab", () => {
 test("sin Node, solo el host gitlab.com cuenta como GitLab", () => {
   const looks = (origin) => {
     const gl = project({}, { origin, env: "GITHUB_TOKEN=a\n", node: false });
-    return /Hace falta Node 20/.test(gl.run("manage-issue/scripts/manage-issue.sh", ISSUE).stderr);
+    return /Hace falta Node 24/.test(gl.run("manage-issue/scripts/manage-issue.sh", ISSUE).stderr);
   };
   for (const origin of ["git@gitlab.com:g/p.git", "https://gitlab.com/g/p.git", "https://ada@gitlab.com/g/p", "ssh://git@altssh.gitlab.com:443/g/p.git", "gitlab.com:g/p.git"]) {
     assert.equal(looks(origin), true, origin);

@@ -97,7 +97,7 @@ if command -v node >/dev/null 2>&1; then
     exit 1
   fi
 elif looks_like_gitlab; then
-  echo "Node no está instalado. Hace falta Node 20 o superior para GitLab." >&2
+  echo "Node no está instalado. Hace falta Node 24 o superior para GitLab." >&2
   exit 1
 fi
 
