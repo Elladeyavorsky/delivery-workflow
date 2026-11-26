@@ -118,6 +118,8 @@ check "el workflow usa self-release.py y no el actualizador antiguo" \
   bash -c 'grep -Fq ".github/scripts/self-release.py" "$1" && ! grep -Eq "update-apm-dependency\.sh|scripts/release-" "$1"' _ "$workflow"
 check "el workflow usa latest y no select para elegir la release" \
   bash -c 'grep -Fq "self-release.py latest" "$1" && ! grep -Fq "self-release.py select" "$1"' _ "$workflow"
+check "el workflow omite apm update si la release depende de otra etiqueta" \
+  grep -Fq 'self-release.py nested "$DEPENDENCY_REPO" "$REF"' "$workflow"
 check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \

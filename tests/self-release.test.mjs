@@ -207,6 +207,23 @@ test('select y latest difieren cuando las releases nuevas traen autodependencia'
   assert.equal(installable.stdout, 'v1.2.3\n');
 });
 
+test('nested lee el pin del manifiesto de la release', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'self-release-nested-'));
+  writeFileSync(join(dir, 'v1.4.1.yml'), manifest);
+  writeFileSync(join(dir, 'v1.2.3.yml'), withoutSelf);
+
+  const nested = run(['nested', '--manifests', dir, repo, 'v1.4.1']);
+  assert.equal(nested.status, 0);
+  assert.equal(nested.stdout, 'venturars/delivery-workflow#v1.1.2\n');
+
+  const none = run(['nested', '--manifests', dir, repo, 'v1.2.3']);
+  assert.equal(none.status, 0);
+  assert.equal(none.stdout, '');
+
+  const invalid = run(['nested', '--manifests', dir, repo, 'staging']);
+  assert.notEqual(invalid.status, 0);
+});
+
 test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () => {
   const dir = mkdtempSync(join(tmpdir(), 'self-release-pin-'));
   const file = join(dir, 'apm.yml');
@@ -220,6 +237,8 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.match(workflow, /steps\.release\.outputs\.ref/);
   assert.match(workflow, /dependencies\.apm ya apunta a \$\{REF\}/);
   assert.match(workflow, /self-release\.py set "\$DEPENDENCY_REPO" "\$REF"/);
+  assert.match(workflow, /self-release\.py nested "\$DEPENDENCY_REPO" "\$REF"/);
+  assert.match(workflow, /Solo se actualiza el pin en apm\.yml/);
   assert.doesNotMatch(workflow, /steps\.compatible\.outputs\.ref/);
   assert.doesNotMatch(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
 });
