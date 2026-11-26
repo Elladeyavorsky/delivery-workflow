@@ -78,7 +78,7 @@ Los agentes usan el token del `.env` para todo lo que hacen en GitHub (issues, p
 
 3. Añade `.env` a `.gitignore`: `echo .env >> .gitignore`.
 
-Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
+El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ### GitLab
 
@@ -101,7 +101,9 @@ Qué cambia respecto a GitHub, como los forks, que no se admiten: [docs/GITLAB.m
 
 ## Uso
 
-Tras la instalación, llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
+Con el paquete instalado, el flujo funciona por defecto. Antes solo hacen falta el `.env` con tu token, `/configure-models` en opencode y `GIT_WORKFLOW_FORGE=gitlab` en una instancia propia de GitLab.
+
+Llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
 
 | Pide | Qué pasa |
 |---|---|
@@ -134,11 +136,11 @@ En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, so
 
 Tras instalar, estos pasos mejoran el resultado. El único necesario para que el flujo funcione es `/configure-models` en opencode.
 
-- **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. Repite el comando tras `apm install` y `apm update`. Ver [docs/MODELS.md](docs/MODELS.md).
+- **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. `apm install` y `apm update` borran la línea `model` de los agentes: repite el comando después. Ver [docs/MODELS.md](docs/MODELS.md).
 - **Context7:** `/setup-context7`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas, sin instalar nada. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
 - **RAG local:** `/setup-docs-rag`, para lo mismo sin que tus consultas salgan de tu ordenador; necesita Docker, Ollama y `uv` (en Windows con opencode, también `bash`: WSL o Git Bash). Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
 - **Docker:** la skill `docker-best-practices`, para que el `Dockerfile` y el `docker-compose.yml` fijen versiones y se comprueben antes de la pull request. Ver [docs/DOCKER.md](docs/DOCKER.md).
-- **Compliance:** `/setup-compliance`, para tener los documentos del AI Act y el RGPD del proyecto. Ver [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
+- **Compliance:** `/setup-compliance`, para tener los documentos del AI Act y el RGPD del proyecto. Es orientativo: no certifica cumplimiento ni es asesoramiento jurídico. Ver [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 En opencode 2.x, reinicia opencode después de `/setup-context7` o `/setup-docs-rag` para que cargue el MCP.
 
