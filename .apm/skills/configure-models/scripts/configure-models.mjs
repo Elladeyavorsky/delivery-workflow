@@ -259,7 +259,7 @@ export function parseOpencodeModels(text) {
 }
 
 const OPENCODE_REASONS = {
-  missing: "no está instalado el comando opencode; si conoces los modelos disponibles, pásalos con --models",
+  missing: "no está instalado el comando opencode ni se ha encontrado el de la app de escritorio; si conoces los modelos disponibles, pásalos con --models",
   timeout: "opencode models no respondió a tiempo",
   error: "opencode models falló",
   empty: "opencode models no devolvió ningún modelo",
@@ -268,9 +268,20 @@ const OPENCODE_REASONS = {
 // La primera llamada puede descargar el catálogo de modelos.
 const OPENCODE_TIMEOUT_MS = 30000;
 
+// La app de escritorio de macOS trae su propio comando y no lo añade al PATH.
+export function opencodeCommands({ platform = process.platform, home = homedir() } = {}) {
+  const bundled = "Applications/OpenCode.app/Contents/Resources/opencode-cli";
+  return ["opencode", ...(platform === "darwin" ? [`/${bundled}`, join(home, bundled)] : [])];
+}
+
 // Se lanza en la raíz del proyecto: su opencode.json puede declarar proveedores.
-export async function detectOpencode({ run = runCommand, root } = {}) {
-  const result = await run("opencode", ["models"], { cwd: root, timeout: OPENCODE_TIMEOUT_MS });
+export async function detectOpencode({ run = runCommand, root, home, platform } = {}) {
+  let result;
+  // Solo se prueba el siguiente cuando el anterior no existe: un fallo del que sí existe es el que se cuenta.
+  for (const command of opencodeCommands({ platform, home })) {
+    result = await run(command, ["models"], { cwd: root, timeout: OPENCODE_TIMEOUT_MS });
+    if (result.status !== "missing") break;
+  }
   if (result.status === "ok") {
     const models = parseOpencodeModels(result.stdout);
     if (models.length) return { status: "ok", models, reason: null };

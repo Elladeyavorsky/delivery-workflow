@@ -11,6 +11,7 @@ import {
   detectOpencode,
   getModelMd,
   loadProfiles,
+  opencodeCommands,
   parseOpencodeModels,
   run as configureModels,
   statusLine,
@@ -50,6 +51,10 @@ test("apm.yml declara opencode primero", () => {
   assert.match(manifest, /^targets: \[opencode, claude, cursor, codex\]$/m);
   assert.match(manifest, /^description: Flujo de entrega para opencode, /m);
   assert.match(manifest, /^keywords: \[.*opencode, claude-code.*\]$/m);
+});
+
+test("cada agente declara mode: all, que opencode 2 exige para lanzarlo como subagente", () => {
+  for (const file of readdirSync(AGENTS)) assert.match(read(AGENTS, file).split("---")[1], /^mode: all$/m, file);
 });
 
 test("cada agente nombra en su texto las skills de su campo skills", () => {
@@ -229,6 +234,25 @@ test("opencode models se lanza en la raíz del proyecto", async () => {
   let seen;
   await detectOpencode({ root: "/raiz", run: async (...call) => ((seen = call), { status: "ok", stdout: ONE }) });
   assert.equal(seen[2].cwd, "/raiz");
+});
+
+test("sin opencode en el PATH, en macOS se usa el comando de la app de escritorio", async () => {
+  const tried = [];
+  const app = "/Applications/OpenCode.app/Contents/Resources/opencode-cli";
+  const only = (found) => async (command) => (tried.push(command), command === found ? { status: "ok", stdout: ONE } : { status: "missing", stdout: "" });
+  const detection = await detectOpencode({ run: only(app), root: "/raiz", home: "/casa", platform: "darwin" });
+  assert.equal(detection.status, "ok");
+  assert.deepEqual(tried, ["opencode", app]);
+  assert.deepEqual(opencodeCommands({ platform: "darwin", home: "/casa" }).at(-1), `/casa${app}`);
+  assert.deepEqual(opencodeCommands({ platform: "linux", home: "/casa" }), ["opencode"]);
+});
+
+test("un fallo del comando que existe no pasa al de la app", async () => {
+  const tried = [];
+  const run = async (command) => (tried.push(command), { status: "error", stdout: "" });
+  const detection = await detectOpencode({ run, root: "/raiz", home: "/casa", platform: "darwin" });
+  assert.match(detection.reason, /falló/);
+  assert.deepEqual(tried, ["opencode"]);
 });
 
 test("con un proveedor, apply escribe un modelo por nivel en los 9 agentes", async () => {

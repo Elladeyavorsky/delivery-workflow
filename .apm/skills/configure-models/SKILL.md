@@ -24,7 +24,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor
 
 #### opencode
 
-- **Modelos**: salen de `opencode models`, lanzado en la raíz del proyecto, como `proveedor/modelo`.
+- **Modelos**: salen de `opencode models`, lanzado en la raíz del proyecto, como `proveedor/modelo`. Si `opencode` no está en el PATH, en macOS se usa el comando que trae la app de escritorio (`OpenCode.app`).
 - **Varios proveedores**: la salida trae `providers` y, mientras no haya uno elegido, las propuestas van vacías. Pregunta a la persona cuál usa y repite `detect` y `apply` con `--provider`. La lista incluye los modelos gratuitos del proveedor `opencode` aunque no tenga credenciales, así que no elijas por ella.
 - **`skills:`**: `apply` lo quita de los 9 agentes del paquete en `.opencode/agents/`, haya o no modelos que escribir. opencode no precarga esas skills y envía el campo al proveedor del modelo en las peticiones `openai-compatible`; cada agente carga las skills que su texto nombra. `apm install` y `apm update` reponen el campo: hay que repetir `apply`, y `check-status` lo avisa. `reset` no lo repone.
 
