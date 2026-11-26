@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   update:
-    name: Actualizar dependencia APM
+    name: Quitar autodependencia APM
     if: github.repository == 'venturars/delivery-workflow'
     runs-on: ubuntu-latest
     env:
@@ -21,67 +21,17 @@ jobs:
         with:
           ref: staging
 
-      - name: Validar las entradas
+      - name: Quitar la autodependencia si existe
         env:
           DEPENDENCY_REPO: venturars/delivery-workflow
-          BASE_BRANCH: staging
-        run: |
-          [[ "$DEPENDENCY_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
-            echo "dependency_repo debe tener el formato organizacion/repositorio." >&2
-            exit 1
-          }
-          git check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 || {
-            echo "base_branch no es una rama válida." >&2
-            exit 1
-          }
-
-      - name: Instalar APM
-        run: |
-          curl -sSL https://aka.ms/apm-unix | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Obtener la última release estable
-        id: release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEPENDENCY_REPO: venturars/delivery-workflow
-        run: |
-          releases=$(gh api \
-            --paginate \
-            --slurp \
-            "repos/$DEPENDENCY_REPO/releases?per_page=100")
-          tag=$(python3 .github/scripts/self-release.py latest <<<"$releases")
-          echo "ref=$tag" >>"$GITHUB_OUTPUT"
-          echo "Última release estable: $tag"
-
-      - name: Actualizar la dependencia y regenerar los archivos de APM
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEPENDENCY_REPO: venturars/delivery-workflow
-          REF: ${{ steps.release.outputs.ref }}
         run: |
           actual=$(python3 .github/scripts/self-release.py pin "$DEPENDENCY_REPO")
-          if [[ "$actual" == "${DEPENDENCY_REPO}#${REF}" ]]; then
-            echo "dependencies.apm ya apunta a ${REF}."
+          if [[ -z "$actual" ]]; then
+            echo "Este paquete no se autodepende. Nada que actualizar."
             exit 0
           fi
-          python3 .github/scripts/self-release.py set "$DEPENDENCY_REPO" "$REF"
-          nested=$(python3 .github/scripts/self-release.py nested "$DEPENDENCY_REPO" "$REF")
-          if [[ -n "$nested" && "$nested" != "${DEPENDENCY_REPO}#${REF}" ]]; then
-            echo "La release $REF depende de $nested: APM no puede instalar dos commits del mismo paquete. Solo se actualiza el pin en apm.yml."
-            exit 0
-          fi
-          # --force: el runner no tiene recibos de despliegue y el paquete local
-          # comparte esos ficheros con la dependencia. Sin esto, APM rechaza la escritura.
-          # Una release puede no declarar opencode, y APM falla si se le pide ese target. claude va
-          # primero porque deja en apm_modules el apm.yml de la release, que es donde se comprueba.
-          for TARGET in claude opencode cursor codex; do
-            if [[ "$TARGET" == opencode ]] && ! grep -Eq '^targets:.*opencode' "apm_modules/$DEPENDENCY_REPO/apm.yml"; then
-              echo "La release $REF no declara opencode: se omite ese target."
-              continue
-            fi
-            apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force
-          done
+          python3 .github/scripts/self-release.py align "$DEPENDENCY_REPO"
+          echo "Se quita $actual de dependencies.apm."
 
       - name: Crear o actualizar la PR
         uses: peter-evans/create-pull-request@v7
@@ -91,9 +41,8 @@ jobs:
           base: staging
           draft: true
           delete-branch: true
-          commit-message: "chore: update venturars/delivery-workflow to ${{ steps.release.outputs.ref }}"
-          title: "Update delivery-workflow to ${{ steps.release.outputs.ref }}"
+          commit-message: "chore: drop self-dependency from apm.yml"
+          title: "Drop the delivery-workflow self-dependency"
           body: |
-            Actualiza `venturars/delivery-workflow` a `${{ steps.release.outputs.ref }}`.
-
-            Incluye `apm.yml` y, si APM puede resolver la release, `apm.lock.yaml` y los archivos generados.
+            Este paquete no se lista a sí mismo en `dependencies.apm`.
+            Los consumidores instalan una etiqueta. En este repositorio se trabaja con `.apm/` local.

@@ -1,7 +1,17 @@
 .env
 
-# APM dependencies
+# APM: copias y recibos de `apm install` en este repo (cada máquina).
+# La fuente del paquete es `.apm/`. Lo ya versionado se quita en otra PR.
 apm_modules/
+apm.lock.yaml
+.agents/
+.codex/
+.opencode/
+.claude/agents/
+.claude/skills/
+.cursor/agents/
+.cursor/mcp.json
+.mcp.json
 
 .DS_Store
 __pycache__/
