@@ -132,7 +132,11 @@ fi
 
 if [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
   pr_json=$(gh pr view --json number,reviewDecision,body 2>/dev/null || true)
-  if echo "$pr_json" | grep -q '"number"'; then
+  if ! echo "$pr_json" | grep -q '"number"'; then
+    echo "Pull request: ninguna abierta en esta rama"
+  elif ! command -v node >/dev/null 2>&1; then
+    echo "Pull request: no se pudo comprobar (falta Node)"
+  else
     pr_line=$(printf '%s' "$pr_json" | node -e '
       const fs = require("fs");
       const p = JSON.parse(fs.readFileSync(0, "utf8"));
@@ -142,8 +146,6 @@ if [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
       process.stdout.write("#" + p.number + " " + decision + (match ? " issue #" + match[1] : ""));
     ')
     echo "Pull request: ${pr_line}"
-  else
-    echo "Pull request: ninguna abierta en esta rama"
   fi
 fi
 

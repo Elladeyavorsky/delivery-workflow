@@ -205,6 +205,15 @@ status=$(PATH="${work}/fake-node:${PATH}" FAKE_NODE_VERSION=23.7.0 "${skills}/ch
 check "check-status pide Node 24 con una versión anterior" grep -qx "Node: 23.7.0. Hace falta Node 24 o superior." <<<"$status"
 status=$(PATH="${work}/fake-node:${PATH}" FAKE_NODE_VERSION=24.0.0 "${skills}/check-status/scripts/check-status.sh")
 check "check-status acepta Node 24" grep -qx "Node: 24.0.0" <<<"$status"
+# Un PATH solo con lo que el script necesita: así no depende de dónde esté instalado node.
+mkdir -p "${work}/no-node"
+for tool in basename bash cat dirname env git grep mktemp rm sed tail; do
+  ln -s "$(command -v "$tool")" "${work}/no-node/${tool}"
+done
+status=$(PATH="${work}/bin:${work}/no-node" "${skills}/check-status/scripts/check-status.sh" 2>&1)
+check "check-status sin Node lo dice" grep -qx "Node: no instalado. Hace falta Node 24 o superior." <<<"$status"
+check "check-status sin Node dice que no comprueba la pull request" grep -qx "Pull request: no se pudo comprobar (falta Node)" <<<"$status"
+check "check-status sin Node llega al final" grep -q "^Sin seguimiento:" <<<"$status"
 status=$("${skills}/check-status/scripts/check-status.sh")
 
 # check-status: la línea de modelos nunca para el script y pasa por sus tres estados.
