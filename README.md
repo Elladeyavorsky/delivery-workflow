@@ -293,4 +293,5 @@ Los cambios de skills se editan en `.apm/`. Vuelve a lanzar `apm install --targe
 - [CHANGES.md](CHANGES.md): de dónde sale el paquete y qué cambia respecto al original.
 - [docs/MODELS.md](docs/MODELS.md): criterio de elección del modelo de cada agente y motivo por el que no se versiona.
 - [docs/MAINTENANCE.md](docs/MAINTENANCE.md): tests, prueba en un repositorio desechable y cómo publicar una versión.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): mapa de capas de este repositorio.
 - [GLOSSARY.md](GLOSSARY.md): vocabulario del flujo.

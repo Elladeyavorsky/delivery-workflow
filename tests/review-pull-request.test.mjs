@@ -28,6 +28,19 @@ test('acepta una pull request de trabajo que cumple las reglas', () => {
   assert.deepEqual(reviewPullRequest(validFacts()), []);
 });
 
+test('rechaza autodependencia hacia staging', () => {
+  const errors = reviewPullRequest(validFacts({
+    selfPin: 'venturars/delivery-workflow#v1.1.2',
+    paths: ['.github/workflows/pr-check-rules.yml'],
+  }));
+  assert.deepEqual(errors, ['apm.yml no lista este paquete en dependencies.apm.']);
+});
+
+test('acepta sin autodependencia', () => {
+  assert.deepEqual(reviewPullRequest(validFacts()), []);
+  assert.deepEqual(reviewPullRequest(validFacts({ selfPin: '' })), []);
+});
+
 test('acepta la pull request de staging a main', () => {
   const errors = reviewPullRequest(validFacts({
     base: 'main',

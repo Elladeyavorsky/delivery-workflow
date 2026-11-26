@@ -20,7 +20,17 @@ ITEM_RE = re.compile(
     r"(?P<value>[^'\"\s]+)(?P=quote)(?P<suffix>[ \t]*(?:#.*)?)(?P<newline>\r?\n?)$"
 )
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
-TAG_RE = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
+PLAIN_VERSION_RE = re.compile(
+    r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+)
+TAG_RE = re.compile(r"v" + PLAIN_VERSION_RE.pattern)
+VERSION_LINE_RE = re.compile(
+    r"^(?P<prefix>[ \t]*version:[ \t]*)"
+    r"(?P<quote>['\"]?)"
+    r"(?P<value>[^'\"#\s]*)"
+    r"(?P=quote)"
+    r"(?P<suffix>[ \t]*(?:#.*)?)(?P<newline>\r?\n?)$"
+)
 TAGS = r"""
 [
   .[]
@@ -215,6 +225,54 @@ def strip_self(lines, repo):
     return updated, "changed"
 
 
+def find_version_index(lines):
+    for index, line in enumerate(lines):
+        if VERSION_LINE_RE.match(line):
+            return index
+    return None
+
+
+def replace_version_value(line, version):
+    match = VERSION_LINE_RE.match(line)
+    if not match:
+        raise SystemExit("apm.yml: la linea version no es válida.")
+    return line[: match.start("value")] + version + line[match.end("value") :]
+
+
+def without_repo_pins(lines, repo):
+    found = locate(lines, repo)
+    if found is None or not found[2]:
+        return lines
+    apm_index, apm_indent, items = found
+    updated = lines
+    for index, _value in sorted(items, reverse=True):
+        updated = updated[:index] + updated[index + 1 :]
+    if not section_has_body(updated, apm_index, apm_indent):
+        updated = updated[:apm_index] + updated[apm_index + 1 :]
+    return updated
+
+
+def blank_version(lines):
+    index = find_version_index(lines)
+    if index is None:
+        return lines
+    updated = lines.copy()
+    updated[index] = replace_version_value(lines[index], "0.0.0")
+    return updated
+
+
+def empty_changeset(changed_paths, old_lines, new_lines, repo):
+    paths = [path for path in changed_paths if path]
+    if not paths:
+        return True
+    if set(paths) != {"apm.yml"}:
+        return False
+    new_norm = blank_version(new_lines)
+    if blank_version(old_lines) == new_norm:
+        return True
+    return blank_version(without_repo_pins(old_lines, repo)) == new_norm
+
+
 def manifest_text(repo, tag, manifests):
     if manifests is not None:
         path = Path(manifests) / f"{tag}.yml"
@@ -317,6 +375,32 @@ def command_nested(args):
         print(pin)
 
 
+def command_set_version(args):
+    if not PLAIN_VERSION_RE.fullmatch(args.version):
+        raise SystemExit("La versión tiene que ser X.Y.Z, sin v.")
+    lines = read_lines(args.file)
+    index = find_version_index(lines)
+    if index is None:
+        raise SystemExit("apm.yml no contiene version.")
+    updated = lines.copy()
+    updated[index] = replace_version_value(lines[index], args.version)
+    write_lines(args.file, updated)
+
+
+def command_empty_changeset(args):
+    require_repo(args.repo)
+    print(
+        "si"
+        if empty_changeset(
+            args.paths,
+            read_lines(args.old),
+            read_lines(args.new),
+            args.repo,
+        )
+        else "no"
+    )
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -351,6 +435,18 @@ def main():
     nested.add_argument("ref")
     nested.add_argument("--manifests")
     nested.set_defaults(func=command_nested)
+
+    set_version = sub.add_parser("set-version")
+    set_version.add_argument("version")
+    set_version.add_argument("--file", default="apm.yml")
+    set_version.set_defaults(func=command_set_version)
+
+    empty = sub.add_parser("empty-changeset")
+    empty.add_argument("repo")
+    empty.add_argument("old")
+    empty.add_argument("new")
+    empty.add_argument("paths", nargs="*")
+    empty.set_defaults(func=command_empty_changeset)
 
     args = parser.parse_args()
     args.func(args)
