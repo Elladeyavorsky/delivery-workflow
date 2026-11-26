@@ -6,12 +6,14 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { buildMessage, notifyReviewers, resolveReviewers } from '../../.github/actions/discord-pr-notifications/notify.mjs';
 import { readRelations, writeRelations } from '../../.github/actions/discord-pr-notifications/state.mjs';
+import { ACTION_COPIES, INVALID_BASE_BRANCHES, VALID_BASE_BRANCHES } from './base-branches.mjs';
 
 const secret = randomBytes(32).toString('base64');
 const aliceId = '123456789012345678';
 const bobId = '223456789012345678';
 const carolId = '323456789012345678';
 const reviewers = [{ login: 'alice', id: 101 }, { login: 'bob', id: 202 }];
+const notifierCopies = await Promise.all(ACTION_COPIES.map((directory) => import(new URL('notify.mjs', directory))));
 
 function mappingComment(login, discordId) {
   return {
@@ -660,4 +662,59 @@ test('no escribe avisos de mención cuando todos los revisores se resuelven', as
   assert.equal(await notifyReviewers(config), 'notified');
   assert.equal(console.warn.mock.callCount(), 0);
   assert.deepEqual(warnings, []);
+});
+
+test('admite una rama base con barra', async (t) => {
+  const { config, pr } = setup(t);
+  let comments = [];
+  let posts = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url.endsWith('/pulls/40')) return response(pr);
+    if (url.includes('/issues/40/comments?')) return response(comments);
+    if (url.includes('/members/search?')) {
+      const login = new URL(url).searchParams.get('query');
+      return response([{ user: { username: login, id: login === 'alice' ? aliceId : bobId } }]);
+    }
+    if (url.endsWith('/channels/222222222222222222/messages')) {
+      posts.push(JSON.parse(options.body));
+      return response({ id: '999999999999999999' });
+    }
+    if (url.endsWith('/issues/40/comments') && options.method === 'POST') {
+      comments.push({ id: 77, body: JSON.parse(options.body).body });
+      return response(comments[0], 201);
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  for (const notifier of notifierCopies) {
+    for (const base of VALID_BASE_BRANCHES) {
+      comments = [];
+      posts = [];
+      writeRelations(config.relationsFile, [], secret);
+      config.baseBranch = base;
+      pr.base.ref = base;
+      assert.equal(await notifier.notifyReviewers(config), 'notified', base);
+      assert.equal(posts.length, 1, base);
+      assert.deepEqual(posts[0].allowed_mentions.users, [aliceId, bobId], base);
+    }
+    // Hacia otra base no se publica.
+    posts = [];
+    comments = [];
+    config.baseBranch = 'release/1.0';
+    pr.base.ref = 'release/1.1';
+    await assert.rejects(notifier.notifyReviewers(config));
+    assert.equal(posts.length, 0);
+  }
+});
+
+test('rechaza una rama base no válida', async (t) => {
+  const { config } = setup(t);
+  let requests = 0;
+  t.mock.method(globalThis, 'fetch', async () => { requests += 1; throw new Error('unexpected'); });
+  for (const notifier of notifierCopies) {
+    for (const baseBranch of INVALID_BASE_BRANCHES) {
+      await assert.rejects(notifier.notifyReviewers({ ...config, baseBranch }),
+        { message: 'Notification configuration is incomplete.' }, JSON.stringify(baseBranch) ?? 'ausente');
+    }
+  }
+  assert.equal(requests, 0);
 });

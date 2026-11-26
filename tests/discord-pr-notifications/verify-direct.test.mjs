@@ -5,9 +5,11 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { ACTION_COPIES, INVALID_BASE_BRANCHES, VALID_BASE_BRANCHES } from './base-branches.mjs';
 
 const verifierPath = fileURLToPath(new URL('../../.github/actions/discord-pr-notifications/verify-direct.mjs', import.meta.url));
 const repository = 'owner/repository';
+const verifierCopies = ACTION_COPIES.map((directory) => fileURLToPath(new URL('verify-direct.mjs', directory)));
 
 function validPr() {
   return {
@@ -35,13 +37,17 @@ function validEvent() {
 
 // El proceso hijo simula GitHub y comprueba que el evento directo no ejecute código de la PR.
 function runVerifier({ event = validEvent(), pr = validPr(), name = 'pull_request_target',
-  number = '42', httpStatus = 200, envOverrides = {} } = {}) {
+  number = '42', httpStatus = 200, envOverrides = {}, verifier = verifierPath } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'discord-pr-direct-'));
   const eventPath = join(directory, 'event.json');
   const outputPath = join(directory, 'output');
+  const fetchLogPath = join(directory, 'fetch-log');
+  writeFileSync(fetchLogPath, '', 'utf8');
   writeFileSync(eventPath, JSON.stringify(event), 'utf8');
   writeFileSync(outputPath, '', 'utf8');
-  const fetchStub = `globalThis.fetch = async (url, options) => {
+  const fetchStub = `import { appendFileSync } from 'node:fs';
+  globalThis.fetch = async (url, options) => {
+    appendFileSync(process.env.TEST_FETCH_LOG, url + String.fromCharCode(10));
     if (options.headers.authorization !== 'Bearer test-token') {
       throw new Error('Unexpected GitHub API request.');
     }
@@ -62,27 +68,33 @@ function runVerifier({ event = validEvent(), pr = validPr(), name = 'pull_reques
     throw new Error('Unexpected GitHub API request.');
   };`;
   const importUrl = `data:text/javascript,${encodeURIComponent(fetchStub)}`;
+  const env = {
+    ...process.env,
+    GITHUB_EVENT_PATH: eventPath,
+    GITHUB_EVENT_NAME: name,
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_REPOSITORY: repository,
+    GITHUB_TOKEN: 'test-token',
+    GITHUB_OUTPUT: outputPath,
+    EXPECTED_REPOSITORY: repository,
+    PR_BASE_BRANCH: 'staging',
+    TRUSTED_BRANCH: 'main',
+    PR_NUMBER: number,
+    TEST_PULL_REQUEST: JSON.stringify(pr),
+    TEST_FETCH_LOG: fetchLogPath,
+    ...envOverrides,
+  };
+  // Un valor undefined en envOverrides quita la variable.
+  for (const [key, value] of Object.entries(env)) if (value === undefined) delete env[key];
   try {
-    const result = spawnSync(process.execPath, ['--import', importUrl, verifierPath], {
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        GITHUB_EVENT_PATH: eventPath,
-        GITHUB_EVENT_NAME: name,
-        GITHUB_REF: 'refs/heads/main',
-        GITHUB_REPOSITORY: repository,
-        GITHUB_TOKEN: 'test-token',
-        GITHUB_OUTPUT: outputPath,
-        EXPECTED_REPOSITORY: repository,
-        PR_BASE_BRANCH: 'staging',
-        TRUSTED_BRANCH: 'main',
-        PR_NUMBER: number,
-        TEST_PULL_REQUEST: JSON.stringify(pr),
-        ...envOverrides,
-      },
-    });
+    const result = spawnSync(process.execPath, ['--import', importUrl, verifier], { encoding: 'utf8', env });
     if (result.error) throw result.error;
-    return { status: result.status, output: readFileSync(outputPath, 'utf8'), stderr: result.stderr };
+    return {
+      status: result.status,
+      output: readFileSync(outputPath, 'utf8'),
+      stderr: result.stderr,
+      requests: readFileSync(fetchLogPath, 'utf8').split('\n').filter(Boolean),
+    };
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -203,4 +215,80 @@ test('rechaza un estado de PR inválido o un fallo de GitHub sin publicar', () =
   assert.equal(result.status, 1);
   assert.equal(result.output, '');
   assert.match(result.stderr, /HTTP 503/);
+});
+
+function commentEvent() {
+  const event = validEvent();
+  event.action = 'created';
+  delete event.pull_request;
+  event.issue = { number: 42, pull_request: {} };
+  event.comment = { body: '/discord-map first-reviewer 123456789012345678' };
+  return event;
+}
+
+test('admite una rama base con barra', () => {
+  for (const verifier of verifierCopies) {
+    for (const base of VALID_BASE_BRANCHES) {
+      const pr = validPr();
+      pr.base.ref = base;
+      const event = validEvent();
+      event.pull_request.base.ref = base;
+      for (const options of [{ event }, { event: commentEvent(), name: 'issue_comment' }]) {
+        const result = runVerifier({ ...options, pr, verifier, envOverrides: { PR_BASE_BRANCH: base } });
+        assert.equal(result.status, 0, `${base}: ${result.stderr}`);
+        assert.equal(result.output, 'eligible=true\npr_number=42\n', base);
+      }
+    }
+  }
+});
+
+test('con una rama base con barra, una PR hacia otra base no se publica', () => {
+  const envOverrides = { PR_BASE_BRANCH: 'release/1.0' };
+  for (const verifier of verifierCopies) {
+    for (const ref of ['release', 'release/1.1', 'staging']) {
+      const pr = validPr();
+      pr.base.ref = ref;
+      // El comentario no trae la base: la PR leída de GitHub se omite.
+      const skipped = runVerifier({ event: commentEvent(), name: 'issue_comment', pr, verifier, envOverrides });
+      assert.equal(skipped.status, 0, skipped.stderr);
+      assert.equal(skipped.output, 'eligible=false\n', ref);
+      // El evento de PR hacia otra base se rechaza antes de leer la PR.
+      const event = validEvent();
+      event.pull_request.base.ref = ref;
+      const rejected = runVerifier({ event, pr, verifier, envOverrides });
+      assert.equal(rejected.status, 1, ref);
+      assert.match(rejected.stderr, /does not target the expected repository and base/);
+      assert.equal(rejected.output, '');
+      assert.deepEqual(rejected.requests, []);
+    }
+  }
+});
+
+test('rechaza una rama base no válida', () => {
+  for (const verifier of verifierCopies) {
+    for (const base of INVALID_BASE_BRANCHES) {
+      const label = JSON.stringify(base) ?? 'ausente';
+      const pr = validPr();
+      pr.base.ref = base;
+      const event = validEvent();
+      event.pull_request.base.ref = base;
+      const result = runVerifier({ event, pr, verifier, envOverrides: { PR_BASE_BRANCH: base } });
+      assert.equal(result.status, 1, label);
+      assert.equal(result.stderr.trim(), 'Direct notification configuration is incomplete.', label);
+      assert.equal(result.output, '', label);
+      assert.deepEqual(result.requests, [], label);
+    }
+  }
+});
+
+test('trusted-branch sigue sin admitir la barra', () => {
+  for (const verifier of verifierCopies) {
+    const event = validEvent();
+    event.repository.default_branch = 'release/1.0';
+    const result = runVerifier({ event, verifier,
+      envOverrides: { TRUSTED_BRANCH: 'release/1.0', GITHUB_REF: 'refs/heads/release/1.0' } });
+    assert.equal(result.status, 1);
+    assert.equal(result.stderr.trim(), 'Direct notification configuration is incomplete.');
+    assert.deepEqual(result.requests, []);
+  }
 });

@@ -147,7 +147,8 @@ async function changesRequestedAfter(repository, number, announcedAt, token) {
 export async function notifyReviewers(config) {
   const { repository, baseBranch, number, githubToken, botToken, cacheKey, guildId, channelId, relationsFile, userMap: userMapInput } = config;
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
-      !/^[A-Za-z0-9_.-]+$/.test(baseBranch ?? '') ||
+      // La misma regla que validateBranch de la skill: admite «/» y la base solo se compara como texto.
+      !/^(?!.*(?:\.\.|\/\/|\.lock$))[A-Za-z0-9_](?:[A-Za-z0-9_.\/-]*[A-Za-z0-9_-])?$/.test(baseBranch ?? '') ||
       (process.env.GITHUB_REPOSITORY && process.env.GITHUB_REPOSITORY !== repository) ||
       !Number.isSafeInteger(number) || number < 1 || !githubToken || !botToken ||
       !cacheKey || !relationsFile ||

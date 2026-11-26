@@ -1,0 +1,26 @@
+name: "Discord: capture PR"
+
+on:
+  pull_request:
+    branches: ["{{BASE_BRANCH}}"]
+    types: [opened, synchronize, reopened, ready_for_review, review_requested]
+
+permissions: {}
+
+jobs:
+  capture:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      # Sin secretos ni checkout: solo se entrega el número de PR al emisor protegido.
+      - name: Save PR number
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p pr-event
+          printf '%s' "$PR_NUMBER" > pr-event/pr-number
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discord-pr-number
+          path: pr-event/pr-number
+          retention-days: 1

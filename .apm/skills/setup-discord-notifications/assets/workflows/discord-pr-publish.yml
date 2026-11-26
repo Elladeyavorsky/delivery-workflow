@@ -1,0 +1,44 @@
+name: "Discord: publish notice"
+
+on:
+  workflow_run:
+    workflows: ["Discord: capture PR", "Discord: capture confirmation"]
+    types: [completed]
+
+jobs:
+  publish:
+    if: >-
+      github.ref == 'refs/heads/{{DEFAULT_BRANCH}}' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'issue_comment') &&
+      github.event.workflow_run.repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: discord-pr-notifications
+    concurrency:
+      group: discord-pr-relations
+      queue: max
+      cancel-in-progress: false
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      # El ledger comenta la PR; GITHUB_TOKEN necesita permiso de escritura sobre PR.
+      pull-requests: write
+    steps:
+      # workflow_run apunta al commit confiable de la rama predeterminada.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/discord-pr-notifications
+        with:
+          github-token: ${{ github.token }}
+          bot-token: ${{ secrets.DISCORD_BOT_TOKEN }}
+          cache-key: ${{ secrets.DISCORD_CACHE_KEY }}
+          guild-id: ${{ vars.DISCORD_GUILD_ID }}
+          channel-id: ${{ vars.DISCORD_GIT_CHANNEL_ID }}
+          user-map: ${{ vars.DISCORD_USER_MAP }}
+          expected-repository: {{REPOSITORY}}
+          base-branch: "{{BASE_BRANCH}}"
+          minimum-reviewers: {{MINIMUM_REVIEWERS}}
+          trigger-run-id: ${{ github.event.workflow_run.id }}
