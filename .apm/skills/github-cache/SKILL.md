@@ -5,7 +5,7 @@ description: "Reutiliza alias y datos públicos de colaboradores al resolver los
 
 # Caché de GitHub
 
-Requiere Node 20+, Git, `gh` y el `GITHUB_TOKEN` del `.env` del proyecto; respeta `GH_HOST`. El script lanza `gh` con ese token, no con la sesión de `gh`, e identifica la cuenta del token para aislar sus datos.
+Requiere Node 24+, Git, `gh` y el `GITHUB_TOKEN` del `.env` del proyecto; respeta `GH_HOST`. El script lanza `gh` con ese token, no con la sesión de `gh`, e identifica la cuenta del token para aislar sus datos.
 
 Desde la raíz del repositorio git, ejecutar `node "<carpeta de esta skill>/scripts/github-cache.mjs"` con los siguientes comandos. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/github-cache`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
