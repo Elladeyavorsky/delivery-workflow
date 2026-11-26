@@ -1,30 +1,32 @@
 # delivery-workflow
 
-Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una tarea de GitHub desde la idea hasta la revisión, sin salir del chat del agente.
+Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una tarea de GitHub o GitLab desde la idea hasta la revisión, sin salir del chat del agente.
 
 ## Qué hace
 
 1. **Piensa la tarea contigo** con preguntas, cada una con su respuesta recomendada.
-2. **La deja escrita en GitHub:** issue con etiqueta, rama, commit `chore: open #N` y pull request en draft.
+2. **La deja escrita en GitHub o GitLab:** issue con etiqueta, rama, commit `chore: open #N` y pull request en draft.
 3. **Escribe la spec, el plan y las tasks** en la propia issue.
 4. **La implementa en hasta nueve rondas** de código, tests y revisión de la documentación. Cada ronda deja un comentario en la issue.
 5. **La cierra** con el commit final, el push y la petición de revisión.
 6. **Si la revisión pide cambios**, escribe spec, plan y tasks en un comentario de la misma issue y repite el ciclo.
 
+En GitLab, la pull request es el merge request. **El camino de GitLab no se ha probado en un GitLab real**, solo contra uno simulado: puede fallar con un servidor de verdad.
+
 Se para cuando falta un dato necesario para la spec o para identificar a los revisores, si aparece un secreto o si falla la novena ronda.
 
 ## Requisitos
 
-- Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
-- [GitHub CLI](https://cli.github.com) (`gh`), APM y Node 24 o superior. `gh` no necesita sesión.
+- Un proyecto con git y un remoto `origin` en GitHub o GitLab en el que puedas escribir.
+- APM y Node 24 o superior. Además, en GitHub, [GitHub CLI](https://cli.github.com) (`gh`), que no necesita sesión; en GitLab, `curl`.
 - Uno de estos agentes: opencode (1.x o 2.x), Claude Code, Cursor o Codex.
-- Un `.env` en la raíz del proyecto con tu token de GitHub. Sin eso, el flujo no arranca ([El token de GitHub](#el-token-de-github)).
+- Un `.env` en la raíz del proyecto con tu token de [GitHub](#el-token-de-github) o de [GitLab](#gitlab). Sin eso, el flujo no arranca.
 
 ## Instalación
 
 ### Preparar el equipo
 
-Una sola vez. Elige tu sistema.
+Una sola vez. Elige tu sistema. Los pasos que instalan `gh` son de GitHub: en GitLab, sáltatelos y comprueba que tienes `curl`.
 
 **macOS y Linux:**
 
@@ -78,6 +80,25 @@ Los agentes usan el token del `.env` para todo lo que hacen en GitHub (issues, p
 
 Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
+### GitLab
+
+El flujo usa GitLab cuando `origin` está en `gitlab.com`.
+
+1. Crea un token propio con el permiso `api`.
+2. En el `.env` de la raíz del proyecto, añade esta línea:
+
+   ```
+   GITLAB_TOKEN=tu_token
+   ```
+
+3. Añade `.env` a `.gitignore`: sin eso, el flujo no usa el token.
+
+La sesión de `glab` y los tokens en variables de la terminal no cuentan. El push sigue usando tus credenciales de git.
+
+En una instancia propia, declara `GIT_WORKFLOW_FORGE=gitlab`. Si la web no está en el host de `origin`, añade `GIT_WORKFLOW_FORGE_URL` con su dirección `https://`. Las dos valen en el entorno o en el `.env`.
+
+Qué cambia respecto a GitHub, como los forks, que no se admiten: [docs/GITLAB.md](docs/GITLAB.md).
+
 ## Uso
 
 Tras la instalación, llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
@@ -101,6 +122,8 @@ La prosa de issues, spec, pull requests y documentación del ciclo sigue la skil
 
 Según el agente y su configuración, la primera vez que el flujo lanza `bash`, `node`, `git` o `gh` te pide permiso. opencode 1.19.6, con su configuración por defecto, ejecuta los comandos sin preguntar, y el paquete no trae configuración de sandbox para opencode: úsalo solo en proyectos en los que confíes.
 
+En GitLab, si tu sandbox limita los dominios, permite `gitlab.com` o el host de tu instancia.
+
 En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, solo en proyectos en los que confíes:
 
 ```json
@@ -119,7 +142,7 @@ Tras instalar, estos pasos mejoran el resultado. El único necesario para que el
 
 En opencode 2.x, reinicia opencode después de `/setup-context7` o `/setup-docs-rag` para que cargue el MCP.
 
-**Opcional:** los avisos de PR en Discord están apagados por defecto. `/setup-discord-notifications` los activa y necesita un token con permiso de administración sobre el repositorio. Ver [docs/DISCORD-PR-NOTIFICATIONS.md](docs/DISCORD-PR-NOTIFICATIONS.md).
+**Opcional:** los avisos de PR en Discord solo funcionan en GitHub y están apagados por defecto. `/setup-discord-notifications` los activa y necesita un token con permiso de administración sobre el repositorio. Ver [docs/DISCORD-PR-NOTIFICATIONS.md](docs/DISCORD-PR-NOTIFICATIONS.md).
 
 ## Actualizar y desinstalar
 

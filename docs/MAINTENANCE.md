@@ -20,6 +20,10 @@ El aviso de PR de este repositorio y su acción compuesta se describen en [DISCO
 
 La skill `setup-discord-notifications` lleva en `assets/discord-pr-notifications/` una copia de la acción de `.github/actions/discord-pr-notifications/`. Las dos deben ser idénticas: al cambiar una, copia el cambio a la otra.
 
+Los tests de GitLab usan `tests/fixtures/fake-gitlab.mjs`, un GitLab simulado. No hay prueba manual en un GitLab real: la de abajo es solo de GitHub.
+
+Cada skill que lleva `scripts/gitlab.mjs` tiene la misma copia. Las copias tienen que ser iguales y un test las compara: al cambiar una, copia el cambio a las demás.
+
 ## Probar el paquete
 
 Una prueba de unos veinte minutos en un repositorio desechable, para comprobar el paquete en tu herramienta antes de usarlo en un proyecto de verdad. Está pensada sobre todo para opencode, Cursor y Codex, que no se han probado de punta a punta.

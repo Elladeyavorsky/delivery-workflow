@@ -6,7 +6,7 @@ Context7 es el canal de documentación por defecto. Para comparar los canales y 
 
 opencode lee también `opencode.jsonc`. La skill no lo modifica: si declara `context7` o `docs-rag`, lo avisa. En opencode 2.x, reinicia opencode para que cargue el MCP.
 
-La clave es opcional: sin ella, el límite de peticiones es menor. Para usarla, crea una clave gratis en context7.com/dashboard y añádela al `.env`, junto al token de GitHub:
+La clave es opcional: sin ella, el límite de peticiones es menor. Para usarla, crea una clave gratis en context7.com/dashboard y añádela al `.env`, junto al token del forge:
 
 ```dotenv
 CONTEXT7_API_KEY=tu-clave
