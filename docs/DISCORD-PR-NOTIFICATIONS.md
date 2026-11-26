@@ -12,7 +12,7 @@ Para los revisores ausentes del mapa, el emisor consulta la relación cifrada de
 
 ## Activar con `/setup-discord-notifications`
 
-La skill `setup-discord-notifications` activa los avisos en un proyecto. Sin ella, `apm install` no añade nada de Discord. Los workflows son de GitHub Actions: un remoto que no sea de GitHub queda fuera. Requiere Node 20+, `gh` y un `GITHUB_TOKEN` en el `.env` con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`. En Codex, la skill se llama con `$` en vez de `/`.
+La skill `setup-discord-notifications` activa los avisos en un proyecto. Sin ella, `apm install` no añade nada de Discord. Los workflows son de GitHub Actions: un remoto que no sea de GitHub queda fuera. Requiere Node 24+, `gh` y un `GITHUB_TOKEN` en el `.env` con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`. En Codex, la skill se llama con `$` en vez de `/`.
 
 Discord no permite crear el bot por API: lo creas tú en el Developer Portal y la skill te guía. Antes de pedirte nada comprueba que `.env` está en `.gitignore` y avisa si no. Los pasos son:
 

@@ -629,7 +629,7 @@ export async function verifyAll({ env, opts, fetchFn = globalThis.fetch }) {
     if (value === null || value === undefined) throw new SetupDiscordError(`Falta ${flag}. No se ha llamado a Discord.`, 2);
     numeric(value, flag);
   }
-  if (typeof fetchFn !== "function") throw new SetupDiscordError("Este Node no trae fetch: usa Node 20 o superior.", 3);
+  if (typeof fetchFn !== "function") throw new SetupDiscordError("Este Node no trae fetch: usa Node 24 o superior.", 3);
   const skipped = check("omitida", "El token no es válido: no se comprueba.");
   const checks = { token: null, servidor: skipped, canal: skipped };
 

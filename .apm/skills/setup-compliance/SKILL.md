@@ -8,7 +8,7 @@ description: "Genera la documentación de compliance del proyecto en docs/: clas
 - **Descripción**: Úsala para dejar en `docs/` una base de compliance del proyecto: `ai-act.md`, `dpia.md`, `security.md`, `system-card.md` y, si hay modelo o datos de entrenamiento propios, `model-card.md` y `data-card.md`. Los documentos son una base orientativa que la persona revisa: no certifican cumplimiento ni son asesoramiento jurídico. Funciona con Cursor, Claude Code y Codex.
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/setup-compliance.mjs" ORDEN [OPCIONES]`, desde la raíz del repositorio.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/setup-compliance`; en Claude Code, `${CLAUDE_SKILL_DIR}`. La lanzas con `/setup-compliance` (en Codex, `$setup-compliance`). Requiere Node 20+.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/setup-compliance`; en Claude Code, `${CLAUDE_SKILL_DIR}`. La lanzas con `/setup-compliance` (en Codex, `$setup-compliance`). Requiere Node 24+.
 
 #### Especificación de Argumentos
 
