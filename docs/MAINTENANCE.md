@@ -155,13 +155,15 @@ Los cambios entran en `staging` por pull request desde su rama de trabajo. Para 
 2. Quien mantiene el paquete abre la pull request de `staging` a `main` y la fusiona.
 3. El push a `main` dispara `release-create-version.yml` («Release: create version»). El workflow busca la última etiqueta `vX.Y.Z`, reúne los commits y los ficheros cambiados desde ella y se los envía a la IA de Groq. La IA decide si el cambio es `major`, `minor` o `patch` y escribe el resumen. El workflow calcula la versión nueva, crea la etiqueta y la release con ese resumen y la lista de PR. No hace falta etiquetar a mano. Si el commit ya tiene etiqueta, no crea otra.
 
+Si el `apm.yml` del merge pide este mismo repositorio (`dependencies.apm`), el workflow lo quita con `self-release.py align` y etiqueta ese commit. Ese commit **no** se empuja a `main`: si el pin volviera a `main`, este workflow crearía otra release. `staging` puede seguir con el pin. Los proyectos instalan la etiqueta, que queda como `v1.2.3`: sin autodependencia, solo `mcp`.
+
 El workflow necesita el secreto `GROQ_API_KEY` en el repositorio. Si falta, si la IA no responde o si su respuesta no es válida, el workflow falla y no crea etiqueta ni release.
 
-El workflow no cambia `version` en `apm.yml` ni hace commits en `main`: la versión publicada es la etiqueta.
+El workflow no cambia `version` en `apm.yml`. La versión publicada es la etiqueta.
 
 Las releases estables usan etiquetas `vX.Y.Z`. Una IA decide el tipo de cambio, así que dos ejecuciones sobre los mismos commits pueden dar un resumen distinto.
 
-Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
+Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles. La PR del bot que actualiza el pin se fusiona solo a `staging`. No hay que llevarla a `main` para “cerrar el ciclo”: el siguiente merge a `main` ya traerá el pin y el release lo volverá a quitar solo en la etiqueta.
 
 ## Mantener este repositorio con su propia release
 

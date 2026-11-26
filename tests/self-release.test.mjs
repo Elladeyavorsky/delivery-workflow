@@ -242,3 +242,17 @@ test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () =
   assert.doesNotMatch(workflow, /steps\.compatible\.outputs\.ref/);
   assert.doesNotMatch(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
 });
+
+test('el release quita la autodependencia y etiqueta ese commit, no main', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/release-create-version.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(workflow, /self-release\.py align --check "\$REPO"/);
+  assert.match(workflow, /self-release\.py align "\$REPO"/);
+  assert.match(workflow, /git tag "\$NEXT" "\$TARGET"/);
+  assert.match(workflow, /git push origin "refs\/tags\/\$NEXT"/);
+  assert.match(workflow, /steps\.align\.outputs\.sha/);
+  assert.doesNotMatch(workflow, /git push origin "HEAD:/);
+  assert.doesNotMatch(workflow, /--target "\$GITHUB_SHA"/);
+});
