@@ -1,8 +1,8 @@
 # Modelos de los agentes
 
-Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`). Es un paso opcional.
+Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`; en opencode 2.x, pide «usa la skill configure-models»). Elegir modelo es opcional. En opencode hay que ejecutarlo antes de usar el flujo, porque además quita `skills:` de los agentes ([opencode](#notas-por-herramienta)).
 
-Compatible con **Cursor, Claude Code y Codex**, en las que tengan carpeta de agentes en el proyecto.
+Compatible con **opencode, Claude Code, Cursor y Codex**, en las que tengan carpeta de agentes en el proyecto.
 
 ## Cómo se usa
 
@@ -10,7 +10,7 @@ Compatible con **Cursor, Claude Code y Codex**, en las que tengan carpeta de age
 2. `/configure-models`: detecta los modelos disponibles, propone uno por agente indicando el motivo y solicita confirmación una sola vez: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]».
 3. Para cambiar uno, indica el nombre del agente y el modelo (de la lista o escrito a mano). Enter equivale a no asignar modelo, de modo que el agente hereda el del chat.
 
-Las elecciones se guardan en `.git/delivery-workflow-models.json`: son personales y git no las registra. Sin la skill, desde la raíz del proyecto (la carpeta es `.claude/skills` en Claude Code y `.agents/skills` en Cursor y Codex):
+Las elecciones se guardan en `.git/delivery-workflow-models.json`: son personales y git no las registra. Sin la skill, desde la raíz del proyecto (la carpeta es `.claude/skills` en Claude Code y `.agents/skills` en opencode, Cursor y Codex):
 
 ```bash
 node .agents/skills/configure-models/scripts/configure-models.mjs apply --set code-developer=NOMBRE   # inherit = sin modelo
@@ -30,9 +30,10 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 
 ## Después de `apm install` o `apm update`
 
-`apm install` elimina la línea `model` de los agentes sin avisar (verificado con `apm` 0.35.0 en las tres herramientas). Por ello:
+`apm install` elimina la línea `model` de los agentes sin avisar (verificado con `apm` 0.35.0 en Claude Code, Cursor y Codex). En opencode, `apm install` y `apm update` reponen además `skills:`. Por ello:
 
 - `check-status` muestra `Modelos: desincronizado (cursor 0/9)`; si ningún agente lleva modelo, muestra `configurado, pero ningún agente lleva modelo`.
+- Si los agentes de opencode llevan `skills:`, `check-status` lo dice y pide ejecutar `/configure-models`.
 - `/configure-models` parte de lo guardado: con Enter (o `--yes`) se restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un valor guardado se considera válido si el modelo sigue en la lista actual, si no se pudo leer la lista o si se escribió a mano (en este último caso se emite un aviso, pero se conserva). Si no había nada que proponer (herramienta no disponible, lista vacía), no se guarda nada y el siguiente `apply` vuelve a proponer. Solo `--set agente=inherit` registra «heredar».
 - `apm audit` marcará esos agentes como modificados. Es el comportamiento esperado.
 
@@ -43,6 +44,14 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los agentes del paquete se tratan como resultado de la instalación y la línea `model` se deja fuera de los commits. Gestionar el `.gitignore` queda fuera del alcance de `/configure-models`.
 
 ## Notas por herramienta
+
+**opencode** (verificado con 1.19.6 y 2.4.2, con un modelo simulado)
+- Lista de modelos: `opencode models`, lanzado en la raíz del proyecto. Si `opencode` no está en el PATH, en macOS se usa el comando que trae la app de escritorio (`OpenCode.app`).
+- Los modelos van como `proveedor/modelo`, y así se escriben en `--set`, en `--models` y en la línea `model:` del agente.
+- Con varios proveedores no hay propuesta hasta elegir uno: la skill lo pregunta y lo pasa con `--provider nombre`, que se guarda con las elecciones. Sin proveedor elegido, `--yes` deja que los agentes hereden el modelo del chat. La lista incluye los modelos gratuitos del proveedor `opencode` aunque no tenga credenciales.
+- `apply` quita `skills:` de los agentes del paquete en `.opencode/agents/`, haya o no modelos que escribir. opencode no precarga esas skills y envía el campo al proveedor del modelo en las peticiones `openai-compatible`; cada agente carga las skills que su texto nombra. `reset` no lo repone.
+- Tras `apply`, `check-status` dice «configurado» aunque ningún agente lleve modelo.
+- Un nombre desconocido **falla** al llamar al agente.
 
 **Cursor** (verificado con `cursor-agent` 2026.11.11, plan Plus)
 - Lista de modelos: `cursor-agent --list-models` y, si falla, `cursor-agent models`. No se ejecuta `agent`, por ser un nombre demasiado genérico. Sin la CLI no hay lista: se facilita con `--models id1,id2,...` (por ejemplo, la que conoce la sesión de Cursor para subagentes) y la propuesta por nivel funciona igual, o el modelo se indica manualmente con `--set`.
@@ -62,4 +71,4 @@ El modelo depende de la suscripción de cada persona: si se versionara, quien no
 - Lista de modelos: `codex debug models` y, si falla, `~/.codex/models_cache.json` (o `$CODEX_HOME`). El lector acepta una lista o un objeto con `models` y reconoce `slug`, `id` o `model`. Los fixtures de las pruebas son manuales y los patrones de nivel (`gpt-N-codex`, `…-mini`) son una hipótesis. Se recomienda revisar la propuesta antes de aceptarla.
 - Se escribe `model = "…"` en `.codex/agents/<agente>.toml`, a continuación de `name`. Según su documentación, es la clave que Codex lee como modelo del agente; no se ha comprobado.
 
-Cada comando externo tiene un límite de 10 s: si no responde (por ejemplo, por falta de sesión iniciada), el resultado es «desconocido» y los agentes heredan el modelo del chat.
+Cada comando externo tiene un límite de 10 s, salvo `opencode models`, con 30 s porque la primera llamada puede descargar el catálogo: si no responde (por ejemplo, por falta de sesión iniciada), el resultado es «desconocido» y los agentes heredan el modelo del chat.

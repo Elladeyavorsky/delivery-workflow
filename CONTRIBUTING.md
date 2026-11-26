@@ -17,16 +17,17 @@ Necesitas `git`, [GitHub CLI](https://cli.github.com), Node, APM y un `.env` con
 Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así tienes los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) y trabajas en este repositorio con la misma herramienta que lo usa.
 
 1. Clona el repositorio y entra en su raíz.
-2. Instala el paquete para tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
+2. Instala el paquete para tu herramienta (`opencode`, `claude`, `cursor`, `codex` o varias separadas por comas):
 
    ```bash
-   apm install --target claude
+   apm install --target opencode
    ```
 
 3. Crea el `.env` con tu token, como explica [El token de GitHub](README.md#el-token-de-github).
-4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`) para abrir la issue, la rama y la pull request de tu cambio.
+4. Abre tu herramienta en la raíz. En opencode, ejecuta antes `/configure-models` ([Modelos de los agentes](docs/MODELS.md)).
+5. Llama a `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») para abrir la issue, la rama y la pull request de tu cambio.
 
-`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta. No los edites a mano.
+`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta; con opencode, también `opencode.json`. No los edites a mano.
 
 ## Reglas
 

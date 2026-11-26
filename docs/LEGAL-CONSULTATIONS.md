@@ -15,6 +15,6 @@ Lo que `legal-advisor` no resuelve es un hueco y el orquestador te lo pregunta. 
 
 ## El MCP de EUR-Lex
 
-El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
+El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `opencode.json`, `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
 
 > **Nota:** El MCP necesita Node 24 o superior. Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20.
