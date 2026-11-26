@@ -132,7 +132,26 @@ check "el instalador de APM usa el token de Actions" \
   grep -Fq 'GITHUB_TOKEN: ${{ github.token }}' "$workflow"
 
 apm_update_commands=$(grep -E '^[[:space:]]*apm update ' "$workflow" | sed 's/^[[:space:]]*//')
-check "el workflow actualiza los tres targets sin interacción" \
+target_loop=$(awk '
+  /for TARGET in / { active=1 }
+  active { sub(/^[[:space:]]+/, ""); print }
+  active && /^done$/ { exit }
+' "$workflow")
+# Ejecuta el bucle real con un apm simulado y el apm.yml de release que se pida.
+targets_updated() {
+  local dir
+  dir=$(mktemp -d)
+  mkdir -p "$dir/apm_modules/venturars/delivery-workflow"
+  echo "$1" >"$dir/apm_modules/venturars/delivery-workflow/apm.yml"
+  (cd "$dir" && DEPENDENCY_REPO=venturars/delivery-workflow REF=v9.9.9 \
+    bash -euo pipefail -c "apm() { echo \"\$4\" >>targets; }; $target_loop" >/dev/null && tr '\n' ' ' <targets)
+  rm -rf "$dir"
+}
+check "una release que declara opencode actualiza los cuatro targets" \
+  test "$(targets_updated 'targets: [opencode, claude, cursor, codex]')" = "claude opencode cursor codex "
+check "una release sin opencode omite ese target y no falla" \
+  test "$(targets_updated 'targets: [claude, cursor, codex]')" = "claude cursor codex "
+check "el workflow actualiza cada target sin interacción" \
   bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force'\''' _ "$apm_update_commands"
 
 selector=$(awk '

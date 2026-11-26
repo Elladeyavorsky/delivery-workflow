@@ -9,7 +9,7 @@ description: "Crea la issue en GitHub con la plantilla de su tipo, la etiqueta d
 - **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la issue queda a nombre de la cuenta del token.
 - **Issue**: `bash "<carpeta de esta skill>/scripts/manage-issue.sh" "[TITULO]" "[FICHERO]" "[TIPO]"`, desde la raíz del repositorio git. Escribe antes el cuerpo en un fichero temporal. El script comprueba el título con `check-title.sh`, deja lista la etiqueta con `ensure-label.sh` y crea la issue asignada a `@me`, en ese orden. Si el título no pasa, no crea nada.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/manage-issue`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-issue`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

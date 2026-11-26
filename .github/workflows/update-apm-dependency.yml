@@ -110,7 +110,13 @@ jobs:
           python3 .github/scripts/self-release.py set "$DEPENDENCY_REPO" "$REF"
           # --force: el runner no tiene recibos de despliegue y el paquete local
           # comparte esos ficheros con la dependencia. Sin esto, APM rechaza la escritura.
-          for TARGET in claude cursor codex; do
+          # Una release puede no declarar opencode, y APM falla si se le pide ese target. claude va
+          # primero porque deja en apm_modules el apm.yml de la release, que es donde se comprueba.
+          for TARGET in claude opencode cursor codex; do
+            if [[ "$TARGET" == opencode ]] && ! grep -Eq '^targets:.*opencode' "apm_modules/$DEPENDENCY_REPO/apm.yml"; then
+              echo "La release $REF no declara opencode: se omite ese target."
+              continue
+            fi
             apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force
           done
 

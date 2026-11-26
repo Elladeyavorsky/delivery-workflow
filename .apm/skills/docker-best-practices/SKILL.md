@@ -17,7 +17,7 @@ description: "Buenas prácticas para Dockerfile, docker-compose.yml y devcontain
 - **Fuera de alcance:** Kubernetes.
 - **Límites de conocimiento:** Cada versión, nombre de paquete y checksum sale de su fuente (la imagen, el índice de paquetes, la release), comprobado en el momento.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/docker-best-practices`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/docker-best-practices`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
@@ -30,7 +30,7 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${
 
 Elige una opción y escribe el porqué:
 
-- **Instalador:** Docker instala dependencias y herramientas con versiones fijas, y los programas se usan en el ordenador. Encaja cuando el equipo trabaja con apps de escritorio (editores o agentes como Cursor o Codex) que leen la carpeta del ordenador y lanzan allí sus comandos.
+- **Instalador:** Docker instala dependencias y herramientas con versiones fijas, y los programas se usan en el ordenador. Encaja cuando el equipo trabaja con apps de escritorio (editores o agentes como opencode, Cursor o Codex) que leen la carpeta del ordenador y lanzan allí sus comandos.
 - **Donde se ejecutan cosas:** servidores de desarrollo, comprobaciones, bases de datos. Cada uno, un servicio.
 - **Entorno completo (Dev Container):** todo el trabajo dentro del contenedor. Solo si las herramientas del equipo lo abren bien.
 

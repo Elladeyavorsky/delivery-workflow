@@ -1,6 +1,7 @@
 ---
 name: concept-developer
 description: "Escribe la spec, el plan y las tasks de la tarea en su issue, y la documentación del proyecto que el cambio deje desfasada. El código lo escriben los agentes de código. Lo llama el orquestador delivery-workflow en el ciclo."
+mode: all
 skills:
   - issue-spec
   - say-it-straight

@@ -8,7 +8,7 @@ description: "Hace un commit solo con los ficheros nombrados de un trozo, con un
 - **Descripción**: Úsala para guardar un trozo con ficheros nombrados. El commit vacío de apertura es de `manage-empty-commit`. Nombra cada fichero: `git add -A` y el directorio entero quedan fuera porque arrastran cambios ajenos al trozo.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/commit-changes.sh" "[MENSAJE]" "[FICHERO_1]" "[FICHERO_2]"`
 
-El comando se lanza desde la raíz del repositorio git, porque las rutas de los ficheros son relativas a ella. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/commit-changes`.
+El comando se lanza desde la raíz del repositorio git, porque las rutas de los ficheros son relativas a ella. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/commit-changes`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 Fuente: un commit es un conventional commit, como en [github-pr](https://www.skills.sh/gentleman-programming/gentleman-skills/github-pr). En este paquete caben varios commits pequeños en la misma pull request.
 

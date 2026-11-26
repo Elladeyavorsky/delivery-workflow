@@ -11,7 +11,7 @@ description: "Cierra o reabre una issue a petición de la persona. La usa manage
 - **Cerrar**: `bash "<carpeta de esta skill>/scripts/gh.sh" issue close N --reason "[MOTIVO]"`.
 - **Reabrir**: `bash "<carpeta de esta skill>/scripts/gh.sh" issue reopen N`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/close-issue`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/close-issue`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

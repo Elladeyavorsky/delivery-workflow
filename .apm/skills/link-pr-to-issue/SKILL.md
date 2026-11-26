@@ -11,7 +11,7 @@ description: "Deja Closes #N en el cuerpo de la pull request y la enlaza con la 
 - **Cuerpo**: Léelo con `gh.sh pr view M --json body --jq .body`, escribe el cuerpo corregido en un fichero temporal y guárdalo con `gh.sh pr edit M --body-file FICHERO`.
 - **Development**: `gh.sh api graphql`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/link-pr-to-issue`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/link-pr-to-issue`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

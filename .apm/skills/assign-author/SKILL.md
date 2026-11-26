@@ -11,7 +11,7 @@ description: "Asigna una issue o una pull request a la cuenta del token de GitHu
 - **Pull request**: `bash "<carpeta de esta skill>/scripts/gh.sh" pr edit N --add-assignee @me`.
 - **Login**: `bash "<carpeta de esta skill>/scripts/gh.sh" api user --jq .login`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/assign-author`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/assign-author`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 
