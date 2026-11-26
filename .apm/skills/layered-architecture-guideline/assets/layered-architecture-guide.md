@@ -98,7 +98,7 @@ Equivalencias: `references/frameworks.md`.
 
 ### 2.4 Variante e intensidad
 
-La skill se aplica a cualquier proyecto que la use. La variante se elige por lo que hace el código, por módulo:
+La skill se aplica a cualquier proyecto. La variante se elige por lo que hace el código, por módulo:
 
 - **Ligera:** CRUD sencillo, sin reglas de negocio (recibir, validar la forma, guardar y leer). Sin capa de dominio propia. Validar tipos, formatos u obligatorios es forma, no negocio.
 - **Completa:** en cuanto hay una regla de negocio, es decir, una comprobación que solo tiene sentido si se conoce el negocio («una sesión no se cierra antes de empezar»).
