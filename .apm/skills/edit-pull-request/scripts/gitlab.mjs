@@ -25,7 +25,14 @@ const LABELS = {
   chore: ["#cfd3d7", "Mantenimiento"],
   knowledge: ["#7057ff", "Conocimiento del equipo"],
 };
-const USAGE = "Uso: gitlab.mjs forge | whoami | label ensure TIPO | issue create TITULO CUERPO TIPO | issue state N | issue close N [completed|not planned] | issue reopen N | issue assign-me N";
+const USAGE = [
+  "Uso: gitlab.mjs forge | status | whoami | member check USUARIO | label ensure TIPO",
+  "  issue create TITULO CUERPO TIPO | issue state N | issue close N [completed|not planned] | issue reopen N | issue assign-me N",
+  "  mr find RAMA BASE | mr create RAMA TITULO CUERPO TIPO BASE | mr status RAMA | mr view N | mr edit N [--title T] [--body-file F]",
+  "  mr draft N | mr ready N | mr assign-me N | mr request-review N USUARIO...",
+].join("\n");
+// Los prefijos con los que GitLab marca un merge request como draft.
+const DRAFT = /^(?:\s*(?:\[draft\]|\(draft\)|draft:))+\s*/i;
 
 export class GitLabError extends Error {
   constructor(message, { code = 1, status } = {}) {
@@ -275,7 +282,9 @@ export function createClient({ url, project, token }, { run = runCurl } = {}) {
   async function graphql(query, variables = {}) {
     const { data } = await send("POST", `${url}/api/graphql`, { body: { query, variables } });
     if (data?.errors?.length) {
-      throw new GitLabError(redact(`GitLab rechazó la consulta. ${data.errors.map((error) => error.message).join(" ")}`));
+      const error = new GitLabError(redact(`GitLab rechazó la consulta. ${data.errors.map((item) => item.message).join(" ")}`));
+      error.graphql = true;
+      throw error;
     }
     return data?.data;
   }
@@ -303,6 +312,28 @@ export async function whoami(client) {
   return { id: data.id, username: data.username };
 }
 
+// GitLab ejecuta como comando una línea que empieza por /nombre fuera de un bloque de código.
+export function findQuickAction(text) {
+  let fence = null;
+  for (const line of String(text ?? "").replace(/\r/g, "").split("\n")) {
+    const mark = line.match(/^ {0,3}(`{3,}|~{3,})/)?.[1];
+    if (mark && !fence) fence = mark;
+    else if (mark && mark[0] === fence[0] && mark.length >= fence.length && line.trim() === mark) fence = null;
+    else if (!fence) {
+      const command = line.match(/^\/[a-z_]+(?=\s|$)/i);
+      if (command) return command[0];
+    }
+  }
+  return null;
+}
+
+function checkText(text) {
+  const command = findQuickAction(text);
+  if (command) {
+    throw new GitLabError(`GitLab ejecutaría «${command}» como un comando. Ponlo entre comillas invertidas o en un bloque de código. No se escribe nada.`);
+  }
+}
+
 const issuePath = (client, number, suffix = "") => client.scoped(`issues/${number}${suffix}`);
 
 export async function getIssue(client, number) {
@@ -310,6 +341,7 @@ export async function getIssue(client, number) {
 }
 
 export async function updateIssue(client, number, changes) {
+  checkText(changes.description);
   return (await client.request("PUT", issuePath(client, number), { body: changes })).data;
 }
 
@@ -320,10 +352,12 @@ export async function listNotes(client, number) {
 }
 
 export async function createNote(client, number, body) {
+  checkText(body);
   return (await client.request("POST", issuePath(client, number, "/notes"), { body: { body } })).data;
 }
 
 export async function updateNote(client, number, id, body) {
+  checkText(body);
   return (await client.request("PUT", issuePath(client, number, `/notes/${id}`), { body: { body } })).data;
 }
 
@@ -360,23 +394,33 @@ export async function ensureLabel(client, type) {
   return { name: type, created: true };
 }
 
-export async function createIssue(client, { title, body, type }, warn = console.error) {
-  const lines = [];
-  let label = null;
+// La etiqueta del tipo, o null si la cuenta no puede crearla.
+async function typeLabel(client, type, lines, warn) {
   try {
     const found = await ensureLabel(client, type);
-    label = found.name;
     lines.push(`Etiqueta ${type}: ${found.created ? "creada" : "ya existe"}.`);
+    return found.name;
   } catch (error) {
-    // Sin permiso, la issue sale sin etiqueta: pasarla al crear la issue la crearía igual o se perdería sin aviso.
+    // Sin permiso se crea sin etiqueta: pasarla al crear la crearía igual o se perdería sin aviso.
     if (error.code !== 2) throw error;
     warn(error.message);
+    return null;
   }
+}
+
+function checkCreated(what, data, me, label, warn) {
+  if (!data.assignees?.some((person) => person.id === me.id)) warn(`${what} quedó sin asignar: hazlo a mano.`);
+  if (label && !data.labels?.includes(label)) warn(`${what} quedó sin etiqueta: ponla a mano.`);
+}
+
+export async function createIssue(client, { title, body, type }, warn = console.error) {
+  checkText(body);
+  const lines = [];
+  const label = await typeLabel(client, type, lines, warn);
   const me = await whoami(client);
   const request = { title, description: body, assignee_ids: [me.id], ...(label ? { labels: label } : {}) };
   const { data } = await client.request("POST", client.scoped("issues"), { body: request });
-  if (!data.assignees?.some((person) => person.id === me.id)) warn("La issue quedó sin asignar: asígnala a mano.");
-  if (label && !data.labels?.includes(label)) warn("La issue quedó sin etiqueta: ponla a mano.");
+  checkCreated("La issue", data, me, label, warn);
   return [...lines, data.web_url].join("\n");
 }
 
@@ -387,17 +431,223 @@ export async function setIssueState(client, number, event) {
 }
 
 // Añade la cuenta del token sin quitar a nadie. Un plan con una sola persona asignada no lo permite.
-export async function assignIssue(client, number) {
+async function assignSelf(client, what, read, write) {
   const me = await whoami(client);
-  const before = ((await getIssue(client, number)).assignees ?? []).map((person) => person.id);
+  const ids = (item) => (item.assignees ?? []).map((person) => person.id);
+  const before = ids(await read());
   if (before.includes(me.id)) return me.username;
-  const after = ((await updateIssue(client, number, { assignee_ids: [...before, me.id] })).assignees ?? []).map((person) => person.id);
+  const after = ids(await write([...before, me.id]));
   const lost = before.filter((id) => !after.includes(id));
-  if (lost.length) await updateIssue(client, number, { assignee_ids: before });
+  if (lost.length) await write(before);
   if (lost.length || !after.includes(me.id)) {
-    throw new GitLabError(`La issue #${number} no admite añadir a ${me.username} sin quitar a quien ya estaba. La asignación queda pendiente.`);
+    throw new GitLabError(`${what} no admite añadir a ${me.username} sin quitar a quien ya estaba. La asignación queda pendiente.`);
   }
   return me.username;
+}
+
+export function assignIssue(client, number) {
+  return assignSelf(client, `La issue #${number}`, () => getIssue(client, number),
+    (ids) => updateIssue(client, number, { assignee_ids: ids }));
+}
+
+const mrPath = (client, number, suffix = "") => client.scoped(`merge_requests/${number}${suffix}`);
+
+export const draftless = (title) => title.replace(DRAFT, "");
+const withDraft = (title, draft) => (draft ? `Draft: ${draftless(title)}` : draftless(title));
+
+export async function getMergeRequest(client, number) {
+  return (await client.request("GET", mrPath(client, number))).data;
+}
+
+export async function updateMergeRequest(client, number, changes) {
+  checkText(changes.description);
+  return (await client.request("PUT", mrPath(client, number), { body: changes })).data;
+}
+
+export function listOpenMergeRequests(client, query = {}) {
+  return client.paginate(client.scoped("merge_requests"), { state: "opened", ...query });
+}
+
+// El merge request abierto de una rama del propio proyecto, o null.
+export async function findMergeRequest(client, branch, base) {
+  const found = await listOpenMergeRequests(client, { source_branch: branch, target_branch: base });
+  return found.find((item) => item.source_project_id === item.target_project_id) ?? null;
+}
+
+export async function createMergeRequest(client, { branch, base, title, body, type }, warn = console.error) {
+  checkText(body);
+  const lines = [];
+  const label = await typeLabel(client, type, lines, warn);
+  const me = await whoami(client);
+  const request = {
+    source_branch: branch, target_branch: base, title: withDraft(title, true), description: body,
+    assignee_ids: [me.id], ...(label ? { labels: label } : {}),
+  };
+  const { data } = await client.request("POST", client.scoped("merge_requests"), { body: request });
+  if (!data.draft) warn("El merge request no quedó en draft: pásalo a draft a mano.");
+  checkCreated("El merge request", data, me, label, warn);
+  return [...lines, data.web_url].join("\n");
+}
+
+export async function setDraft(client, number, draft) {
+  const current = await getMergeRequest(client, number);
+  if (current.draft === draft) return false;
+  const updated = await updateMergeRequest(client, number, { title: withDraft(current.title, draft) });
+  if (updated.draft !== draft) throw new GitLabError(`El merge request #${number} no cambió de estado.`);
+  return true;
+}
+
+// El título llega sin prefijo: el merge request conserva su estado de draft.
+export async function editMergeRequest(client, number, { title, body }) {
+  const changes = {};
+  if (title !== undefined) changes.title = withDraft(title, (await getMergeRequest(client, number)).draft);
+  if (body !== undefined) changes.description = body;
+  return updateMergeRequest(client, number, changes);
+}
+
+export function assignMergeRequest(client, number) {
+  return assignSelf(client, `El merge request #${number}`, () => getMergeRequest(client, number),
+    (ids) => updateMergeRequest(client, number, { assignee_ids: ids }));
+}
+
+// El estado de revisión de cada revisor, o null si la instancia no lo dice por su API.
+export async function reviewStates(client, number) {
+  const query = "query($path: ID!, $iid: String!) { project(fullPath: $path) { mergeRequest(iid: $iid) { reviewers { nodes { username mergeRequestInteraction { reviewState } } } } } }";
+  try {
+    const data = await client.graphql(query, { path: client.project, iid: String(number) });
+    const nodes = data?.project?.mergeRequest?.reviewers?.nodes;
+    if (!nodes) return null;
+    return new Map(nodes.map((node) => [node.username, node.mergeRequestInteraction?.reviewState ?? null]));
+  } catch (error) {
+    if (error.graphql || error.status === 404) return null;
+    throw error;
+  }
+}
+
+// Pide cambios quien lo marcó en su revisión o dejó un hilo sin resolver. El autor no cuenta.
+export async function reviewSummary(client, mergeRequest) {
+  const number = mergeRequest.iid;
+  const states = await reviewStates(client, number);
+  const discussions = await client.paginate(mrPath(client, number, "/discussions"));
+  const requested = states ? [...states].filter(([, state]) => state === "REQUESTED_CHANGES").map(([name]) => name) : [];
+  const threads = discussions.filter((thread) =>
+    thread.notes.some((note) => note.resolvable && !note.resolved) && thread.notes[0].author.id !== mergeRequest.author.id);
+  // El texto general de una revisión no es un hilo: se recoge de quien pidió cambios.
+  const notes = discussions.flatMap((thread) => thread.notes)
+    .filter((note) => !note.resolvable && !note.system && requested.includes(note.author.username));
+  const askers = [...new Set([...requested, ...threads.map((thread) => thread.notes[0].author.username)])];
+  let decision = "CHANGES_REQUESTED";
+  if (!askers.length) {
+    const { data } = await client.request("GET", mrPath(client, number, "/approvals"));
+    decision = data?.approved_by?.length ? "APPROVED" : "—";
+  }
+  return { decision, requested, askers, threads, notes, statesAvailable: Boolean(states) };
+}
+
+export async function findUser(client, username) {
+  const { data } = await client.request("GET", "users", { query: { username } });
+  if (!data?.[0]) throw new GitLabError(`No existe el usuario ${username} en GitLab.`);
+  return data[0];
+}
+
+export async function isMember(client, id) {
+  try {
+    await client.request("GET", client.scoped(`members/all/${id}`));
+    return true;
+  } catch (error) {
+    if (error.status === 404) return false;
+    throw error;
+  }
+}
+
+async function requestAgain(client, number, user) {
+  const query = "mutation($input: MergeRequestReviewerRereviewInput!) { mergeRequestReviewerRereview(input: $input) { errors } }";
+  const input = { projectPath: client.project, iid: String(number), userId: `gid://gitlab/User/${user.id}` };
+  try {
+    const data = await client.graphql(query, { input });
+    return data?.mergeRequestReviewerRereview?.errors?.join(" ") || null;
+  } catch (error) {
+    if (error.graphql) return error.message;
+    throw error;
+  }
+}
+
+// Añade revisores sin quitar a nadie, vuelve a pedirla a quien ya revisó y comprueba el resultado leyendo.
+export async function requestReview(client, number, usernames) {
+  const mergeRequest = await getMergeRequest(client, number);
+  const author = mergeRequest.author.username.toLowerCase();
+  const names = [...new Map(usernames.map((name) => [name.toLowerCase(), name])).values()]
+    .filter((name) => name.toLowerCase() !== author);
+  if (!names.length) throw new GitLabError("No queda nadie a quien pedir revisión: el autor no cuenta.");
+  const pending = new Map();
+  const wanted = [];
+  for (const name of names) {
+    const user = await findUser(client, name);
+    if (await isMember(client, user.id)) wanted.push(user);
+    else pending.set(user.username, "no es miembro del proyecto");
+  }
+  const current = (mergeRequest.reviewers ?? []).map((person) => person.id);
+  const added = wanted.filter((user) => !current.includes(user.id));
+  if (added.length) {
+    const updated = await updateMergeRequest(client, number, { reviewer_ids: [...current, ...added.map((user) => user.id)] });
+    const kept = (updated.reviewers ?? []).map((person) => person.id);
+    if (current.some((id) => !kept.includes(id))) await updateMergeRequest(client, number, { reviewer_ids: current });
+  }
+  const again = wanted.filter((user) => current.includes(user.id));
+  if (again.length) {
+    const states = await reviewStates(client, number);
+    for (const user of again) {
+      if (states?.get(user.username) === "UNREVIEWED") continue;
+      const problem = await requestAgain(client, number, user);
+      if (problem) pending.set(user.username, `no se pudo volver a pedir: ${problem}`);
+    }
+  }
+  const final = ((await getMergeRequest(client, number)).reviewers ?? []).map((person) => person.id);
+  for (const user of wanted) {
+    if (!final.includes(user.id)) pending.set(user.username, "no figura como revisor: puede que el plan admita uno solo o que la cuenta no pueda asignarlo");
+  }
+  const done = wanted.map((user) => user.username).filter((name) => !pending.has(name));
+  const lines = [];
+  if (done.length) lines.push(`Revisión pedida: ${done.join(", ")}.`);
+  for (const [name, reason] of pending) lines.push(`Sin pedir: ${name} (${reason}).`);
+  if (pending.size) throw new GitLabError(lines.join("\n"));
+  return lines.join("\n");
+}
+
+export function viewMergeRequest(item, decision) {
+  const names = (list) => (list ?? []).map((person) => person.username);
+  return {
+    number: item.iid, url: item.web_url, title: draftless(item.title), body: item.description ?? "", isDraft: item.draft,
+    state: item.state, author: item.author?.username, assignees: names(item.assignees), reviewers: names(item.reviewers),
+    reviewDecision: decision,
+  };
+}
+
+// Las líneas de check-status sobre el forge, el token y la cuenta. Nunca fallan.
+export async function status(options = {}) {
+  const found = await resolveForge(options);
+  const lines = [`Forge: GitLab (${found.host})`];
+  try {
+    await readToken(found.root);
+    lines.push("Token de GitLab: GITLAB_TOKEN en .env");
+  } catch (error) {
+    return [...lines, `Token de GitLab: ${error.message}`].join("\n");
+  }
+  try {
+    lines.push(`GitLab: cuenta ${(await whoami(await connect(options))).username}`);
+  } catch (error) {
+    lines.push(`GitLab: ${error.message}`);
+  }
+  return lines.join("\n");
+}
+
+// La línea de check-status sobre el merge request de la rama.
+export async function statusLine(client, branch) {
+  const found = await findMergeRequest(client, branch);
+  if (!found) return "Pull request: ninguna abierta en esta rama";
+  const { decision } = await reviewSummary(client, found);
+  const issue = (found.description ?? "").match(/(?:closes|close|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/i);
+  return `Pull request: #${found.iid} ${decision}${issue ? ` issue #${issue[1]}` : ""}`;
 }
 
 function issueNumber(value) {
@@ -405,10 +655,72 @@ function issueNumber(value) {
   return value;
 }
 
+function mergeRequestNumber(value) {
+  const match = String(value ?? "").match(/^(?:!?|https:\/\/\S+\/-\/merge_requests\/)([1-9]\d*)\/?$/);
+  if (!match) throw new GitLabError("Indica el número o la dirección del merge request.");
+  return match[1];
+}
+
+async function readBody(file, options) {
+  return readFile(resolve(options.cwd ?? process.cwd(), file), "utf8").catch(() => {
+    throw new GitLabError("El fichero del cuerpo debe existir y ser legible.");
+  });
+}
+
+async function runMergeRequest(action, rest, options) {
+  const { warn = console.error } = options;
+  const filled = (count) => rest.length === count && rest.every(Boolean);
+  if (action === "find" && filled(2)) return (await findMergeRequest(await connect(options), ...rest))?.web_url ?? "";
+  if (action === "status" && filled(1)) return statusLine(await connect(options), rest[0]);
+  if (action === "create" && filled(5)) {
+    const [branch, title, file, type, base] = rest;
+    const body = await readBody(file, options);
+    return createMergeRequest(await connect(options), { branch, base, title, body, type }, warn);
+  }
+  const [value, ...extra] = rest;
+  if (action === "edit") {
+    const number = mergeRequestNumber(value);
+    const changes = {};
+    for (let i = 0; i < extra.length; i += 2) {
+      if (extra[i] === "--title" && extra[i + 1]) changes.title = extra[i + 1];
+      else if (extra[i] === "--body-file" && extra[i + 1]) changes.body = await readBody(extra[i + 1], options);
+      else throw new GitLabError(USAGE);
+    }
+    if (!Object.keys(changes).length) throw new GitLabError("Indica --title o --body-file.");
+    await editMergeRequest(await connect(options), number, changes);
+    return `Merge request #${number}: editado.`;
+  }
+  if (action === "request-review" && extra.length) {
+    const number = mergeRequestNumber(value);
+    return requestReview(await connect(options), number, extra);
+  }
+  if (["view", "draft", "ready", "assign-me"].includes(action) && !extra.length) {
+    const number = mergeRequestNumber(value);
+    const client = await connect(options);
+    if (action === "view") {
+      const item = await getMergeRequest(client, number);
+      return JSON.stringify(viewMergeRequest(item, (await reviewSummary(client, item)).decision));
+    }
+    if (action === "assign-me") return `Merge request #${number}: asignado a ${await assignMergeRequest(client, number)}.`;
+    const draft = action === "draft";
+    const changed = await setDraft(client, number, draft);
+    return `Merge request #${number}: ${changed ? "ahora" : "ya"} ${draft ? "en draft" : "listo para revisión"}.`;
+  }
+  throw new GitLabError(USAGE);
+}
+
 export async function run(args, options = {}) {
   const [command, action, ...rest] = args;
   const { warn = console.error } = options;
   if (command === "forge" && args.length === 1) return (await checkForge(options)).forge;
+  if (command === "status" && args.length === 1) return status(options);
+  if (command === "mr") return runMergeRequest(action, rest, options);
+  if (command === "member" && action === "check" && rest.length === 1) {
+    const client = await connect(options);
+    const user = await findUser(client, rest[0]);
+    if (!(await isMember(client, user.id))) throw new GitLabError(`${user.username} no es miembro del proyecto.`);
+    return `${user.username} es miembro del proyecto.`;
+  }
   if (command === "whoami" && args.length === 1) return (await whoami(await connect(options))).username;
   if (command === "label" && action === "ensure" && rest.length === 1) {
     const [type] = rest;
@@ -417,9 +729,7 @@ export async function run(args, options = {}) {
   }
   if (command === "issue" && action === "create" && rest.length === 3 && rest.every(Boolean)) {
     const [title, file, type] = rest;
-    const body = await readFile(resolve(options.cwd ?? process.cwd(), file), "utf8").catch(() => {
-      throw new GitLabError("El fichero del cuerpo debe existir y ser legible.");
-    });
+    const body = await readBody(file, options);
     return createIssue(await connect(options), { title, body, type }, warn);
   }
   if (command === "issue" && ["state", "close", "reopen", "assign-me"].includes(action)) {

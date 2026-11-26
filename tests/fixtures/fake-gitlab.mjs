@@ -31,7 +31,27 @@ function page(list) {
 }
 
 if (token !== state.token) reply(401, { message: "401 Unauthorized" });
+const person = (id) => ({ id });
+// Un plan con una sola persona asignada se queda con la última que se pide.
+const assignees = (ids) => (state.singleAssignee ? ids.slice(-1) : ids).map(person);
+
 if (url.pathname === "/api/v4/user") reply(200, state.me);
+const users = state.users ?? [];
+if (url.pathname === "/api/v4/users") reply(200, users.filter((user) => user.username.toLowerCase() === url.searchParams.get("username").toLowerCase()));
+
+const requests = state.mergeRequests ?? {};
+if (url.pathname === "/api/graphql") {
+  if (state.noReviewState) reply(200, { errors: [{ message: "Field 'reviewState' doesn't exist" }] });
+  if (body.query.startsWith("mutation")) {
+    const { iid, userId } = body.variables.input;
+    const user = requests[iid].reviewers.find((item) => `gid://gitlab/User/${item.id}` === userId);
+    user.state = "UNREVIEWED";
+    reply(200, { data: { mergeRequestReviewerRereview: { errors: [] } } });
+  }
+  if (body.variables.path !== state.project) reply(200, { data: { project: null } });
+  const nodes = requests[body.variables.iid].reviewers.map((item) => ({ username: item.username, mergeRequestInteraction: { reviewState: item.state ?? "UNREVIEWED" } }));
+  reply(200, { data: { project: { mergeRequest: { reviewers: { nodes } } } } });
+}
 
 const route = url.pathname.match(/^\/api\/v4\/projects\/([^/]+)\/(.*)$/);
 if (!route || decodeURIComponent(route[1]) !== state.project) reply(404, { message: "404 Project Not Found" });
@@ -46,6 +66,53 @@ if (rest === "labels") {
   reply(201, body);
 }
 
+const isDraft = (title) => /^\s*(\[draft\]|\(draft\)|draft:)/i.test(title);
+const byId = (id) => users.find((user) => user.id === id) ?? { id };
+// Un plan con un solo revisor se queda con el primero que se pide.
+const reviewers = (item, ids) => (state.singleReviewer ? ids.slice(0, 1) : ids)
+  .map((id) => item.reviewers.find((current) => current.id === id) ?? { ...byId(id) });
+
+if (rest === "merge_requests") {
+  if (method === "GET") {
+    const wanted = (item, name) => !url.searchParams.has(name) || item[name] === url.searchParams.get(name);
+    page(Object.values(requests).filter((item) => item.state === url.searchParams.get("state") && wanted(item, "source_branch") && wanted(item, "target_branch")));
+  }
+  const iid = Object.keys(requests).length + 1;
+  const item = {
+    iid, state: "opened", title: body.title, description: body.description, draft: isDraft(body.title),
+    source_branch: body.source_branch, target_branch: body.target_branch, source_project_id: 1, target_project_id: 1,
+    author: state.me, assignees: assignees(body.assignee_ids ?? []), reviewers: [], labels: body.labels ? body.labels.split(",") : [],
+    web_url: `https://gitlab.com/${state.project}/-/merge_requests/${iid}`,
+  };
+  state.mergeRequests = { ...requests, [iid]: item };
+  reply(201, item);
+}
+
+const mr = rest.match(/^merge_requests\/(\d+)(?:\/(discussions|approvals))?$/);
+if (mr) {
+  const item = requests[mr[1]];
+  if (!item) reply(404, { message: "404 Not found" });
+  if (mr[2] === "discussions") page(item.discussions ?? []);
+  if (mr[2] === "approvals") reply(200, { approved_by: (item.approvedBy ?? []).map((user) => ({ user: { username: user } })) });
+  if (method === "PUT") {
+    if (state.denyEdit) forbidden();
+    if (body.title !== undefined) Object.assign(item, { title: body.title, draft: isDraft(body.title) });
+    if (body.description !== undefined) item.description = body.description;
+    if (body.assignee_ids) item.assignees = assignees(body.assignee_ids);
+    // Sin permiso para administrarlo, GitLab ignora los revisores sin dar error.
+    if (body.reviewer_ids && !state.ignoreReviewers) item.reviewers = reviewers(item, body.reviewer_ids);
+  }
+  reply(200, item);
+}
+
+if (rest === "members/all") {
+  if (state.etag && args.includes(`If-None-Match: ${state.etag}`)) reply(304);
+  const list = users.filter((user) => state.members[user.id] !== undefined).map((user) => ({ ...user, access_level: state.members[user.id], email: "no@guardar.example" }));
+  const size = state.pageSize ?? 100;
+  const current = Number(url.searchParams.get("page") ?? 1);
+  reply(200, list.slice((current - 1) * size, current * size), { "x-next-page": current * size < list.length ? current + 1 : "", ...(state.etag ? { etag: state.etag } : {}) });
+}
+
 const members = rest.match(/^members\/all\/(\d+)$/);
 if (members) {
   const level = state.members[members[1]];
@@ -53,9 +120,6 @@ if (members) {
   reply(200, { id: Number(members[1]), access_level: level });
 }
 
-const person = (id) => ({ id });
-// Un plan con una sola persona asignada se queda con la última que se pide.
-const assignees = (ids) => (state.singleAssignee ? ids.slice(-1) : ids).map(person);
 
 if (rest === "issues" && method === "POST") {
   const iid = Object.keys(state.issues).length + 1;

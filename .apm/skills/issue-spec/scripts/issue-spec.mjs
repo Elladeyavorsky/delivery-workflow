@@ -7,7 +7,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import {
-  GitLabError, LIMITS, canEditIssue, checkForge, connect, createNote, getIssue, listNotes, updateIssue, updateNote,
+  GitLabError, LIMITS, canEditIssue, checkForge, connect, createNote, getIssue, listNotes, listOpenMergeRequests,
+  reviewSummary, updateIssue, updateNote,
 } from "./gitlab.mjs";
 
 const exec = promisify(execFile);
@@ -136,6 +137,24 @@ function closesIssue(body, number) {
   return new RegExp(`(?:closes|close|closed|fix|fixes|fixed|resolve|resolves|resolved)\\s+#${number}\\b`, "i").test(
     body ?? "",
   );
+}
+
+// La revisión del merge request abierto que cierra la issue.
+async function gitlabReviewNotes(api, number) {
+  const found = (await listOpenMergeRequests(api)).find((item) => closesIssue(item.description, number));
+  if (!found) throw new IssueSpecError("No hay un merge request abierto que cierre esta issue.", 1);
+  const review = await reviewSummary(api, found);
+  const lineComments = review.threads.flatMap((thread) => thread.notes.filter((note) => !note.system).map((note) => ({
+    user: { login: note.author.username },
+    path: note.position?.new_path ?? note.position?.old_path,
+    line: note.position?.new_line ?? note.position?.old_line,
+    body: note.body,
+  })));
+  const reviews = review.notes.map((note) => ({ state: "CHANGES_REQUESTED", author: note.author.username, body: note.body }));
+  const text = formatReviewNotes({ reviewDecision: review.decision, reviews, lineComments });
+  const extra = [`Piden cambios: ${review.askers.join(", ") || "nadie"}`];
+  if (!review.statesAvailable) extra.push("Esta instancia no dice quién pidió cambios: la decisión sale de los hilos y las aprobaciones.");
+  return `${text}\n${extra.join("\n")}\n`;
 }
 
 function checkTop(parsed, expected) {
@@ -340,7 +359,7 @@ async function execute(args, { run: injected, gitlab, today = () => new Date().t
     return `Issue #${number}: comentario publicado.`;
   }
   if (command === "reviews") {
-    if (api) throw new IssueSpecError("reviews todavía no está disponible en GitLab.", 1);
+    if (api) return gitlabReviewNotes(api, number);
     const prs = JSON.parse(await call(["pr", "list", ...repo, "--state", "open", "--json", "number,body,url,reviewDecision"])) || [];
     const pr = (Array.isArray(prs) ? prs : []).find((item) => closesIssue(item.body, number));
     if (!pr) throw new IssueSpecError("No hay una pull request abierta que cierre esta issue.", 1);

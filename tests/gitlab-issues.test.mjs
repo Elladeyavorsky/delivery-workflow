@@ -6,7 +6,7 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { findSecret, hashTop, parseBody, run as issueSpec } from "../.apm/skills/issue-spec/scripts/issue-spec.mjs";
+import { findSecret, hashTop, parseBody } from "../.apm/skills/issue-spec/scripts/issue-spec.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skills = join(root, ".apm/skills");
@@ -246,10 +246,3 @@ test("un token de GitLab en el texto bloquea la escritura", () => {
   assert.deepEqual(writes(gl.state()), []);
 });
 
-test("reviews todavía no está en GitLab", async () => {
-  const result = project().spec("reviews", "1");
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /todavía no/);
-  // Con el camino de GitHub inyectado no se consulta el forge del repositorio.
-  await assert.rejects(issueSpec(["reviews", "1"], { run: async () => "[]" }), /pull request abierta/);
-});

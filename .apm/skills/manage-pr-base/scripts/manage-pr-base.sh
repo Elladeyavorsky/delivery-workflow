@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Crea una PR contra la rama base, en draft, asignada al usuario autenticado y con la etiqueta del tipo.
+# En GitLab crea un merge request con gitlab.mjs.
 
 set -euo pipefail
 
@@ -66,10 +67,21 @@ else
   base=$(detect_base)
 fi
 
-source "${here}/gh.sh"
-load_github_token
+forge=github
+if command -v node >/dev/null 2>&1; then
+  forge=$(node "${here}/gitlab.mjs" forge) || exit $?
+elif git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'; then
+  echo "Node no está instalado. Hace falta Node 20 o superior para GitLab." >&2
+  exit 1
+fi
 
-existing=$(gh pr list --head "$branch" --base "$base" --state open --json url --jq '.[0].url // empty')
+if [[ "$forge" == gitlab ]]; then
+  existing=$(node "${here}/gitlab.mjs" mr find "$branch" "$base")
+else
+  source "${here}/gh.sh"
+  load_github_token
+  existing=$(gh pr list --head "$branch" --base "$base" --state open --json url --jq '.[0].url // empty')
+fi
 if [[ -n "$existing" ]]; then
   echo "La pull request de ${branch} hacia ${base} ya existía: ${existing}"
   echo "No se ha tocado su cuerpo."
@@ -82,6 +94,12 @@ bash "${here}/check-title.sh" "$title" >/dev/null || exit 1
 if grep -Eq '#[0-9]' "$body"; then
   echo "El cuerpo no nombra la issue: deja «Closes #» sin número, lo completa link-pr-to-issue." >&2
   exit 1
+fi
+
+if [[ "$forge" == gitlab ]]; then
+  node "${here}/gitlab.mjs" mr create "$branch" "$title" "$body" "$type" "$base"
+  echo "Base: ${base}"
+  exit 0
 fi
 
 label_args=()

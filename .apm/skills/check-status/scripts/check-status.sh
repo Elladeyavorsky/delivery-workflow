@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resume la rama, la rama base, el token del .env, gh, Node, el remoto y los cambios locales.
+# Resume la rama, la rama base, el forge, el token del .env, Node, el remoto y los cambios locales.
 
 set -euo pipefail
 
@@ -75,25 +75,47 @@ else
   echo "Rama base: no detectada. Defínela con GIT_WORKFLOW_BASE."
 fi
 
-source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
+gitlab="$(dirname "${BASH_SOURCE[0]}")/gitlab.mjs"
 token=no
 token_error=$(mktemp)
-trap 'rm -f "$token_error"' EXIT
-if load_github_token 2>"$token_error"; then
-  token=yes
-  echo "Token de GitHub: GITHUB_TOKEN en .env"
-else
-  echo "Token de GitHub: $(cat "$token_error")"
+forge_error=$(mktemp)
+trap 'rm -f "$token_error" "$forge_error"' EXIT
+
+# El forge decide qué token y qué cuenta se comprueban.
+forge=github
+if command -v node >/dev/null 2>&1; then
+  if ! forge=$(node "$gitlab" forge 2>"$forge_error"); then
+    echo "Forge: $(cat "$forge_error")"
+    forge=github
+  fi
+elif [[ "${GIT_WORKFLOW_FORGE:-}" == gitlab ]] || git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'; then
+  forge=gitlab
 fi
 
-if ! command -v gh >/dev/null 2>&1; then
-  echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
-elif [[ "$token" == no ]]; then
-  echo "GitHub CLI: instalado, sin token"
-elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
-  echo "GitHub CLI: cuenta ${login}"
+if [[ "$forge" == gitlab ]]; then
+  if command -v node >/dev/null 2>&1; then
+    node "$gitlab" status 2>&1 || true
+  else
+    echo "Forge: GitLab. No se puede comprobar el token ni la cuenta sin Node."
+  fi
 else
-  echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+  source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
+  if load_github_token 2>"$token_error"; then
+    token=yes
+    echo "Token de GitHub: GITHUB_TOKEN en .env"
+  else
+    echo "Token de GitHub: $(cat "$token_error")"
+  fi
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
+  elif [[ "$token" == no ]]; then
+    echo "GitHub CLI: instalado, sin token"
+  elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
+    echo "GitHub CLI: cuenta ${login}"
+  else
+    echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+  fi
 fi
 
 if ! command -v node >/dev/null 2>&1; then
@@ -130,7 +152,15 @@ else
   echo "Último commit: todavía no hay commits"
 fi
 
-if [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
+if [[ "$forge" == gitlab ]]; then
+  if command -v node >/dev/null 2>&1; then
+    if pr_line=$(node "$gitlab" mr status "$branch" 2>"$forge_error"); then
+      echo "$pr_line"
+    else
+      echo "Pull request: no se pudo consultar. $(cat "$forge_error")"
+    fi
+  fi
+elif [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
   pr_json=$(gh pr view --json number,reviewDecision,body 2>/dev/null || true)
   if echo "$pr_json" | grep -q '"number"'; then
     pr_line=$(printf '%s' "$pr_json" | node -e '
