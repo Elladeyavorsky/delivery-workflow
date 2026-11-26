@@ -7,8 +7,6 @@ apm.lock.yaml
 .agents/
 .codex/
 .opencode/
-.claude/agents/
-.claude/skills/
 .cursor/agents/
 .cursor/mcp.json
 .mcp.json

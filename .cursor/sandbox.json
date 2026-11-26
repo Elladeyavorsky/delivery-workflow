@@ -1,5 +1,0 @@
-{
-  "networkPolicy": {
-    "allow": ["api.github.com", "github.com"]
-  }
-}
