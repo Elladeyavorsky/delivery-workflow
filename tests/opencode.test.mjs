@@ -346,6 +346,24 @@ test("reset no repone skills", async () => {
   assert.doesNotMatch(agent(p, "manage-pr"), /^skills:/m);
 });
 
+test("apply sin modelos queda anotado en opencode, con el proveedor elegido", async () => {
+  const p = project();
+  const free = "libre/uno\nlibre/dos\notro/tres\n";
+  await cli(p, ["apply", "--provider", "libre"], models(free));
+  assert.equal(statusLine({ profiles, root: p.base }), "configurado, pero ningún agente lleva modelo (opencode 9/9): heredan el del chat");
+  const [after] = await cli(p, ["detect"], models(free));
+  assert.equal(after.provider, "libre");
+  assert.equal(after.saved, false);
+  await cli(p, ["reset"], models(free));
+  assert.equal(statusLine({ profiles, root: p.base }), "sin configurar (ejecuta /configure-models)");
+});
+
+test("en las demás herramientas, apply sin modelos sigue sin anotar nada", async () => {
+  const p = project(["cursor"]);
+  await cli(p, ["apply"], models("", "missing"));
+  assert.equal(statusLine({ profiles, root: p.base }), "sin configurar (ejecuta /configure-models)");
+});
+
 test("status pide configure-models mientras un agente de opencode lleve skills", async () => {
   const p = project();
   assert.match(statusLine({ profiles, root: p.base }), /sin configurar \(ejecuta \/configure-models: los agentes de opencode/);

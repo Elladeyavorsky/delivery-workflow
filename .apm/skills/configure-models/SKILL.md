@@ -20,13 +20,13 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor
 3. **`--yes` / `-y`** _(Opcional)_: acepta la propuesta sin preguntar.
 4. **`--target opencode|cursor|claude|codex`** _(Opcional)_: una sola herramienta. Por defecto, todas las que tengan carpeta de agentes.
 5. **`--models id1,id2,...`** _(Opcional)_: la lista de modelos de la herramienta, para cuando el script no puede leerla (por ejemplo, `cursor-agent` no está instalado). Sustituye a la detección y el script propone por nivel igual que si la hubiera leído. Exige `--target` si hay más de una herramienta. Úsala en `detect` y repítela en `apply`. En opencode los ids van como `proveedor/modelo`.
-6. **`--provider nombre`** _(Opcional, solo opencode)_: el proveedor del que salen las propuestas. Se guarda con las elecciones. Un proveedor que no está en la lista es un error que nombra los disponibles.
+6. **`--provider nombre`** _(Opcional, solo opencode)_: el proveedor del que salen las propuestas. Se guarda con las elecciones, también cuando ningún agente lleva modelo. Un proveedor que no está en la lista es un error que nombra los disponibles.
 
 #### opencode
 
 - **Modelos**: salen de `opencode models`, lanzado en la raíz del proyecto, como `proveedor/modelo`. Si `opencode` no está en el PATH, en macOS se usa el comando que trae la app de escritorio (`OpenCode.app`).
 - **Varios proveedores**: la salida trae `providers` y, mientras no haya uno elegido, las propuestas van vacías. Pregunta a la persona cuál usa y repite `detect` y `apply` con `--provider`. La lista incluye los modelos gratuitos del proveedor `opencode` aunque no tenga credenciales, así que no elijas por ella.
-- **`skills:`**: `apply` lo quita de los 9 agentes del paquete en `.opencode/agents/`, haya o no modelos que escribir. opencode no precarga esas skills y envía el campo al proveedor del modelo en las peticiones `openai-compatible`; cada agente carga las skills que su texto nombra. `apm install` y `apm update` reponen el campo: hay que repetir `apply`, y `check-status` lo avisa. `reset` no lo repone.
+- **`skills:`**: `apply` lo quita de los 9 agentes del paquete en `.opencode/agents/`, haya o no modelos que escribir. opencode no precarga esas skills y envía el campo al proveedor del modelo en las peticiones `openai-compatible`; cada agente carga las skills que su texto nombra. Tras `apply`, `check-status` dice «configurado» aunque ningún agente lleve modelo. `apm install` y `apm update` reponen el campo: hay que repetir `apply`, y `check-status` lo avisa. `reset` no lo repone.
 
 #### Reglas de Invocación Críticas
 

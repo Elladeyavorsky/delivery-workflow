@@ -736,7 +736,10 @@ async function applyOne({ profiles, root, tool, state, opts, runner }) {
   if (stripped.length) notes.push(`Se ha quitado «skills:» de ${stripped.length} agentes de ${profiles.tools[tool].name}: cada uno carga sus skills al usarlas.`);
   // Sin modelo propuesto no se guarda nada: «no había qué proponer» no es «elegí heredar» (eso es --set x=inherit).
   const keep = Object.keys(choices).filter((a) => choices[a] !== null || !["propuesta", "reemplazado"].includes(source[a]));
-  if (keep.length === 0) delete state.tools[tool];
+  // En opencode aplicar hace algo aunque no haya modelos (quita «skills:»): se anota, sin elecciones, para que
+  // check-status no diga «sin configurar» y el proveedor elegido no se pierda.
+  const applied = profiles.tools[tool].stripSkills && files.some((f) => f.result !== "ausente");
+  if (keep.length === 0 && !applied) delete state.tools[tool];
   else {
     state.tools[tool] = {
       agents: Object.fromEntries(keep.map((a) => [a, choices[a]])),
