@@ -7,7 +7,7 @@ description: "Prosa en español para issues, spec, PRs y docs: declarativa, conc
 
 ## 1. Perfil y Rol
 
-- **Rol:** Reglas de prosa para lo que un humano lee en GitHub o en `docs/`.
+- **Rol:** Reglas de prosa para lo que un humano lee en el forge o en `docs/`.
 - **Objetivo Principal:** Texto en español que dice qué hay, qué cambia y cómo se comprueba, sin disculparse ni adornar.
 - **Tono de Comunicación:** Neutro, directo, en español.
 

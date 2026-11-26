@@ -6,12 +6,20 @@ description: "Deja Closes #N en el cuerpo de la pull request y la enlaza con la 
 ### Herramienta: LINK_PR_TO_ISSUE
 
 - **Descripción**: Úsala desde el orquestador, después de `manage-pr`, para dejar `Closes #N` en el cuerpo y enlazar la issue en Development. `manage-pr` no la llama: puede abrir la pull request sin issue. Para abrir la pull request o cambiar su base, usa `manage-pr`. La línea `Closes #N` de la plantilla es la que cierra la issue al fusionar; esta skill no la cierra a mano.
+- **Forge**: Antes de llamar, `node "<carpeta de esta skill>/scripts/gitlab.mjs" forge` escribe `github` o `gitlab`. Con `github`, usa los comandos de esta skill con `gh.sh`. Con `gitlab`, los de «En GitLab».
 - **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la acción queda a nombre de la cuenta del token.
 - **Abreviatura**: Abajo, `gh.sh` es `bash "<carpeta de esta skill>/scripts/gh.sh"`.
 - **Cuerpo**: Léelo con `gh.sh pr view M --json body --jq .body`, escribe el cuerpo corregido en un fichero temporal y guárdalo con `gh.sh pr edit M --body-file FICHERO`.
 - **Development**: `gh.sh api graphql`.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/link-pr-to-issue`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
+
+#### En GitLab
+
+Abajo, `gitlab.mjs` es `node "<carpeta de esta skill>/scripts/gitlab.mjs"`, desde la raíz del repositorio git. Usa el `GITLAB_TOKEN` del `.env` del proyecto. La pull request es el merge request.
+
+- **Cuerpo**: Léelo en el campo `body` de `gitlab.mjs mr view M`, escribe el cuerpo corregido en un fichero temporal y guárdalo con `gitlab.mjs mr edit M --body-file FICHERO`.
+- **Enlace**: La línea `Closes #N` enlaza la issue: no hay paso Development ni más llamadas. GitLab la cierra al fusionar en la rama por defecto.
 
 #### Especificación de Argumentos
 
@@ -37,4 +45,4 @@ bash "<carpeta de esta skill>/scripts/gh.sh" api graphql -f query='mutation($iss
 
 La issue sigue abierta después de enlazarla: GitHub la cierra al fusionar la pull request que lleva `Closes #N` en la rama por defecto del repositorio. Si la rama base es otra (por ejemplo `staging` cuando la rama por defecto es `main`), fusionar en la rama base no la cierra.
 
-- **Si falla**: Comunica el error y deja el enlace pendiente. Solo da la issue por enlazada cuando `gh` lo confirme. Si `gh` no está instalado o falta el token del `.env`, dilo: el cuerpo ya lleva `Closes #N`, solo falta el enlace en Development.
+- **Si falla**: Comunica el error y deja el enlace pendiente. Solo da la issue por enlazada cuando el forge lo confirme. En GitHub, si `gh` no está instalado o falta el token del `.env`, dilo: el cuerpo ya lleva `Closes #N`, solo falta el enlace en Development.
