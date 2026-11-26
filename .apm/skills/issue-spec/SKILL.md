@@ -1,6 +1,6 @@
 ---
 name: issue-spec
-description: "Lee y escribe la spec, el plan y las tasks de una tarea en su issue de GitHub o GitLab sin tocar la parte de arriba, marca tasks, cambia el estado y comenta cada ronda. También lee las revisiones de la PR y escribe spec, plan y tasks en un comentario de revisión. La usan el orquestador delivery-workflow y los subagentes del ciclo."
+description: "Lee y escribe la spec, el plan y las tasks de una tarea en su issue del forge sin tocar la parte de arriba, marca tasks, cambia el estado y comenta cada ronda. También lee las revisiones de la PR y escribe spec, plan y tasks en un comentario de revisión. La usan el orquestador delivery-workflow y los subagentes del ciclo."
 ---
 
 ### Herramienta: ISSUE_SPEC

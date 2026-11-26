@@ -1,6 +1,6 @@
 ---
 name: assign-author
-description: "Asigna una issue o una pull request a la cuenta del token de GitHub o GitLab del proyecto. Úsala para el autor; para revisores, usa assign-reviewers."
+description: "Asigna una issue o una pull request a la cuenta del token del forge del proyecto. Úsala para el autor; para revisores, usa assign-reviewers."
 ---
 
 ### Herramienta: ASSIGN_AUTHOR

@@ -1,6 +1,6 @@
 ---
 name: check-status
-description: "Resume la rama actual, la rama base, si el .env tiene el token de GitHub o GitLab, la cuenta del token y Node 20+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
+description: "Resume la rama actual, la rama base, si el .env tiene el token del forge, la cuenta del token y Node 20+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
 ---
 
 ### Herramienta: CHECK_STATUS

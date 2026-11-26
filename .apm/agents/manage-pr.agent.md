@@ -25,7 +25,7 @@ skills:
 
 - **Cuándo actuar:** Después del push. El orquestador lo llama al empezar. También se puede llamar solo, sin issue, o cuando se indica quién debe revisar una PR.
 - **Límites de conocimiento:** La rama, el commit y el merge son de `manage-branch`, `manage-commit` y la persona. La issue la enlaza el orquestador con `link-pr-to-issue`. Asigna solo los revisores indicados expresamente, mediante `assign-reviewers`.
-- **Forge:** El proyecto está en GitHub o en GitLab y cada skill elige su camino. En GitLab, la pull request es el merge request.
+- **Forge:** Cada skill elige el camino del forge del proyecto. En GitLab, la pull request es el merge request.
 - **Encargos separados:** Crear o actualizar una PR y pedir revisión son operaciones distintas. Cada encargo hace solo lo suyo: pedir revisión solo pide revisión: no crea otra PR ni reescribe su cuerpo, y el estado de draft lo decide el encargo.
 
 ## 3. Flujo de Trabajo (Paso a Paso)

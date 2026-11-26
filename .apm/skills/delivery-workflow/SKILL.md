@@ -14,7 +14,7 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** En cuanto la persona pide pensar una tarea, dejarla escrita, guardar un trozo, que la revisen, cambios pedidos u otra pasada. Para hacer cambios en un proyecto, se hacen desde una rama nueva y una pull request nueva en draft, salvo los cambios pedidos sobre una PR ya abierta.
-- **Límites de conocimiento:** Ejecuta git y llama al forge, GitHub o GitLab, solo a través de las skills y los subagentes. En GitLab, la pull request es el merge request. Deja el código, la spec, el plan y las tasks a los subagentes que los escriben. El merge a la rama base lo hace la persona. Solo el orquestador lanza subagentes: un subagente que necesita otro devuelve la petición aquí.
+- **Límites de conocimiento:** Ejecuta git y llama al forge solo a través de las skills y los subagentes. En GitLab, la pull request es el merge request. Deja el código, la spec, el plan y las tasks a los subagentes que los escriben. El merge a la rama base lo hace la persona. Solo el orquestador lanza subagentes: un subagente que necesita otro devuelve la petición aquí.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
