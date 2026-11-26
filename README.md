@@ -48,7 +48,11 @@ El flujo de entrega que ejecutan los agentes en GitHub (issues, pull requests, e
 
 Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
+Hay dos usos distintos. **Otro proyecto** (aTempo, etc.) instala una etiqueta: sigue [Instalación en macOS y Linux](#instalación-en-macos-y-linux). **Este repositorio** es el paquete: no instales `venturars/delivery-workflow#v…` aquí; ve a [Trabajar en este repositorio](#trabajar-en-este-repositorio).
+
 ## Instalación en macOS y Linux
+
+Para un **proyecto consumidor**, no para editar delivery-workflow.
 
 1. Prepara el equipo, una sola vez:
 
@@ -56,13 +60,13 @@ Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en t
    brew install gh node apm          # sin Homebrew: curl -sSL https://aka.ms/apm-unix | sh
    ```
 
-2. Instala el paquete desde la raíz del proyecto. En `--target` pon tu herramienta: `claude`, `cursor`, `codex` o varias separadas por comas.
+2. Instala el paquete desde la raíz **de ese proyecto**. En `--target` pon tu herramienta: `claude`, `cursor`, `codex` o varias separadas por comas.
 
    ```bash
-   apm install venturars/delivery-workflow#v0.1.0 --target claude
+   apm install venturars/delivery-workflow#v1.2.3 --target cursor
    ```
 
-   Mientras no exista `v0.1.0`, usa `#staging`.
+   Usa una etiqueta estable `vX.Y.Z`. `#staging` solo para probar lo que aún no se ha publicado.
 
 3. Haz commit de `apm.yml` y `apm.lock.yaml`.
 
@@ -265,20 +269,23 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 
 ## Trabajar en este repositorio
 
-Este repositorio **es** el paquete. Las skills y los agentes viven en `.apm/`. No te listes a ti mismo en `dependencies.apm` ni instales `venturars/delivery-workflow#v…` aquí: eso es para los consumidores (por ejemplo aTempo).
+Este repositorio **es** el paquete. La fuente son las skills y los agentes en **`.apm/`** (sí van en git).
+
+No ejecutes `apm install venturars/delivery-workflow#v1.4.2` aquí. Eso es para [Instalación en macOS y Linux](#instalación-en-macos-y-linux) en **otro** proyecto.
 
 1. Clona el repositorio y entra en su raíz. Ya tienes `.apm/` de la rama.
 2. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
-3. Despliega el paquete **local** a tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
+3. Despliega el paquete **local** a tu herramienta:
 
    ```bash
    apm install --target cursor
    ```
 
-   Eso copia `.apm/` a `.cursor/`, `.claude/` o `.agents/`. No descarga una etiqueta de GitHub.
-4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`).
+   Cambia `cursor` por `claude`, `codex` o varios separados por comas. Eso copia `.apm/` a `.cursor/`, `.claude/`, `.agents/`, etc. **No** descarga una etiqueta de GitHub. Esas copias, `apm.lock.yaml` y `apm_modules/` son de tu máquina: están en `.gitignore` y no se suben.
 
-Los cambios de skills se hacen en `.apm/`. Vuelve a lanzar `apm install --target …` para regenerar las copias de la herramienta. Las normas del cambio están en [CONTRIBUTING.md](CONTRIBUTING.md).
+4. Abre tu herramienta en esta carpeta y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`).
+
+Los cambios de skills se editan en `.apm/`. Vuelve a lanzar `apm install --target …` para refrescar las copias. Las normas del cambio están en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Más información
 
