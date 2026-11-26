@@ -1,6 +1,6 @@
 # delivery-workflow
 
-Paquete [APM](https://github.com/microsoft/apm) para agentes de IA como opencode, Claude Code, Cursor y Codex. Lleva una tarea de GitHub desde la idea hasta la revisión, sin salir del chat del agente.
+Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una tarea de GitHub desde la idea hasta la revisión, sin salir del chat del agente.
 
 ## Qué hace
 
@@ -17,6 +17,7 @@ Se para cuando falta un dato necesario para la spec o para identificar a los rev
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
 - [GitHub CLI](https://cli.github.com) (`gh`), APM y Node 24 o superior. `gh` no necesita sesión.
+- Uno de estos agentes: opencode (1.x o 2.x), Claude Code, Cursor o Codex.
 - Un `.env` en la raíz del proyecto con tu token de GitHub. Sin eso, el flujo no arranca ([El token de GitHub](#el-token-de-github)).
 
 ## Instalación
@@ -58,7 +59,9 @@ Desde la raíz del proyecto. En `--target` pon tu agente: `opencode`, `claude`, 
 apm install venturars/delivery-workflow --target opencode
 ```
 
-Haz commit de `apm.yml` y `apm.lock.yaml`. Las skills quedan en la carpeta que APM crea para tu agente.
+Haz commit de `apm.yml` y `apm.lock.yaml`. Las skills quedan en la carpeta que APM crea para tu agente. Con opencode, las skills van en `.agents/skills/`, los agentes en `.opencode/agents/` y APM escribe `opencode.json`.
+
+**Con opencode**, ejecuta `/configure-models` antes de usar el flujo: quita el campo `skills:` de los agentes, que un proveedor `openai-compatible` puede rechazar.
 
 ### El token de GitHub
 
@@ -77,7 +80,7 @@ El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usand
 
 ## Uso
 
-Todo funciona ya por defecto al instalar el paquete con APM. Llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`) y pide lo que quieras con tus palabras:
+Tras la instalación, llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
 
 | Pide | Qué pasa |
 |---|---|
@@ -96,7 +99,9 @@ La prosa de issues, spec, pull requests y documentación del ciclo sigue la skil
 
 ### Permisos
 
-La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, tu agente pide permiso. En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, solo en proyectos en los que confíes:
+Según el agente y su configuración, la primera vez que el flujo lanza `bash`, `node`, `git` o `gh` te pide permiso. opencode 1.19.6, con su configuración por defecto, ejecuta los comandos sin preguntar, y el paquete no trae configuración de sandbox para opencode: úsalo solo en proyectos en los que confíes.
+
+En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, solo en proyectos en los que confíes:
 
 ```json
 { "permissions": { "allow": ["Bash(bash:*)", "Bash(node:*)", "Bash(git:*)", "Bash(gh:*)"] } }
@@ -104,19 +109,21 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, tu agente pide p
 
 ## Recomendado
 
-Tras instalar, estos pasos mejoran el resultado. Ninguno es necesario para que el flujo funcione.
+Tras instalar, estos pasos mejoran el resultado. El único necesario para que el flujo funcione es `/configure-models` en opencode.
 
 - **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. Repite el comando tras `apm install` y `apm update`. Ver [docs/MODELS.md](docs/MODELS.md).
 - **Context7:** `/setup-context7`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas, sin instalar nada. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
-- **RAG local:** `/setup-docs-rag`, para lo mismo sin que tus consultas salgan de tu ordenador; necesita Docker, Ollama y `uv`. Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
+- **RAG local:** `/setup-docs-rag`, para lo mismo sin que tus consultas salgan de tu ordenador; necesita Docker, Ollama y `uv` (en Windows con opencode, también `bash`: WSL o Git Bash). Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
 - **Docker:** la skill `docker-best-practices`, para que el `Dockerfile` y el `docker-compose.yml` fijen versiones y se comprueben antes de la pull request. Ver [docs/DOCKER.md](docs/DOCKER.md).
 - **Compliance:** `/setup-compliance`, para tener los documentos del AI Act y el RGPD del proyecto. Ver [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
-**Opcional:** los avisos de PR en Discord están apagados por defecto; configúralos solo si los quieres. Ver [docs/DISCORD-PR-NOTIFICATIONS.md](docs/DISCORD-PR-NOTIFICATIONS.md).
+En opencode 2.x, reinicia opencode después de `/setup-context7` o `/setup-docs-rag` para que cargue el MCP.
+
+**Opcional:** los avisos de PR en Discord están apagados por defecto. `/setup-discord-notifications` los activa y necesita un token con permiso de administración sobre el repositorio. Ver [docs/DISCORD-PR-NOTIFICATIONS.md](docs/DISCORD-PR-NOTIFICATIONS.md).
 
 ## Actualizar y desinstalar
 
-- **Actualizar:** `apm update` y haz commit de `apm.yml` y `apm.lock.yaml`.
+- **Actualizar:** `apm update` y haz commit de `apm.yml` y `apm.lock.yaml`. En opencode, ejecuta después `/configure-models`.
 - **Desinstalar:** `apm uninstall venturars/delivery-workflow`. El `.env` es tuyo: bórralo o déjalo.
 
 ## Más información
