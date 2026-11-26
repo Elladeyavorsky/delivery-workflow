@@ -116,6 +116,8 @@ check "el workflow no es reutilizable ni acepta otro repositorio" \
   bash -c '! grep -Eq "workflow_call|inputs:" "$1"' _ "$workflow"
 check "el workflow usa self-release.py y no el actualizador antiguo" \
   bash -c 'grep -Fq ".github/scripts/self-release.py" "$1" && ! grep -Eq "update-apm-dependency\.sh|scripts/release-" "$1"' _ "$workflow"
+check "el workflow usa latest y no select para elegir la release" \
+  bash -c 'grep -Fq "self-release.py latest" "$1" && ! grep -Fq "self-release.py select" "$1"' _ "$workflow"
 check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \
@@ -154,11 +156,7 @@ check "una release sin opencode omite ese target y no falla" \
 check "el workflow actualiza cada target sin interacción" \
   bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force'\''' _ "$apm_update_commands"
 
-selector=$(awk '
-  /tag=\$\(jq -r / { active=1; next }
-  active && /<<<"\$releases"\)/ { exit }
-  active { sub(/^[[:space:]]+/, ""); print }
-' "$workflow")
+self_release="${package}/.github/scripts/self-release.py"
 
 pagination_call=$(awk '
   /releases=\$\(gh api/ { active=1 }
@@ -170,7 +168,7 @@ check "el workflow pagina y agrupa todas las páginas de GitHub Releases" \
     grep -Fq -- "--slurp" <<<"$1" &&
     grep -Fq "releases?per_page=100" <<<"$1"' _ "$pagination_call"
 check "el selector del workflow no consulta publishedAt" \
-  bash -c '! grep -Eq "publishedAt|published_at" <<<"$1"' _ "$selector"
+  bash -c '! grep -Eq "publishedAt|published_at" "$1"' _ "$workflow"
 
 release_step="${work}/release-step.sh"
 awk '
@@ -192,7 +190,7 @@ cat >"$releases_out_of_order" <<'JSON'
 JSON
 
 select_tag() {
-  jq -r "$selector" "$1"
+  python3 "$self_release" latest <"$1"
 }
 selects_as() {
   local expected=$1
@@ -351,7 +349,7 @@ run_real_release_step() {
     GH_RESPONSE_FILE="$releases_paged" \
     DEPENDENCY_REPO=owner/selected \
     GITHUB_OUTPUT="$workflow_output" \
-    bash "$release_step" >"$workflow_log" 2>&1
+    bash -c "cd '$package' && bash '$release_step'" >"$workflow_log" 2>&1
 }
 check "el paso real del workflow se ejecuta con el gh simulado" run_real_release_step
 check "el mock recibe api --paginate --slurp, el endpoint exacto y ningún límite" \
