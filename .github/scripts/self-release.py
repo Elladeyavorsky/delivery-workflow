@@ -307,6 +307,16 @@ def command_latest(args):
     print(tags[0])
 
 
+def command_nested(args):
+    require_repo(args.repo)
+    if not TAG_RE.fullmatch(args.ref):
+        raise SystemExit("La release no tiene un tag vX.Y.Z válido.")
+    text = manifest_text(args.repo, args.ref, args.manifests)
+    pin = self_pin(text.splitlines(keepends=True), args.repo)
+    if pin:
+        print(pin)
+
+
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -335,6 +345,12 @@ def main():
 
     latest = sub.add_parser("latest")
     latest.set_defaults(func=command_latest)
+
+    nested = sub.add_parser("nested")
+    nested.add_argument("repo")
+    nested.add_argument("ref")
+    nested.add_argument("--manifests")
+    nested.set_defaults(func=command_nested)
 
     args = parser.parse_args()
     args.func(args)
