@@ -22,7 +22,7 @@ Orden: mapa → vecinos → clasificar (2.3) → ubicar → de dentro hacia fuer
 
 - **R-AGT-01 (INV)** — Antes de crear o modificar archivos, el agente DEBE leer el mapa de capas del proyecto. Si no existe, DEBE inferirlo del árbol existente (sección 3.2), dejar constancia de la inferencia y, si el flujo es interactivo, confirmarla antes de generar código.
 - **R-AGT-02 (INV)** — El agente NO DEBE mover, renombrar ni reorganizar archivos o carpetas existentes, ni crear una estructura paralela a la del proyecto, salvo que se le pida de forma explícita.
-- **R-AGT-03 (DEF)** — Todo archivo nuevo DEBE ubicarse donde el mapa de capas indique para su capa y DEBE imitar a los archivos vecinos de esa capa: convención de nombres, mayúsculas y minúsculas, extensión, forma de exportar y ubicación de las pruebas.
+- **R-AGT-03 (DEF)** — Todo archivo nuevo DEBE ubicarse donde el mapa de capas indique para su capa y DEBE imitar a los archivos vecinos de esa capa: convención de nombres, mayúsculas y minúsculas, extensión, forma de exportar y ubicación de las pruebas. Imita la forma, no los incumplimientos de reglas que tengan.
 - **R-AGT-04 (DEF)** — El agente NO DEBE añadir frameworks ni librerías nuevos para cumplir esta guía cuando el proyecto ya cubre esa necesidad (validación, inyección de dependencias, acceso a datos, logs). Si falta una capacidad, DEBE proponerla antes de añadirla.
 - **R-AGT-05 (INV)** — Si una petición obliga a incumplir una regla DEBE, el agente DEBE señalarlo y proponer una alternativa antes de generar el código.
 - **R-AGT-06 (CONV)** — Al revisar código, el agente DEBE citar las reglas incumplidas por su identificador.
