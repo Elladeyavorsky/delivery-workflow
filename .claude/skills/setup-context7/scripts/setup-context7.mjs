@@ -36,6 +36,21 @@ export const CHANNELS = [SERVER_NAME, DOCS_RAG_SERVER];
 // fuera del repositorio. projectConfigFile es donde lo escribían versiones anteriores: solo se lee para avisar.
 // Cada herramienta nombra la variable de entorno a su manera (verificado en su documentación).
 export const TOOLS = {
+  opencode: {
+    name: "opencode",
+    agentsDir: ".opencode/agents",
+    // Config de usuario de opencode; XDG_CONFIG_HOME cambia su carpeta (ver userConfigPath).
+    configFile: ".config/opencode/opencode.json",
+    projectConfigFile: "opencode.json",
+    format: "opencode",
+    ruleFile: "AGENTS.md",
+    entry: (withKey) => ({
+      type: "remote",
+      url: SERVER_URL,
+      enabled: true,
+      ...(withKey ? { headers: { Authorization: `Bearer {env:${ENV_VAR}}` } } : {}),
+    }),
+  },
   cursor: {
     name: "Cursor",
     agentsDir: ".cursor/agents",
@@ -310,7 +325,10 @@ function readIfExists(path) {
   }
 }
 
-// --- Config JSON (Cursor y Claude Code) ---
+// --- Config JSON (opencode, Cursor y Claude Code) ---
+
+// Clave que agrupa los servidores MCP en cada formato JSON.
+export const serversKey = (format) => (format === "opencode" ? "mcp" : "mcpServers");
 
 function parseJsonFile(text, file) {
   if (text === null || text.trim() === "") return {};
@@ -327,25 +345,51 @@ function parseJsonFile(text, file) {
 }
 
 // Devuelve {text, result}. Solo cambia la clave del servidor; los demás MCP y claves quedan como estaban.
-export function setServerJson(text, entry, file = "mcp.json", name = SERVER_NAME) {
+export function setServerJson(text, entry, file = "mcp.json", name = SERVER_NAME, key = "mcpServers") {
   const data = parseJsonFile(text, file);
-  if (data.mcpServers !== undefined && (data.mcpServers === null || typeof data.mcpServers !== "object" || Array.isArray(data.mcpServers))) {
-    throw new SetupContext7Error(`${file}: «mcpServers» no es un objeto: no se toca.`, 3);
+  if (data[key] !== undefined && (data[key] === null || typeof data[key] !== "object" || Array.isArray(data[key]))) {
+    throw new SetupContext7Error(`${file}: «${key}» no es un objeto: no se toca.`, 3);
   }
-  const current = data.mcpServers?.[name];
+  const current = data[key]?.[name];
   if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) return { text, result: "igual" };
-  data.mcpServers = { ...(data.mcpServers ?? {}), [name]: entry };
+  data[key] = { ...(data[key] ?? {}), [name]: entry };
   return { text: `${JSON.stringify(data, null, 2)}\n`, result: "cambiado" };
 }
 
-export function removeServerJson(text, file = "mcp.json", name = SERVER_NAME) {
+export function removeServerJson(text, file = "mcp.json", name = SERVER_NAME, key = "mcpServers") {
   if (text === null) return { text: null, result: "ausente" };
   const data = parseJsonFile(text, file);
-  if (!data.mcpServers || typeof data.mcpServers !== "object" || !(name in data.mcpServers)) return { text, result: "igual" };
-  delete data.mcpServers[name];
-  if (Object.keys(data.mcpServers).length === 0) delete data.mcpServers;
+  if (!data[key] || typeof data[key] !== "object" || !(name in data[key])) return { text, result: "igual" };
+  delete data[key][name];
+  if (Object.keys(data[key]).length === 0) delete data[key];
   if (Object.keys(data).length === 0) return { text: "", result: "cambiado" };
   return { text: `${JSON.stringify(data, null, 2)}\n`, result: "cambiado" };
+}
+
+// --- opencode.jsonc: solo se lee ---
+
+// Quita los comentarios de un JSONC sin tocar lo que va dentro de las cadenas.
+const stripJsonComments = (text) => text.replace(/("(?:[^"\\]|\\.)*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g, (_, string) => string ?? "");
+
+// ¿Declara `name` el opencode.jsonc que hay junto a este opencode.json?
+export function jsoncDeclares(jsonPath, name) {
+  const text = readIfExists(`${jsonPath}c`);
+  return text !== null && new RegExp(`"${name}"\\s*:\\s*\\{`).test(stripJsonComments(text));
+}
+
+// Avisos para la persona: la skill no escribe en un .jsonc, y opencode lee los dos ficheros.
+export function jsoncNotes(jsonPath, file) {
+  return CHANNELS.filter((name) => jsoncDeclares(jsonPath, name)).map(
+    (name) => `${file}c declara ${name} y no se modifica. opencode lee ese fichero además de ${file}: revísalo y quítalo a mano.`,
+  );
+}
+
+// Ruta de la config de usuario. En opencode manda XDG_CONFIG_HOME cuando la carpeta personal es la real.
+export function userConfigPath(home, tool, env = process.env) {
+  if (tool === "opencode" && env.XDG_CONFIG_HOME && resolve(home) === resolve(homedir())) {
+    return join(env.XDG_CONFIG_HOME, "opencode", "opencode.json");
+  }
+  return join(home, TOOLS[tool].configFile);
 }
 
 // --- Config TOML (Codex) ---
@@ -477,7 +521,10 @@ export function hasRule(text) {
 // --- Estado actual ---
 
 // Ruta que se enseña a la persona: la config de usuario, relativa a su carpeta personal.
-export const displayPath = (tool) => `~/${TOOLS[tool].configFile}`;
+export function displayPath(tool, home = homedir()) {
+  const path = userConfigPath(home, tool);
+  return path === join(home, TOOLS[tool].configFile) ? `~/${TOOLS[tool].configFile}` : path;
+}
 
 // ¿Está el servidor `name` en este texto de config? {configured, withKey, invalid?}
 export function serverStateIn(text, format, name = SERVER_NAME) {
@@ -497,14 +544,14 @@ export function serverStateIn(text, format, name = SERVER_NAME) {
   } catch {
     return { configured: false, withKey: false, invalid: true };
   }
-  const entry = data?.mcpServers?.[name];
+  const entry = data?.[serversKey(format)]?.[name];
   return { configured: entry !== undefined, withKey: Boolean(entry?.headers) };
 }
 
 // Estado del servidor en la config de usuario de la herramienta.
 export function serverState(home, tool, name = SERVER_NAME) {
   const t = TOOLS[tool];
-  return serverStateIn(readIfExists(join(home, t.configFile)), t.format, name);
+  return serverStateIn(readIfExists(userConfigPath(home, tool)), t.format, name);
 }
 
 // ¿Está docs-rag registrado? En la config del proyecto o, de versiones anteriores, en la de usuario.
@@ -581,7 +628,7 @@ export const USAGE = [
   "  detect                 Dependencias del proyecto (sugeridas y descartadas) y canal de documentación de cada herramienta (JSON).",
   "  apply                  Registra el MCP de Context7 en la config de usuario de cada herramienta (quita docs-rag) y, con --libs, la regla del proyecto.",
   "  reset                  Quita el MCP de Context7 de la config de usuario y la regla del proyecto.",
-  "Opciones: --target cursor|claude|codex  --libs a,b,c  --with-key (añade la cabecera con la variable CONTEXT7_API_KEY)  --root RUTA  --home RUTA",
+  "Opciones: --target opencode|cursor|claude|codex  --libs a,b,c  --with-key (añade la cabecera con la variable CONTEXT7_API_KEY)  --root RUTA  --home RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -614,7 +661,7 @@ export function detectReport({ root, home = homedir(), tools, profiles = loadPro
       return {
         tool,
         name: t.name,
-        configFile: displayPath(tool),
+        configFile: displayPath(tool, home),
         ...serverState(home, tool),
         channel: channelOf(home, tool, root),
         legacyProjectConfig: legacyProjectConfig(root, tool) ? t.projectConfigFile : null,
@@ -627,7 +674,8 @@ export function detectReport({ root, home = homedir(), tools, profiles = loadPro
 
 // Quita el servidor `name` del archivo de config `path` y borra el archivo si se queda vacío. Devuelve {file, result}.
 export function removeServerFromFile(path, tool, file, name) {
-  const { text, result } = TOOLS[tool].format === "toml" ? removeServerToml(readIfExists(path), name) : removeServerJson(readIfExists(path), file, name);
+  const { format } = TOOLS[tool];
+  const { text, result } = format === "toml" ? removeServerToml(readIfExists(path), name) : removeServerJson(readIfExists(path), file, name, serversKey(format));
   if (result === "cambiado") {
     if (text === "") rmSync(path, { force: true });
     else writeAtomic(path, text);
@@ -639,11 +687,12 @@ export function removeServerFromFile(path, tool, file, name) {
 // El docs-rag de la config del proyecto lo quita applyAll: solo hay un canal de documentación.
 function applyConfig(home, tool, withKey) {
   const t = TOOLS[tool];
-  const file = displayPath(tool);
-  const path = join(home, t.configFile);
+  const file = displayPath(tool, home);
+  const path = userConfigPath(home, tool);
   const before = readIfExists(path);
-  const set = t.format === "toml" ? setServerToml(before, withKey) : setServerJson(before, t.entry(withKey), file);
-  const drop = t.format === "toml" ? removeServerToml(set.text, DOCS_RAG_SERVER) : removeServerJson(set.text, file, DOCS_RAG_SERVER);
+  const key = serversKey(t.format);
+  const set = t.format === "toml" ? setServerToml(before, withKey) : setServerJson(before, t.entry(withKey), file, SERVER_NAME, key);
+  const drop = t.format === "toml" ? removeServerToml(set.text, DOCS_RAG_SERVER) : removeServerJson(set.text, file, DOCS_RAG_SERVER, key);
   const changed = set.result === "cambiado" || drop.result === "cambiado";
   if (changed) writeAtomic(path, drop.text);
   return { file, result: changed ? "cambiado" : "igual", removed: drop.result === "cambiado" ? [DOCS_RAG_SERVER] : [] };
@@ -669,8 +718,12 @@ export function applyAll({ root, home = homedir(), tools, libs, withKey, key = {
     if (projectConfig.result === "cambiado") {
       notes.push(`Se ha quitado ${DOCS_RAG_SERVER} de ${projectConfig.file} del proyecto: el canal de documentación pasa a ser Context7. El índice sigue en .docs-rag/; si no lo vas a usar, bórralo con «setup-docs-rag.mjs reset --drop-index».`);
     }
+    if (t.format === "opencode") {
+      notes.push(...jsoncNotes(userConfigPath(home, tool), config.file), ...jsoncNotes(join(root, t.projectConfigFile), t.projectConfigFile));
+    }
     if (legacyProjectConfig(root, tool)) {
-      notes.push(`${t.projectConfigFile} del proyecto aún tiene context7 de una versión anterior. El MCP ya está en ${config.file}: quítalo del proyecto si nadie más del equipo lo usa.`);
+      const origin = t.format === "opencode" ? "" : " de una versión anterior";
+      notes.push(`${t.projectConfigFile} del proyecto aún tiene context7${origin}. El MCP ya está en ${config.file}: quítalo del proyecto si nadie más del equipo lo usa.`);
     }
     if (withKey) {
       notes.push(`La config usa la variable ${ENV_VAR}. El valor no se escribe en ningún archivo.`);
@@ -699,10 +752,11 @@ export function applyAll({ root, home = homedir(), tools, libs, withKey, key = {
 export function resetAll({ root, home = homedir(), tools }) {
   const results = tools.map((tool) => {
     const t = TOOLS[tool];
-    const config = removeServerFromFile(join(home, t.configFile), tool, displayPath(tool), SERVER_NAME);
-    return { tool, name: t.name, config, rule: null, notes: [] };
+    const config = removeServerFromFile(userConfigPath(home, tool), tool, displayPath(tool, home), SERVER_NAME);
+    const notes = t.format === "opencode" ? jsoncNotes(userConfigPath(home, tool), config.file) : [];
+    return { tool, name: t.name, config, rule: null, notes };
   });
-  // Cursor y Codex comparten AGENTS.md: el bloque solo se quita si ninguna herramienta que siga usando Context7 lo necesita.
+  // opencode, Cursor y Codex comparten AGENTS.md: el bloque solo se quita si ninguna herramienta que siga usando Context7 lo necesita.
   const stillUsing = toolsPresent(root).filter((tool) => !tools.includes(tool) && serverState(home, tool).configured);
   const needed = new Set(stillUsing.map((tool) => TOOLS[tool].ruleFile));
   for (const r of results) {
@@ -729,7 +783,7 @@ export async function run(argv) {
   const root = await resolveRoot(opts);
   const tools = selectTools(opts, root);
   if (tools.length === 0) {
-    throw new SetupContext7Error("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
+    throw new SetupContext7Error("No hay carpetas de agentes en este proyecto (.opencode/agents, .cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
   }
   const home = resolve(opts.home ?? homedir());
   if (opts.command === "detect") return JSON.stringify({ ...detectReport({ root, home, tools }), key: await keyState(root) }, null, 2);

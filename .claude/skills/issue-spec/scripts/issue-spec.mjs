@@ -187,7 +187,7 @@ function parseArgs(args) {
   const [command, number, ...rest] = args;
   if (!command || !/^\d+$/.test(number ?? "")) {
     throw new IssueSpecError(
-      "Uso: read N [--revision] [--section top|spec|plan|tasks] | top-hash N [--revision] | write N --expect-top H [--revision] [--spec F] [--plan F] [--tasks F] | tick N TASK-NN --expect-top H [--revision] | state N Borrador|Implementada|Fallida --expect-top H [--revision] | comment N F | reviews N | revision N F",
+      "Uso: can-edit N | read N [--revision] [--section top|spec|plan|tasks] | top-hash N [--revision] | write N --expect-top H [--revision] [--spec F] [--plan F] [--tasks F] | tick N TASK-NN --expect-top H [--revision] | state N Borrador|Implementada|Fallida --expect-top H [--revision] | comment N F | reviews N | revision N F",
       1,
     );
   }
@@ -221,7 +221,16 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
   const repo = options.repo ? ["--repo", options.repo] : [];
   const apiRepo = options.repo ? `repos/${options.repo}` : "repos/{owner}/{repo}";
   const readIssueBody = async () => JSON.parse(await call(["issue", "view", number, ...repo, "--json", "body"])).body ?? "";
-  const writeIssueBody = (body) => withTemporary(body, (path) => call(["issue", "edit", number, ...repo, "--body-file", path]));
+  const writeIssueBody = (body) =>
+    withTemporary(body, (path) => call(["issue", "edit", number, ...repo, "--body-file", path])).catch((error) => {
+      if (/permission|forbidden|403|Resource not accessible/i.test(String(error.message))) {
+        throw new IssueSpecError(
+          "No puedes editar el cuerpo de esta issue. Publica la spec con revision y sigue con --revision.",
+          6,
+        );
+      }
+      throw error;
+    });
   const listComments = async () => {
     const raw = await call(["api", `${apiRepo}/issues/${number}/comments`, "--paginate"]);
     const parsed = JSON.parse(raw || "[]");
@@ -247,6 +256,12 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
     if (options.section === "top") return parsed.top;
     if (!SECTIONS.includes(options.section)) throw new IssueSpecError("La sección tiene que ser top, spec, plan o tasks.", 1);
     return parsed.sections[options.section] ?? "";
+  }
+  if (command === "can-edit") {
+    const [owner, name] = options.repo ? options.repo.split("/") : ["{owner}", "{repo}"];
+    const query = "query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){issue(number:$n){viewerCanUpdate}}}";
+    const raw = await call(["api", "graphql", "-f", `query=${query}`, "-F", `owner=${owner}`, "-F", `name=${name}`, "-F", `n=${number}`]);
+    return JSON.parse(raw).data.repository.issue.viewerCanUpdate ? "yes" : "no";
   }
   if (command === "top-hash") return hashTop(parseBody((await source()).body).top);
   if (command === "write") {

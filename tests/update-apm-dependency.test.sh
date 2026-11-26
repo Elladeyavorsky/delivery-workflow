@@ -116,10 +116,10 @@ check "el workflow no es reutilizable ni acepta otro repositorio" \
   bash -c '! grep -Eq "workflow_call|inputs:" "$1"' _ "$workflow"
 check "el workflow usa self-release.py y no el actualizador antiguo" \
   bash -c 'grep -Fq ".github/scripts/self-release.py" "$1" && ! grep -Eq "update-apm-dependency\.sh|scripts/release-" "$1"' _ "$workflow"
-check "el workflow usa latest y no select para elegir la release" \
-  bash -c 'grep -Fq "self-release.py latest" "$1" && ! grep -Fq "self-release.py select" "$1"' _ "$workflow"
-check "el workflow omite apm update si la release depende de otra etiqueta" \
-  grep -Fq 'self-release.py nested "$DEPENDENCY_REPO" "$REF"' "$workflow"
+check "el workflow no pinnea este paquete a una etiqueta" \
+  bash -c '! grep -Fq "self-release.py set" "$1" && ! grep -Fq "self-release.py latest" "$1" && ! grep -Fq "apm update" "$1"' _ "$workflow"
+check "el workflow quita la autodependencia si existe" \
+  grep -Fq 'self-release.py align "$DEPENDENCY_REPO"' "$workflow"
 check "el job solo corre en venturars/delivery-workflow" \
   grep -Fq "if: github.repository == 'venturars/delivery-workflow'" "$workflow"
 check "la pull request va a staging" \
@@ -128,60 +128,15 @@ check "la pull request se abre en draft" \
   grep -Fq 'draft: true' "$workflow"
 check "el checkout es staging" \
   grep -Fq 'ref: staging' "$workflow"
-check "el instalador publica apm en el PATH de los pasos siguientes" \
-  grep -Fq 'echo "$HOME/.local/bin" >> "$GITHUB_PATH"' "$workflow"
 check "el horario es diario a las 08:17 UTC" \
   grep -Fq 'cron: "17 8 * * *"' "$workflow"
 check "el instalador de APM usa el token de Actions" \
   grep -Fq 'GITHUB_TOKEN: ${{ github.token }}' "$workflow"
 
-apm_update_commands=$(grep -E '^[[:space:]]*apm update ' "$workflow" | sed 's/^[[:space:]]*//')
-target_loop=$(awk '
-  /for TARGET in / { active=1 }
-  active { sub(/^[[:space:]]+/, ""); print }
-  active && /^done$/ { exit }
-' "$workflow")
-# Ejecuta el bucle real con un apm simulado y el apm.yml de release que se pida.
-targets_updated() {
-  local dir
-  dir=$(mktemp -d)
-  mkdir -p "$dir/apm_modules/venturars/delivery-workflow"
-  echo "$1" >"$dir/apm_modules/venturars/delivery-workflow/apm.yml"
-  (cd "$dir" && DEPENDENCY_REPO=venturars/delivery-workflow REF=v9.9.9 \
-    bash -euo pipefail -c "apm() { echo \"\$4\" >>targets; }; $target_loop" >/dev/null && tr '\n' ' ' <targets)
-  rm -rf "$dir"
-}
-check "una release que declara opencode actualiza los cuatro targets" \
-  test "$(targets_updated 'targets: [opencode, claude, cursor, codex]')" = "claude opencode cursor codex "
-check "una release sin opencode omite ese target y no falla" \
-  test "$(targets_updated 'targets: [claude, cursor, codex]')" = "claude cursor codex "
-check "el workflow actualiza cada target sin interacción" \
-  bash -c 'test "$1" = '\''apm update "$DEPENDENCY_REPO" --target "$TARGET" --yes --force'\''' _ "$apm_update_commands"
-
 self_release="${package}/.github/scripts/self-release.py"
 
-pagination_call=$(awk '
-  /releases=\$\(gh api/ { active=1 }
-  active { print }
-  active && /\)/ { exit }
-' "$workflow")
-check "el workflow pagina y agrupa todas las páginas de GitHub Releases" \
-  bash -c 'grep -Fq -- "--paginate" <<<"$1" &&
-    grep -Fq -- "--slurp" <<<"$1" &&
-    grep -Fq "releases?per_page=100" <<<"$1"' _ "$pagination_call"
-check "el selector del workflow no consulta publishedAt" \
-  bash -c '! grep -Eq "publishedAt|published_at" "$1"' _ "$workflow"
-
-release_step="${work}/release-step.sh"
-awk '
-  /id: release/ { in_step=1 }
-  in_step && /run: \|/ { in_run=1; next }
-  in_run && /^          / { sub(/^          /, ""); print; next }
-  in_run && /^[[:space:]]*$/ { print ""; next }
-  in_run { exit }
-' "$workflow" >"$release_step"
-check "extrae el bloque run real del paso de selección del workflow" \
-  test -s "$release_step"
+check "el selector de latest no consulta publishedAt" \
+  bash -c '! grep -Eq "publishedAt|published_at" "$1"' _ "$self_release"
 
 releases_out_of_order="${work}/releases-out-of-order.json"
 cat >"$releases_out_of_order" <<'JSON'
@@ -316,48 +271,6 @@ check "el fixture tiene 11 páginas, 1000 releases válidas en las primeras diez
   has_multiple_pages_and_over_1000_releases
 check "el selector aplana las páginas y elige el máximo global de la última" \
   selects_as v9007199254740993.0.0 "$releases_paged"
-
-gh_mock_bin="${work}/gh-mock-bin"
-mkdir -p "$gh_mock_bin"
-cat >"${gh_mock_bin}/gh" <<'MOCK'
-#!/usr/bin/env bash
-set -u
-printf '%s\n' "$@" >"$GH_ARGS_FILE"
-if [[ $# -ne 4 ||
-      "$1" != api ||
-      "$2" != --paginate ||
-      "$3" != --slurp ||
-      "$4" != "repos/$DEPENDENCY_REPO/releases?per_page=100" ]]; then
-  echo "gh recibió argumentos inesperados." >&2
-  exit 64
-fi
-cat "$GH_RESPONSE_FILE"
-MOCK
-chmod +x "${gh_mock_bin}/gh"
-
-gh_args="${work}/gh-arguments.txt"
-gh_expected_args="${work}/gh-expected-arguments.txt"
-printf '%s\n' \
-  api \
-  --paginate \
-  --slurp \
-  'repos/owner/selected/releases?per_page=100' >"$gh_expected_args"
-workflow_output="${work}/github-output"
-workflow_log="${work}/release-step.log"
-run_real_release_step() {
-  env \
-    PATH="${gh_mock_bin}:$PATH" \
-    GH_ARGS_FILE="$gh_args" \
-    GH_RESPONSE_FILE="$releases_paged" \
-    DEPENDENCY_REPO=owner/selected \
-    GITHUB_OUTPUT="$workflow_output" \
-    bash -c "cd '$package' && bash '$release_step'" >"$workflow_log" 2>&1
-}
-check "el paso real del workflow se ejecuta con el gh simulado" run_real_release_step
-check "el mock recibe api --paginate --slurp, el endpoint exacto y ningún límite" \
-  cmp -s "$gh_expected_args" "$gh_args"
-check "el paso real del workflow selecciona el máximo estable de la página 11" \
-  grep -Fxq 'ref=v9007199254740993.0.0' "$workflow_output"
 
 if (( failures > 0 )); then
   echo "${failures} comprobación(es) fallaron."

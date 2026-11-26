@@ -17,7 +17,7 @@ description: "Guía de protección de datos (RGPD y LOPDGDD) para la spec, la do
 - **Activación:** Solo si `docs/CONSTITUTION.md` del proyecto tiene la sección `## Datos personales`. La plantilla de esa sección está en `<carpeta de esta skill>/assets/datos-personales.md`.
 - **Límites:** La guía no añade condiciones de parada. El ciclo sigue parando solo por un hueco, un secreto o la ronda 9 fallida. Nunca deduce el rol en el tratamiento: lo escribe la persona responsable del proyecto.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/data-protection-guideline`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/data-protection-guideline`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 

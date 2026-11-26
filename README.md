@@ -265,19 +265,20 @@ La primera vez que el flujo lanza `bash`, `node`, `git` o `gh`, la herramienta p
 
 ## Trabajar en este repositorio
 
-Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así tienes los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) y trabajas en este repositorio con la misma herramienta que lo usa.
+Este repositorio **es** el paquete. Las skills y los agentes viven en `.apm/`. No te listes a ti mismo en `dependencies.apm` ni instales `venturars/delivery-workflow#v…` aquí: eso es para los consumidores (por ejemplo aTempo).
 
-1. Clona el repositorio y entra en su raíz.
-2. Instala el paquete para tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
+1. Clona el repositorio y entra en su raíz. Ya tienes `.apm/` de la rama.
+2. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
+3. Despliega el paquete **local** a tu herramienta (`claude`, `cursor`, `codex` o varias separadas por comas):
 
    ```bash
-   apm install --target claude
+   apm install --target cursor
    ```
 
-3. Crea el `.env` con tu token, como explica [El token de GitHub](#el-token-de-github).
-4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`) para abrir la issue, la rama y la pull request de tu cambio.
+   Eso copia `.apm/` a `.cursor/`, `.claude/` o `.agents/`. No descarga una etiqueta de GitHub.
+4. Abre tu herramienta en la raíz y llama a `/delivery-workflow` (en Codex, `$delivery-workflow`).
 
-`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta. No los edites a mano. Las normas del cambio (issues, ramas, commits y pull requests) están en [CONTRIBUTING.md](CONTRIBUTING.md).
+Los cambios de skills se hacen en `.apm/`. Vuelve a lanzar `apm install --target …` para regenerar las copias de la herramienta. Las normas del cambio están en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Más información
 
