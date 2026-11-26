@@ -81,14 +81,42 @@ token_error=$(mktemp)
 forge_error=$(mktemp)
 trap 'rm -f "$token_error" "$forge_error"' EXIT
 
-# El forge decide qué token y qué cuenta se comprueban.
+# Sin Node: dice si el repositorio es de GitLab, por GIT_WORKFLOW_FORGE (entorno o .env) o por origin.
+looks_like_gitlab() {
+  local declared=${GIT_WORKFLOW_FORGE:-} top common file line
+  if [[ -z "$declared" ]] && top=$(git rev-parse --show-toplevel 2>/dev/null); then
+    file="${top}/.env"
+    if [[ ! -f "$file" ]]; then
+      common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || common=""
+      file="$(dirname "$common")/.env"
+    fi
+    if [[ -f "$file" ]]; then
+      line=$(grep -E '^[[:space:]]*(export[[:space:]]+)?GIT_WORKFLOW_FORGE[[:space:]]*=' "$file" | tail -n 1) || line=""
+      declared=$(sed -E "s/^[^=]*=//; s/[[:space:]]+#.*$//; s/[\"'[:space:]]//g" <<<"$line")
+    fi
+  fi
+  if [[ -n "$declared" ]]; then
+    grep -qix 'gitlab' <<<"$declared"
+    return
+  fi
+  git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'
+}
+
+# El forge decide qué token y qué cuenta se comprueban. Con "ninguno" no se comprueba ninguno.
 forge=github
 if command -v node >/dev/null 2>&1; then
-  if ! forge=$(node "$gitlab" forge 2>"$forge_error"); then
+  forge_status=0
+  forge=$(node "$gitlab" forge 2>"$forge_error") || forge_status=$?
+  if [[ $forge_status -eq 3 ]]; then
+    # Falta GITHUB_TOKEN en un host propio: se dice cómo declarar GitLab y se sigue como en GitHub.
     echo "Forge: $(cat "$forge_error")"
     forge=github
+  elif [[ $forge_status -ne 0 || ( "$forge" != github && "$forge" != gitlab ) ]]; then
+    reason=$(cat "$forge_error")
+    echo "Forge: ${reason:-no se pudo comprobar.}"
+    forge=ninguno
   fi
-elif [[ "${GIT_WORKFLOW_FORGE:-}" == gitlab ]] || git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'; then
+elif looks_like_gitlab; then
   forge=gitlab
 fi
 
@@ -98,7 +126,7 @@ if [[ "$forge" == gitlab ]]; then
   else
     echo "Forge: GitLab. No se puede comprobar el token ni la cuenta sin Node."
   fi
-else
+elif [[ "$forge" == github ]]; then
   source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
   if load_github_token 2>"$token_error"; then
     token=yes

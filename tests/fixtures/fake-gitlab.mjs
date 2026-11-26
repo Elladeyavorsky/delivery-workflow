@@ -43,6 +43,7 @@ const requests = state.mergeRequests ?? {};
 if (url.pathname === "/api/graphql") {
   if (state.noReviewState) reply(200, { errors: [{ message: "Field 'reviewState' doesn't exist" }] });
   if (body.query.startsWith("mutation")) {
+    if (state.denyRereview) reply(403, { message: "403 Forbidden" });
     const { iid, userId } = body.variables.input;
     const user = requests[iid].reviewers.find((item) => `gid://gitlab/User/${item.id}` === userId);
     user.state = "UNREVIEWED";

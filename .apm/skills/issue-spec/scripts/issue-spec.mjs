@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { realpathSync } from "node:fs";
 import {
   GitLabError, LIMITS, canEditIssue, checkForge, connect, createNote, getIssue, listNotes, listOpenMergeRequests,
   reviewSummary, updateIssue, updateNote,
@@ -393,7 +394,8 @@ async function execute(args, { run: injected, gitlab, today = () => new Date().t
   throw new IssueSpecError(`Comando desconocido: ${command}.`, 1);
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+// Node da en import.meta.url la ruta real: la de la llamada puede pasar por un enlace simbólico.
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
   run(process.argv.slice(2))
     .then((output) => console.log(output))
     .catch((error) => {

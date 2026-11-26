@@ -25,12 +25,38 @@ if [[ ! -f "$body" || ! -r "$body" ]]; then
   exit 1
 fi
 
+# Sin Node: dice si el repositorio es de GitLab, por GIT_WORKFLOW_FORGE (entorno o .env) o por origin.
+looks_like_gitlab() {
+  local declared=${GIT_WORKFLOW_FORGE:-} top common file line
+  if [[ -z "$declared" ]] && top=$(git rev-parse --show-toplevel 2>/dev/null); then
+    file="${top}/.env"
+    if [[ ! -f "$file" ]]; then
+      common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || common=""
+      file="$(dirname "$common")/.env"
+    fi
+    if [[ -f "$file" ]]; then
+      line=$(grep -E '^[[:space:]]*(export[[:space:]]+)?GIT_WORKFLOW_FORGE[[:space:]]*=' "$file" | tail -n 1) || line=""
+      declared=$(sed -E "s/^[^=]*=//; s/[[:space:]]+#.*$//; s/[\"'[:space:]]//g" <<<"$line")
+    fi
+  fi
+  if [[ -n "$declared" ]]; then
+    grep -qix 'gitlab' <<<"$declared"
+    return
+  fi
+  git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'
+}
+
 if command -v node >/dev/null 2>&1; then
   forge=$(node "${here}/gitlab.mjs" forge) || exit $?
-  if [[ "$forge" == gitlab ]]; then
-    exec node "${here}/gitlab.mjs" issue create "$title" "$body" "$type"
-  fi
-elif git remote get-url origin 2>/dev/null | grep -q 'gitlab\.com'; then
+  case "$forge" in
+    github) ;;
+    gitlab) exec node "${here}/gitlab.mjs" issue create "$title" "$body" "$type" ;;
+    *)
+      echo "No se pudo saber si el forge es GitHub o GitLab." >&2
+      exit 1
+      ;;
+  esac
+elif looks_like_gitlab; then
   echo "Node no está instalado. Hace falta Node 20 o superior para GitLab." >&2
   exit 1
 fi

@@ -5,6 +5,7 @@ import { readFile, writeFile, open, unlink, rename } from "node:fs/promises";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { realpathSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { checkForge, connect, whoami } from "./gitlab.mjs";
 
@@ -26,7 +27,10 @@ const FORGES = {
   },
   gitlab: {
     name: "GitLab",
-    login: /^[a-z\d_](?:[a-z\d_.-]{0,253}[a-z\d_])?$/i,
+    // La forma que valida GitLab: puede empezar por punto y terminar en guion.
+    login: /^(?:[a-z\d_.][a-z\d_.-]{0,253}[a-z\d_-]|[a-z\d_])$/i,
+    // Una cuenta antigua con otra forma se deja fuera del directorio.
+    skipInvalid: true,
     // Un proyecto puede estar en subgrupos.
     repository: /^[\w.-]+(?:\/[\w.-]+)+$/,
     host: /^[a-z\d.-]+(?::\d+)?$/i,
@@ -85,8 +89,8 @@ function projectBody(endpoint, body, forge) {
     if (!item || !isLogin(login) || (item.name !== null && typeof item.name !== "string")) throw new Error(`Perfil de ${forge.name} inválido.`);
     return { login, name: item.name };
   }
-  if (!Array.isArray(body) || body.some((item) => !isLogin(forge.user(item)))) throw new Error(`Directorio de ${forge.name} inválido.`);
-  return body.map((item) => ({ login: forge.user(item) }));
+  if (!Array.isArray(body) || (!forge.skipInvalid && body.some((item) => !isLogin(forge.user(item))))) throw new Error(`Directorio de ${forge.name} inválido.`);
+  return body.filter((item) => isLogin(forge.user(item))).map((item) => ({ login: forge.user(item) }));
 }
 
 function validCache(cache, now, forge) {
@@ -272,6 +276,7 @@ async function gitlabMain() {
   console.log(JSON.stringify(result));
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+// Node da en import.meta.url la ruta real: la de la llamada puede pasar por un enlace simbólico.
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
   main().catch((error) => { console.error(error.message); process.exitCode = 1; });
 }

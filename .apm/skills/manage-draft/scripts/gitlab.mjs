@@ -3,7 +3,7 @@
 // Elige el forge, lee GITLAB_TOKEN del .env del proyecto y llama a la API de GitLab con curl.
 // curl respeta el proxy del sandbox. El token entra por stdin: no aparece en los argumentos ni en ficheros.
 import { execFile } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
@@ -312,17 +312,57 @@ export async function whoami(client) {
   return { id: data.id, username: data.username };
 }
 
-// GitLab ejecuta como comando una línea que empieza por /nombre fuera de un bloque de código.
+// Los comandos y sustituciones que declara GitLab en lib/gitlab/quick_actions y su carpeta ee, a 2026-11-26.
+const QUICK_ACTIONS = new Set((
+  "add_child add_contacts add_email approve assign assign_reviewer award blocked_by blocks board_move " +
+  "checkin_reminder child_epic clear_health_status clear_weight clone close confidential convert_to_ticket " +
+  "copy_metadata create_merge_request done draft due duplicate epic estimate estimate_time health_status " +
+  "internal_note iteration label labels link lock merge milestone move page parent_epic promote promote_to " +
+  "promote_to_incident publish q react ready reassign reassign_reviewer rebase relabel relate remove_child " +
+  "remove_child_epic remove_contacts remove_due_date remove_email remove_epic remove_estimate remove_iteration " +
+  "remove_label remove_milestone remove_parent remove_parent_epic remove_reviewer remove_time_estimate " +
+  "remove_time_spent remove_zoom reopen request_changes request_review reviewer run_pipeline set_parent severity " +
+  "shrug spend spend_time spent status submit_review subscribe tableflip tag target_branch timeline title todo " +
+  "type unapprove unassign unassign_reviewer unlabel unlink unlock unsubscribe weight zoom"
+).split(" "));
+
+// El cierre de un comentario HTML que empieza en esa línea, o -1 si no se cierra.
+function commentEnd(lines, start) {
+  if (!/^ {0,3}<!--/.test(lines[start])) return -1;
+  for (let i = start; i < lines.length; i++) if (lines[i].includes("-->")) return i;
+  return -1;
+}
+
+// La primera línea que GitLab ejecutaría: un comando al principio, fuera de un bloque de código y de un
+// comentario HTML. Ante la duda cuenta como comando.
 export function findQuickAction(text) {
+  const lines = String(text ?? "").replace(/\r/g, "").split("\n");
   let fence = null;
-  for (const line of String(text ?? "").replace(/\r/g, "").split("\n")) {
-    const mark = line.match(/^ {0,3}(`{3,}|~{3,})/)?.[1];
-    if (mark && !fence) fence = mark;
-    else if (mark && mark[0] === fence[0] && mark.length >= fence.length && line.trim() === mark) fence = null;
-    else if (!fence) {
-      const command = line.match(/^\/[a-z_]+(?=\s|$)/i);
-      if (command) return command[0];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!fence) {
+      const end = commentEnd(lines, i);
+      if (end >= 0) {
+        i = end;
+        continue;
+      }
+      // Tras las comillas invertidas de apertura no puede haber otra: sería código en línea.
+      const open = line.match(/^( {0,3})(`{3,}(?=[^`]*$)|~{3,})/);
+      if (open) {
+        fence = { mark: open[2], indented: open[1].length > 0 };
+        continue;
+      }
+    } else {
+      const close = line.match(/^ {0,3}(`{3,}|~{3,})[ \t]*$/)?.[1];
+      if (close && close[0] === fence.mark[0] && close.length >= fence.mark.length) {
+        fence = null;
+        continue;
+      }
+      // Un bloque sangrado puede estar dentro de una lista, y una línea sin sangrar la termina.
+      if (!fence.indented) continue;
     }
+    const command = line.match(/^\/([a-z_]+)(?=\s|$)/i);
+    if (command && QUICK_ACTIONS.has(command[1].toLowerCase())) return command[0];
   }
   return null;
 }
@@ -560,14 +600,20 @@ export async function isMember(client, id) {
   }
 }
 
+// Devuelve el problema de volver a pedir la revisión, o null.
 async function requestAgain(client, number, user) {
   const query = "mutation($input: MergeRequestReviewerRereviewInput!) { mergeRequestReviewerRereview(input: $input) { errors } }";
   const input = { projectPath: client.project, iid: String(number), userId: `gid://gitlab/User/${user.id}` };
+  const data = await client.graphql(query, { input });
+  return data?.mergeRequestReviewerRereview?.errors?.join(" ") || null;
+}
+
+// El mensaje de un fallo de GitLab, para anotarlo y seguir. Otro error es un fallo del script.
+async function problemOf(action) {
   try {
-    const data = await client.graphql(query, { input });
-    return data?.mergeRequestReviewerRereview?.errors?.join(" ") || null;
+    return (await action()) ?? null;
   } catch (error) {
-    if (error.graphql) return error.message;
+    if (error instanceof GitLabError) return error.message;
     throw error;
   }
 }
@@ -582,29 +628,43 @@ export async function requestReview(client, number, usernames) {
   const pending = new Map();
   const wanted = [];
   for (const name of names) {
-    const user = await findUser(client, name);
-    if (await isMember(client, user.id)) wanted.push(user);
-    else pending.set(user.username, "no es miembro del proyecto");
+    const problem = await problemOf(async () => {
+      const user = await findUser(client, name);
+      if (!(await isMember(client, user.id))) return "no es miembro del proyecto";
+      wanted.push(user);
+    });
+    if (problem) pending.set(name, problem);
   }
   const current = (mergeRequest.reviewers ?? []).map((person) => person.id);
   const added = wanted.filter((user) => !current.includes(user.id));
   if (added.length) {
-    const updated = await updateMergeRequest(client, number, { reviewer_ids: [...current, ...added.map((user) => user.id)] });
-    const kept = (updated.reviewers ?? []).map((person) => person.id);
-    if (current.some((id) => !kept.includes(id))) await updateMergeRequest(client, number, { reviewer_ids: current });
+    const problem = await problemOf(async () => {
+      const updated = await updateMergeRequest(client, number, { reviewer_ids: [...current, ...added.map((user) => user.id)] });
+      const kept = (updated.reviewers ?? []).map((person) => person.id);
+      if (current.some((id) => !kept.includes(id))) await updateMergeRequest(client, number, { reviewer_ids: current });
+    });
+    if (problem) for (const user of added) pending.set(user.username, problem);
   }
   const again = wanted.filter((user) => current.includes(user.id));
   if (again.length) {
-    const states = await reviewStates(client, number);
+    let states = null;
+    await problemOf(async () => {
+      states = await reviewStates(client, number);
+    });
     for (const user of again) {
       if (states?.get(user.username) === "UNREVIEWED") continue;
-      const problem = await requestAgain(client, number, user);
+      const problem = await problemOf(() => requestAgain(client, number, user));
       if (problem) pending.set(user.username, `no se pudo volver a pedir: ${problem}`);
     }
   }
-  const final = ((await getMergeRequest(client, number)).reviewers ?? []).map((person) => person.id);
+  let final = [];
+  const unread = await problemOf(async () => {
+    final = ((await getMergeRequest(client, number)).reviewers ?? []).map((person) => person.id);
+  });
   for (const user of wanted) {
-    if (!final.includes(user.id)) pending.set(user.username, "no figura como revisor: puede que el plan admita uno solo o que la cuenta no pueda asignarlo");
+    if (pending.has(user.username)) continue;
+    if (unread) pending.set(user.username, `no se pudo confirmar: ${unread}`);
+    else if (!final.includes(user.id)) pending.set(user.username, "no figura como revisor: puede que el plan admita uno solo o que la cuenta no pueda asignarlo");
   }
   const done = wanted.map((user) => user.username).filter((name) => !pending.has(name));
   const lines = [];
@@ -749,7 +809,8 @@ export async function run(args, options = {}) {
   throw new GitLabError(USAGE);
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+// Node da en import.meta.url la ruta real: la de la llamada puede pasar por un enlace simbólico.
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
   run(process.argv.slice(2))
     .then((output) => console.log(output))
     .catch((error) => {
