@@ -1,11 +1,11 @@
 # delivery-workflow
 
-Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una tarea de GitHub o GitLab desde la idea hasta la revisión, sin salir del chat del agente.
+Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una tarea desde la idea hasta la revisión en el forge de tu proyecto, sin salir del chat del agente.
 
 ## Qué hace
 
 1. **Piensa la tarea contigo** con preguntas, cada una con su respuesta recomendada.
-2. **La deja escrita en GitHub o GitLab:** issue con etiqueta, rama, commit `chore: open #N` y pull request en draft.
+2. **La deja escrita en el forge:** issue con etiqueta, rama, commit `chore: open #N` y pull request en draft.
 3. **Escribe la spec, el plan y las tasks** en la propia issue.
 4. **La implementa en hasta nueve rondas** de código, tests y revisión de la documentación. Cada ronda deja un comentario en la issue.
 5. **La cierra** con el commit final, el push y la petición de revisión.
@@ -17,10 +17,10 @@ Se para cuando falta un dato necesario para la spec o para identificar a los rev
 
 ## Requisitos
 
-- Un proyecto con git y un remoto `origin` en GitHub o GitLab en el que puedas escribir.
+- Un proyecto con git y un remoto `origin` en un forge compatible, GitHub o GitLab, en el que puedas escribir.
 - APM y Node 24 o superior. Además, en GitHub, [GitHub CLI](https://cli.github.com) (`gh`), que no necesita sesión; en GitLab, `curl`.
 - Uno de estos agentes: opencode (1.x o 2.x), Claude Code, Cursor o Codex.
-- Un `.env` en la raíz del proyecto con tu token de [GitHub](#el-token-de-github) o de [GitLab](#gitlab). Sin eso, el flujo no arranca.
+- Un `.env` en la raíz del proyecto con el token de tu forge ([GitHub](#el-token-de-github) o [GitLab](#gitlab)). Sin eso, el flujo no arranca.
 
 ## Instalación
 
