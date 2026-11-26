@@ -13,6 +13,19 @@ import { promisify } from "node:util";
 const exec = promisify(execFile);
 const FORGES = ["github", "gitlab"];
 const MAX_PAGES = 1000;
+const PLANNER = 15;
+export const LIMITS = { issue: 1048576, comment: 1000000 };
+// Los mismos colores y descripciones que ensure-label.sh usa en GitHub.
+const LABELS = {
+  feat: ["#a2eeef", "Nueva funcionalidad"],
+  fix: ["#d73a4a", "Corrige un fallo"],
+  docs: ["#0075ca", "Documentación"],
+  refactor: ["#fbca04", "Cambia el código sin cambiar el comportamiento"],
+  test: ["#0e8a16", "Tests"],
+  chore: ["#cfd3d7", "Mantenimiento"],
+  knowledge: ["#7057ff", "Conocimiento del equipo"],
+};
+const USAGE = "Uso: gitlab.mjs forge | whoami | label ensure TIPO | issue create TITULO CUERPO TIPO | issue state N | issue close N [completed|not planned] | issue reopen N | issue assign-me N";
 
 export class GitLabError extends Error {
   constructor(message, { code = 1, status } = {}) {
@@ -74,14 +87,14 @@ async function setting(name, { root, env }) {
 
 export async function readToken(root) {
   const file = await readEnvFile(root);
-  if (!file) throw new GitLabError("Falta el fichero .env en la raíz del proyecto con GITLAB_TOKEN=tu_token.");
+  if (!file) throw new GitLabError("Falta el fichero .env en la raíz del proyecto con GITLAB_TOKEN=tu_token.", { code: 3 });
   if ((await git(file.base, "check-ignore", "-q", ".env")) === null) {
-    throw new GitLabError("El .env no está en .gitignore. Añádelo antes de seguir: el token no puede subirse.");
+    throw new GitLabError("El .env no está en .gitignore. Añádelo antes de seguir: el token no puede subirse.", { code: 3 });
   }
   const token = envValue(file.text, "GITLAB_TOKEN");
   // Las comillas, las barras invertidas y los caracteres de control romperían la configuración que lee curl.
   if (!token || !/^[\x21-\x7e]+$/.test(token) || /["\\]/.test(token)) {
-    throw new GitLabError("El .env no tiene un GITLAB_TOKEN válido.");
+    throw new GitLabError("El .env no tiene un GITLAB_TOKEN válido.", { code: 3 });
   }
   return token;
 }
@@ -150,6 +163,7 @@ export async function checkForge(options = {}) {
     if (!file || !envValue(file.text, "GITHUB_TOKEN")) {
       throw new GitLabError(
         `Falta GITHUB_TOKEN en el .env y ${found.host} se trata como GitHub. Si tu forge es GitLab, declara GIT_WORKFLOW_FORGE=gitlab.`,
+        { code: 3 },
       );
     }
   }
@@ -273,13 +287,14 @@ export function createClient({ url, project, token }, { run = runCurl } = {}) {
 }
 
 // El cliente de la API para el proyecto de origin. El token solo se lee cuando el forge es GitLab.
-export async function connect({ cwd, env, run } = {}) {
+export async function connect({ cwd, env, run, project } = {}) {
   const found = await resolveForge({ cwd, env });
   if (found.forge !== "gitlab") {
     throw new GitLabError("El forge de este repositorio es GitHub. Si es GitLab, declara GIT_WORKFLOW_FORGE=gitlab.");
   }
   const token = await readToken(found.root);
-  return { ...found, ...createClient({ ...found, token }, { run }) };
+  const target = { ...found, project: project ?? found.project };
+  return { ...target, ...createClient({ ...target, token }, { run }) };
 }
 
 export async function whoami(client) {
@@ -288,11 +303,140 @@ export async function whoami(client) {
   return { id: data.id, username: data.username };
 }
 
+const issuePath = (client, number, suffix = "") => client.scoped(`issues/${number}${suffix}`);
+
+export async function getIssue(client, number) {
+  return (await client.request("GET", issuePath(client, number))).data;
+}
+
+export async function updateIssue(client, number, changes) {
+  return (await client.request("PUT", issuePath(client, number), { body: changes })).data;
+}
+
+// Los comentarios de la issue, del más antiguo al más nuevo y sin los de sistema.
+export async function listNotes(client, number) {
+  const notes = await client.paginate(issuePath(client, number, "/notes"), { sort: "asc", order_by: "created_at" });
+  return notes.filter((note) => !note.system);
+}
+
+export async function createNote(client, number, body) {
+  return (await client.request("POST", issuePath(client, number, "/notes"), { body: { body } })).data;
+}
+
+export async function updateNote(client, number, id, body) {
+  return (await client.request("PUT", issuePath(client, number, `/notes/${id}`), { body: { body } })).data;
+}
+
+// Edita la issue quien la creó, quien la tiene asignada y el rol Planner o superior.
+export async function canEditIssue(client, number) {
+  const me = await whoami(client);
+  const issue = await getIssue(client, number);
+  if (issue.author?.id === me.id || issue.assignees?.some((person) => person.id === me.id)) return true;
+  try {
+    const { data } = await client.request("GET", client.scoped(`members/all/${me.id}`));
+    return (data?.access_level ?? 0) >= PLANNER;
+  } catch (error) {
+    if (error.status === 404) return false;
+    throw error;
+  }
+}
+
+// Devuelve el nombre de la etiqueta del tipo, tal como está en el proyecto. La crea si falta.
+export async function ensureLabel(client, type) {
+  if (!Object.hasOwn(LABELS, type)) {
+    throw new GitLabError("El tipo tiene que ser feat, fix, docs, refactor, test, chore o knowledge.");
+  }
+  const find = async () => (await client.paginate(client.scoped("labels"), { search: type }))
+    .find((label) => label.name.toLowerCase() === type)?.name;
+  const existing = await find();
+  if (existing) return { name: existing, created: false };
+  const [color, description] = LABELS[type];
+  try {
+    await client.request("POST", client.scoped("labels"), { body: { name: type, color, description } });
+  } catch (error) {
+    if (!error.status) throw error;
+    throw new GitLabError(`Etiqueta ${type}: no se pudo crear con esta cuenta. Sigue sin etiqueta.`, { code: 2, status: error.status });
+  }
+  return { name: type, created: true };
+}
+
+export async function createIssue(client, { title, body, type }, warn = console.error) {
+  const lines = [];
+  let label = null;
+  try {
+    const found = await ensureLabel(client, type);
+    label = found.name;
+    lines.push(`Etiqueta ${type}: ${found.created ? "creada" : "ya existe"}.`);
+  } catch (error) {
+    // Sin permiso, la issue sale sin etiqueta: pasarla al crear la issue la crearía igual o se perdería sin aviso.
+    if (error.code !== 2) throw error;
+    warn(error.message);
+  }
+  const me = await whoami(client);
+  const request = { title, description: body, assignee_ids: [me.id], ...(label ? { labels: label } : {}) };
+  const { data } = await client.request("POST", client.scoped("issues"), { body: request });
+  if (!data.assignees?.some((person) => person.id === me.id)) warn("La issue quedó sin asignar: asígnala a mano.");
+  if (label && !data.labels?.includes(label)) warn("La issue quedó sin etiqueta: ponla a mano.");
+  return [...lines, data.web_url].join("\n");
+}
+
+const stateName = (issue) => (issue.state === "closed" ? "CLOSED" : "OPEN");
+
+export async function setIssueState(client, number, event) {
+  return stateName(await updateIssue(client, number, { state_event: event }));
+}
+
+// Añade la cuenta del token sin quitar a nadie. Un plan con una sola persona asignada no lo permite.
+export async function assignIssue(client, number) {
+  const me = await whoami(client);
+  const before = ((await getIssue(client, number)).assignees ?? []).map((person) => person.id);
+  if (before.includes(me.id)) return me.username;
+  const after = ((await updateIssue(client, number, { assignee_ids: [...before, me.id] })).assignees ?? []).map((person) => person.id);
+  const lost = before.filter((id) => !after.includes(id));
+  if (lost.length) await updateIssue(client, number, { assignee_ids: before });
+  if (lost.length || !after.includes(me.id)) {
+    throw new GitLabError(`La issue #${number} no admite añadir a ${me.username} sin quitar a quien ya estaba. La asignación queda pendiente.`);
+  }
+  return me.username;
+}
+
+function issueNumber(value) {
+  if (!/^[1-9]\d*$/.test(value ?? "")) throw new GitLabError("Indica el número de la issue.");
+  return value;
+}
+
 export async function run(args, options = {}) {
-  const [command, ...rest] = args;
-  if (command === "forge" && !rest.length) return (await checkForge(options)).forge;
-  if (command === "whoami" && !rest.length) return (await whoami(await connect(options))).username;
-  throw new GitLabError("Uso: gitlab.mjs forge | whoami");
+  const [command, action, ...rest] = args;
+  const { warn = console.error } = options;
+  if (command === "forge" && args.length === 1) return (await checkForge(options)).forge;
+  if (command === "whoami" && args.length === 1) return (await whoami(await connect(options))).username;
+  if (command === "label" && action === "ensure" && rest.length === 1) {
+    const [type] = rest;
+    const found = await ensureLabel(await connect(options), type);
+    return `Etiqueta ${type}: ${found.created ? "creada" : "ya existe"}.`;
+  }
+  if (command === "issue" && action === "create" && rest.length === 3 && rest.every(Boolean)) {
+    const [title, file, type] = rest;
+    const body = await readFile(resolve(options.cwd ?? process.cwd(), file), "utf8").catch(() => {
+      throw new GitLabError("El fichero del cuerpo debe existir y ser legible.");
+    });
+    return createIssue(await connect(options), { title, body, type }, warn);
+  }
+  if (command === "issue" && ["state", "close", "reopen", "assign-me"].includes(action)) {
+    const [value, reason, ...extra] = rest;
+    if (extra.length || (reason !== undefined && action !== "close")) throw new GitLabError(USAGE);
+    const number = issueNumber(value);
+    if (reason !== undefined && !["completed", "not planned"].includes(reason)) {
+      throw new GitLabError("El motivo tiene que ser completed o not planned.");
+    }
+    const client = await connect(options);
+    if (action === "state") return stateName(await getIssue(client, number));
+    if (action === "assign-me") return `Issue #${number}: asignada a ${await assignIssue(client, number)}.`;
+    if (action === "reopen") return `Issue #${number}: ${await setIssueState(client, number, "reopen")}.`;
+    const state = await setIssueState(client, number, "close");
+    return `Issue #${number}: ${state}. GitLab no guarda el motivo de cierre.`;
+  }
+  throw new GitLabError(USAGE);
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
