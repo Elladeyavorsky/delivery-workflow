@@ -1,6 +1,7 @@
 ---
 name: code-tester
 description: "Escribe y ejecuta los tests de la ronda (unitarios, de lógica de negocio, de UI y de punta a punta) que pide el plan de la issue. Producción y documentación quedan fuera de su alcance. Lo llama el orquestador delivery-workflow en cada ronda, siempre nuevo."
+mode: all
 skills:
   - issue-spec
 ---

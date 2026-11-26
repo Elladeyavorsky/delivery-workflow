@@ -16,13 +16,15 @@ tar -C "$package" \
   --exclude='./.claude' \
   --exclude='./.codex' \
   --exclude='./.cursor' \
+  --exclude='./.opencode' \
   --exclude='./.apm-local' \
   --exclude='./.mcp.json' \
+  --exclude='./opencode.json' \
   --exclude='./apm.lock.yaml' \
   --exclude='./apm_modules' \
   -cf - . | tar -C "$work" -xf -
 
-for path in .agents .claude .codex .cursor apm_modules apm.lock.yaml; do
+for path in .agents .claude .codex .cursor .opencode apm_modules apm.lock.yaml; do
   if [[ -e "${work}/${path}" ]]; then
     echo "FALLA: se copió el artefacto preexistente ${path}"
     exit 1
@@ -41,7 +43,7 @@ ruby -ryaml -e '
 echo "Generando artefactos APM temporales desde las fuentes locales..."
 (cd "$work" && apm install --only apm --no-audit)
 
-for path in .agents .claude .codex .cursor apm_modules apm.lock.yaml; do
+for path in .agents .claude .codex .cursor .opencode apm_modules apm.lock.yaml; do
   if [[ ! -e "${work}/${path}" ]]; then
     echo "FALLA: apm install no generó ${path}"
     exit 1

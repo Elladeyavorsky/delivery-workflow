@@ -53,7 +53,7 @@ brew install gh node apm          # sin Homebrew: curl -sSL https://aka.ms/apm-u
 
 ### Instalar el paquete
 
-Desde la raíz del proyecto. En `--target` pon tu agente: `opencode`, `claude`, `cursor`, `codex` o varios separados por comas.
+Desde la raíz del proyecto en el que vas a usar el flujo. Para cambiar delivery-workflow, sigue [Trabajar en este repositorio](CONTRIBUTING.md#trabajar-en-este-repositorio). En `--target` pon tu agente: `opencode`, `claude`, `cursor`, `codex` o varios separados por comas.
 
 ```bash
 apm install venturars/delivery-workflow --target opencode
@@ -76,7 +76,7 @@ Los agentes usan el token del `.env` para todo lo que hacen en GitHub (issues, p
 
 3. Añade `.env` a `.gitignore`: `echo .env >> .gitignore`.
 
-El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
+Cada persona tiene su propio `.env` con su propio token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ## Uso
 

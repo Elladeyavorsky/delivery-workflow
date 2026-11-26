@@ -1,6 +1,7 @@
 ---
 name: code-developer
 description: "Implementa la task de código de la ronda según la spec y el plan de la issue. La documentación y la spec las edita `concept-developer`. Lo llama el orquestador delivery-workflow en cada ronda, siempre nuevo."
+mode: all
 skills:
   - issue-spec
   - layered-architecture-guideline

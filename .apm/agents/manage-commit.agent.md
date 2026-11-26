@@ -1,6 +1,7 @@
 ---
 name: manage-commit
 description: "Administra los commits de la rama actual: el commit vacío chore: open #N al empezar, o un trozo con ficheros nombrados. Lo llama el orquestador delivery-workflow."
+mode: all
 skills:
   - manage-empty-commit
   - commit-changes

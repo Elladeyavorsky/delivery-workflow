@@ -14,10 +14,10 @@ Necesitas `git`, [GitHub CLI](https://cli.github.com), Node, APM y un `.env` con
 
 ## Trabajar en este repositorio
 
-Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así tienes los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) y trabajas en este repositorio con la misma herramienta que lo usa.
+Este repositorio es el paquete: su fuente son las skills y los agentes de `.apm/`. No instales aquí `venturars/delivery-workflow`, que es para [otro proyecto](README.md#instalar-el-paquete). Despliega la copia local para tener los agentes y las skills del flujo (`/delivery-workflow`, `/check-status`, `say-it-straight`…) mientras lo cambias.
 
 1. Clona el repositorio y entra en su raíz.
-2. Instala el paquete para tu herramienta (`opencode`, `claude`, `cursor`, `codex` o varias separadas por comas):
+2. Despliega el paquete local en tu herramienta (`opencode`, `claude`, `cursor`, `codex` o varias separadas por comas):
 
    ```bash
    apm install --target opencode
@@ -27,7 +27,7 @@ Para cambiar delivery-workflow, instala antes el propio paquete con APM. Así ti
 4. Abre tu herramienta en la raíz. En opencode, ejecuta antes `/configure-models` ([Modelos de los agentes](docs/MODELS.md)).
 5. Llama a `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») para abrir la issue, la rama y la pull request de tu cambio.
 
-`apm install` genera `apm_modules/`, `apm.lock.yaml` y los directorios de tu herramienta; con opencode, también `opencode.json`. No los edites a mano.
+Lo que genera `apm install` es de tu máquina y no se sube: `apm_modules/`, `apm.lock.yaml`, los directorios de tu herramienta y, con opencode, `opencode.json`, que no está en `.gitignore`. No los edites a mano: cambia `.apm/` y vuelve a ejecutar `apm install --target …`.
 
 ## Reglas
 

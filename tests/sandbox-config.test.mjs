@@ -131,7 +131,7 @@ test("apm install conserva claves", { skip: !hasApm ? "apm no está instalado" :
     // Los despliegues locales de skills y agentes chocan con apm install: se
     // dejan solo los ficheros de configuración que la prueba comprueba.
     execFileSync("sh", ["-c",
-      `cd "${work}" && rm -rf .agents .apm-local && for d in .claude .cursor .codex; do find "$d" -mindepth 1 -maxdepth 1 ! -name settings.json ! -name sandbox.json ! -name mcp.json ! -name config.toml -exec rm -rf {} +; done`]);
+      `cd "${work}" && rm -rf .agents .apm-local .opencode && for d in .claude .cursor .codex; do find "$d" -mindepth 1 -maxdepth 1 ! -name settings.json ! -name sandbox.json ! -name mcp.json ! -name config.toml -exec rm -rf {} +; done`]);
     // Como en tests/apm-audit.test.sh: sin dependencias externas.
     execFileSync("ruby", ["-ryaml", "-e",
       'p = ARGV[0]; m = YAML.load_file(p); m.delete("dependencies"); File.write(p, YAML.dump(m))',

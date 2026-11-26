@@ -1,6 +1,7 @@
 ---
 name: legal-advisor
 description: "Responde las consultas legales de protección de datos que la guía no resuelve, con data-protection-guideline y el MCP de EUR-Lex, y publica las respuestas con su fuente en la issue. No certifica cumplimiento. Lo llama el orquestador delivery-workflow cuando un reporte trae «Consultas legales»."
+mode: all
 skills:
   - issue-spec
   - say-it-straight

@@ -52,6 +52,8 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 
 ### El ciclo
 
+El paso siguiente a un subagente empieza cuando llega su resultado. Si la herramienta lo lanza en segundo plano (opencode 2), termina el turno y espera el aviso.
+
 Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de la issue, la huella, la ronda, la task y, si las hay, las listas que dice cada paso. Si es un ciclo de cambios pedidos o la issue no se puede editar, el encargo dice revisión: entonces `read`, `write`, `tick`, `state` y `top-hash` llevan `--revision`. No lleva el chat ni el reporte de otro agente: todo lo que necesitan está en la issue (el cuerpo, o el comentario de revisión).
 
 1. **Spec:** El subagente `concept-developer`, ronda 0. En la primera entrega escribe `## Spec`, `## Plan` y `## Tasks` debajo de la plantilla de la issue. En cambios pedidos, o si la issue no se puede editar, las publica con `issue-spec revision`. Si su reporte trae «Consultas legales», sigue el paso «Consultas legales» antes de la ronda 1.

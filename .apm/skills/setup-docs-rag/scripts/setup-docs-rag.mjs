@@ -15,13 +15,16 @@ import {
   findManifests,
   loadProfiles,
   classify,
+  jsoncNotes,
   parseLibs,
   removeServerFromFile,
   resetAll as removeContext7,
   setServerJson,
+  serversKey,
   setServerTomlBlock,
   tomlStdioBlock,
   toolsPresent,
+  userConfigPath,
 } from "../../setup-context7/scripts/setup-context7.mjs";
 
 const execFile = promisify(execFileCb);
@@ -415,7 +418,14 @@ export function appDirs(root) {
 // Claude Code y Codex arrancan el servidor en la raíz del proyecto. Cursor no lo garantiza: usa ${workspaceFolder}.
 // uv resuelve un UV_PROJECT_ENVIRONMENT relativo desde la carpeta de --project (.docs-rag/app), no desde el directorio
 // de trabajo: por eso el entorno es ../venv.
+// opencode arranca el servidor en la carpeta desde la que se lanza, que puede ser una subcarpeta: el comando
+// va antes a la raíz del repositorio.
+const OPENCODE_COMMAND = `cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" && exec uv run --quiet --project ${RAG_DIR}/app python -m docs_rag.server`;
+
 export function serverEntry(tool) {
+  if (tool === "opencode") {
+    return { type: "local", enabled: true, command: ["bash", "-c", OPENCODE_COMMAND], environment: { UV_PROJECT_ENVIRONMENT: "../venv" } };
+  }
   const cursor = tool === "cursor";
   const args = ["run", "--quiet", "--project", `${cursor ? "${workspaceFolder}/" : ""}${RAG_DIR}/app`, "python", "-m", "docs_rag.server"];
   if (cursor) args.push("--root", "${workspaceFolder}");
@@ -438,7 +448,7 @@ export function registerServer({ root, tool }) {
   const path = join(root, file);
   const before = readText(path);
   const entry = serverEntry(tool);
-  const set = t.format === "toml" ? setServerTomlBlock(before, DOCS_RAG_SERVER, tomlStdioBlock(DOCS_RAG_SERVER, entry)) : setServerJson(before, entry, file, DOCS_RAG_SERVER);
+  const set = t.format === "toml" ? setServerTomlBlock(before, DOCS_RAG_SERVER, tomlStdioBlock(DOCS_RAG_SERVER, entry)) : setServerJson(before, entry, file, DOCS_RAG_SERVER, serversKey(t.format));
   if (set.result === "cambiado") writeAtomic(path, set.text);
   return { file, result: resultInEnglish(set.result) };
 }
@@ -449,7 +459,7 @@ export function unregisterServer({ root, tool }) {
 
 // Quita el registro de usuario que dejaban las versiones anteriores (la #64 lo escribía en ~/).
 export function unregisterUserServer({ home, tool }) {
-  return removeDocsRag(join(home, TOOLS[tool].configFile), tool, displayPath(tool));
+  return removeDocsRag(userConfigPath(home, tool), tool, displayPath(tool, home));
 }
 
 function writeAtomic(path, text) {
@@ -486,7 +496,7 @@ export const USAGE = [
   "  detect        Inventario (dependencias con versión, runtimes, descartes), requisitos, índice y canal de cada herramienta (JSON).",
   "  apply         Arranca Qdrant, descarga el modelo, instala el MCP en .docs-rag/, indexa lo que haya cambiado, registra docs-rag en la config del proyecto y quita Context7 (canal único).",
   "  reset         Quita el MCP docs-rag de la config del proyecto. Con --drop-index borra también la colección y .docs-rag/.",
-  "Opciones: --libs a,b,c  --no-runtimes  --target cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
+  "Opciones: --libs a,b,c  --no-runtimes  --target opencode|cursor|claude|codex  --drop-index  --root RUTA  --home RUTA",
 ].join("\n");
 
 export function parseArgs(argv) {
@@ -619,6 +629,7 @@ export function registerTools({ root, home, tools }) {
     }
     if (context7Removed.rule.result === "changed") notes.push(`Se ha quitado la regla de Context7 de ${removed.rule.file}.`);
     notes.push(...removed.notes);
+    if (t.format === "opencode") notes.push(...jsoncNotes(join(root, projectFile(tool)), projectFile(tool)));
     if (legacy.result === "changed") notes.push(`Se ha quitado docs-rag de ${legacy.file}: ahora se registra en ${config.file} del proyecto.`);
     if (legacyApp && index === 0) notes.push(`~/${RAG_DIR}/ es de una versión anterior y ya no se usa. Bórralo si ningún otro proyecto lo necesita.`);
     notes.push(`${config.file} usa rutas relativas al proyecto. Si lo subes a git, quien no haya lanzado /setup-docs-rag verá un MCP docs-rag que no arranca.`);
@@ -670,7 +681,7 @@ export async function run(argv) {
   const root = await resolveRoot(opts);
   const home = resolve(opts.home ?? homedir());
   const tools = selectTools(opts, root);
-  if (tools.length === 0) throw new SetupDocsRagError("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
+  if (tools.length === 0) throw new SetupDocsRagError("No hay carpetas de agentes en este proyecto (.opencode/agents, .cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
   if (opts.command === "detect") return JSON.stringify(await detect({ root, home, tools }), null, 2);
   if (opts.command === "reset") return JSON.stringify(await reset({ root, home, tools, dropIndex: opts.dropIndex }), null, 2);
   return JSON.stringify(await apply({ root, home, tools, libs: opts.libs, withRuntimes: opts.withRuntimes }), null, 2);

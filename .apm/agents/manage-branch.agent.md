@@ -1,6 +1,7 @@
 ---
 name: manage-branch
 description: "Administra la rama de trabajo: la abre como número-tipo-descripcion desde la rama base. Lo llama el orquestador delivery-workflow al empezar, después de pull-changes."
+mode: all
 skills:
   - manage-branch
 ---

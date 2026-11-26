@@ -24,17 +24,22 @@ export function loadProfiles(path = PROFILES_PATH) {
 
 // Un modelo escrito a mano acaba en el frontmatter: nada de espacios, comillas ni saltos de línea.
 const MODEL_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._\-[\]=,]*$/;
+// opencode nombra sus modelos «proveedor/modelo», y el modelo puede llevar más «/», «:» o «@».
+const OPENCODE_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9._\-/:@]*[A-Za-z0-9._\-]$/;
 
-export function isModelShape(model) {
-  return typeof model === "string" && MODEL_SHAPE.test(model);
+export function isModelShape(model, tool) {
+  return typeof model === "string" && (tool === "opencode" ? OPENCODE_SHAPE : MODEL_SHAPE).test(model);
 }
 
 // "inherit", vacío o null significan lo mismo: el agente no lleva línea `model`.
-export function normalizeChoice(value) {
+export function normalizeChoice(value, tool) {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
   if (text === "" || text.toLowerCase() === "inherit") return null;
-  if (!isModelShape(text)) throw new ConfigureModelsError(`Modelo no válido: «${text}». Sin espacios ni comillas.`, 2);
+  if (!isModelShape(text, tool)) {
+    const hint = tool === "opencode" ? " En opencode va como proveedor/modelo." : "";
+    throw new ConfigureModelsError(`Modelo no válido: «${text}». Sin espacios ni comillas.${hint}`, 2);
+  }
   return text;
 }
 
@@ -243,7 +248,66 @@ export async function detectCodex({ run = runCommand, home = homedir(), env = pr
   return { status: "unknown", models: [], reason };
 }
 
+// `opencode models` escribe una línea «proveedor/modelo» por modelo.
+export function parseOpencodeModels(text) {
+  const ids = String(text)
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => isModelShape(line, "opencode"));
+  return [...new Set(ids)].map((id) => ({ id, name: id }));
+}
+
+const OPENCODE_REASONS = {
+  missing: "no está instalado el comando opencode ni se ha encontrado el de la app de escritorio; si conoces los modelos disponibles, pásalos con --models",
+  timeout: "opencode models no respondió a tiempo",
+  error: "opencode models falló",
+  empty: "opencode models no devolvió ningún modelo",
+};
+
+// La primera llamada puede descargar el catálogo de modelos.
+const OPENCODE_TIMEOUT_MS = 30000;
+
+// La app de escritorio de macOS trae su propio comando y no lo añade al PATH.
+export function opencodeCommands({ platform = process.platform, home = homedir() } = {}) {
+  const bundled = "Applications/OpenCode.app/Contents/Resources/opencode-cli";
+  return ["opencode", ...(platform === "darwin" ? [`/${bundled}`, join(home, bundled)] : [])];
+}
+
+// Se lanza en la raíz del proyecto: su opencode.json puede declarar proveedores.
+export async function detectOpencode({ run = runCommand, root, home, platform } = {}) {
+  let result;
+  // Solo se prueba el siguiente cuando el anterior no existe: un fallo del que sí existe es el que se cuenta.
+  for (const command of opencodeCommands({ platform, home })) {
+    result = await run(command, ["models"], { cwd: root, timeout: OPENCODE_TIMEOUT_MS });
+    if (result.status !== "missing") break;
+  }
+  if (result.status === "ok") {
+    const models = parseOpencodeModels(result.stdout);
+    if (models.length) return { status: "ok", models, reason: null };
+  }
+  const failure = result.status === "ok" ? "empty" : result.status;
+  return { status: "unknown", models: [], reason: OPENCODE_REASONS[failure] ?? OPENCODE_REASONS.error };
+}
+
+export const providerOf = (model) => model.slice(0, model.indexOf("/"));
+
+// Con varios proveedores no se propone nada hasta que la persona elige uno. La lista completa se conserva:
+// un modelo guardado o escrito a mano puede ser de cualquiera de ellos.
+export function chooseProvider(detection, { provider = null, saved = null } = {}) {
+  if (detection.status !== "ok") return detection;
+  const providers = [...new Set(detection.models.map((m) => providerOf(m.id)).filter(Boolean))].sort();
+  if (provider && !providers.includes(provider)) {
+    throw new ConfigureModelsError(`Proveedor desconocido: «${provider}». Disponibles: ${providers.join(", ")}.`, 2);
+  }
+  const chosen = provider ?? (providers.includes(saved) ? saved : null) ?? (providers.length === 1 ? providers[0] : null);
+  const proposalModels = chosen ? detection.models.filter((m) => providerOf(m.id) === chosen) : [];
+  const ask = chosen ? null : `Hay modelos de varios proveedores (${providers.join(", ")}): elige uno con --provider para que haya propuesta.`;
+  return { ...detection, providers, provider: chosen, proposalModels, ...(ask ? { ask } : {}) };
+}
+
 export const DETECTORS = {
+  opencode: (args) => detectOpencode(args),
   cursor: (args) => detectCursor(args),
   claude: (args) => detectClaude(args),
   codex: (args) => detectCodex(args),
@@ -266,7 +330,7 @@ export function manualDetection(models, toolName) {
   };
 }
 
-export async function detect({ profiles = loadProfiles(), root, tools, run, home, models } = {}) {
+export async function detect({ profiles = loadProfiles(), root, tools, run, home, models, provider, savedProvider } = {}) {
   const present = tools ?? toolsPresent(profiles, root);
   const result = [];
   for (const tool of present) {
@@ -277,11 +341,12 @@ export async function detect({ profiles = loadProfiles(), root, tools, run, home
     if (detection.status === "ok" && detection.models.length === 0) {
       detection = { ...detection, status: "unknown", reason: "la herramienta devolvió una lista de modelos vacía" };
     }
+    if (profiles.tools[tool].providers) detection = chooseProvider(detection, { provider, saved: savedProvider });
     result.push({
       tool,
       name: profiles.tools[tool].name,
       ...detection,
-      proposal: proposeAll(profiles, tool, detection.models),
+      proposal: proposeAll(profiles, tool, detection.proposalModels ?? detection.models),
     });
   }
   return result;
@@ -394,6 +459,39 @@ export function setModelToml(text, model) {
   return kept.join(eol);
 }
 
+// Quita el bloque `skills:` del frontmatter. opencode no precarga esas skills y envía el campo al proveedor
+// del modelo en las peticiones `openai-compatible`; el texto de cada agente ya nombra las skills que usa.
+export function stripSkills(text) {
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const end = frontmatterBounds(lines);
+  let inside = false;
+  const front = lines.slice(1, end).filter((line) => {
+    if (/^skills:(?:\s|$)/.test(line)) {
+      inside = true;
+      return false;
+    }
+    if (inside && /^(?:\s|-(?:\s|$))/.test(line)) return false;
+    inside = false;
+    return true;
+  });
+  if (front.length === end - 1) return text;
+  return [lines[0], ...front, ...lines.slice(end)].join(eol);
+}
+
+// Agentes del paquete que aún llevan `skills:` en una herramienta que hay que limpiar.
+export function agentsWithSkills({ profiles, root, tool }) {
+  if (!profiles.tools[tool].stripSkills) return [];
+  return Object.keys(profiles.agents).filter((agent) => {
+    try {
+      const text = readFileSync(agentPath(profiles, root, tool, agent), "utf8");
+      return stripSkills(text) !== text;
+    } catch {
+      return false;
+    }
+  });
+}
+
 export const getModel = (text, extension) => (extension === "toml" ? getModelToml(text) : getModelMd(text));
 export const setModel = (text, model, extension) => (extension === "toml" ? setModelToml(text, model) : setModelMd(text, model));
 
@@ -439,11 +537,15 @@ export function writeState(dir, state) {
 // --- Qué se aplica ---
 
 // Guardado válido: sigue en la lista actual. Si no se pudo detectar, se confía: pudo escribirse a mano.
-export function planChoices({ profiles, tool, detection, saved, manual = [], overrides = {} }) {
+export function planChoices({ profiles, tool, detection, saved: stored, manual = [], overrides = {}, provider = null }) {
+  // Al elegir otro proveedor, lo guardado de los demás deja de valer; lo escrito a mano se mantiene.
+  const saved = stored && provider
+    ? Object.fromEntries(Object.entries(stored).filter(([agent, model]) => model === null || manual.includes(agent) || providerOf(model) === provider))
+    : stored;
   const ids = new Set(detection.models.map((m) => m.id));
   const known = detection.status === "ok";
   const notes = [];
-  const proposal = Object.fromEntries(proposeAll(profiles, tool, detection.models).map((p) => [p.agent, p.model]));
+  const proposal = Object.fromEntries(proposeAll(profiles, tool, detection.proposalModels ?? detection.models).map((p) => [p.agent, p.model]));
   const choices = {};
   const source = {};
   for (const agent of Object.keys(profiles.agents)) {
@@ -468,13 +570,14 @@ export function planChoices({ profiles, tool, detection, saved, manual = [], ove
   }
   for (const [agent, raw] of Object.entries(overrides)) {
     if (!(agent in profiles.agents)) throw new ConfigureModelsError(`Agente desconocido: «${agent}».`, 2);
-    const model = normalizeChoice(raw);
+    const model = normalizeChoice(raw, tool);
     choices[agent] = model;
     source[agent] = "manual";
     if (model !== null && known && !ids.has(model)) {
-      notes.push(`«${model}» (${agent}) no está en la lista de ${profiles.tools[tool].name}: si no lo reconoce, usará el modelo del chat sin avisar.`);
+      notes.push(`«${model}» (${agent}) no está en la lista de ${profiles.tools[tool].name}: si no lo reconoce, usará el modelo del chat sin avisar o fallará al llamar al agente.`);
     }
   }
+  if (detection.ask) notes.push(detection.ask);
   if (detection.note) notes.push(detection.note);
   if (!known) {
     notes.unshift(`No se pudo leer la lista de modelos: ${detection.reason}. Se usan los modelos guardados o, si no hay, los agentes heredan el del chat.`);
@@ -491,12 +594,13 @@ export function agentPath(profiles, root, tool, agent) {
 }
 
 // Escribe las elecciones en los archivos. Un agente que falta se salta y se dice.
-export function applyToFiles({ profiles, root, tool, choices }) {
+export function applyToFiles({ profiles, root, tool, choices, strip = false }) {
   return Object.entries(choices).map(([agent, model]) => {
     const file = agentPath(profiles, root, tool, agent);
     if (!existsSync(file)) return { agent, model, file, result: "ausente" };
     const before = readFileSync(file, "utf8");
-    const after = setModel(before, model, profiles.tools[tool].extension);
+    const withModel = setModel(before, model, profiles.tools[tool].extension);
+    const after = strip && profiles.tools[tool].stripSkills ? stripSkills(withModel) : withModel;
     if (after === before) return { agent, model, file, result: "igual" };
     writeFileSync(file, after);
     return { agent, model, file, result: "cambiado" };
@@ -507,7 +611,7 @@ export function applyToFiles({ profiles, root, tool, choices }) {
 
 export function parseArgs(argv) {
   const [command, ...rest] = argv;
-  const opts = { command, yes: false, target: null, root: null, set: {}, models: [] };
+  const opts = { command, yes: false, target: null, root: null, provider: null, set: {}, models: [] };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === "--yes" || a === "-y") opts.yes = true;
@@ -515,12 +619,17 @@ export function parseArgs(argv) {
       for (const raw of String(rest[++i] ?? "").split(",")) {
         const id = raw.trim();
         if (id === "") continue;
-        if (!isModelShape(id)) throw new ConfigureModelsError(`Modelo no válido en --models: «${id}». Sin espacios ni comillas.`, 2);
+        // La forma exacta depende de la herramienta, que se conoce después: `run` la vuelve a comprobar.
+        if (!isModelShape(id) && !isModelShape(id, "opencode")) throw new ConfigureModelsError(`Modelo no válido en --models: «${id}». Sin espacios ni comillas.`, 2);
         if (!opts.models.some((m) => m.id === id)) opts.models.push({ id, name: id });
       }
       if (opts.models.length === 0) throw new ConfigureModelsError("--models espera una lista de ids separados por comas.", 2);
     }
     else if (a === "--target") opts.target = rest[++i];
+    else if (a === "--provider") {
+      opts.provider = rest[++i];
+      if (!opts.provider) throw new ConfigureModelsError("--provider espera el nombre de un proveedor.", 2);
+    }
     else if (a === "--root") opts.root = rest[++i];
     else if (a === "--set") {
       const [agent, ...model] = String(rest[++i] ?? "").split("=");
@@ -537,7 +646,7 @@ export const USAGE = [
   "  apply                  Escribe el modelo en cada agente. Sin --set usa lo guardado o la propuesta.",
   "  reset                  Quita la línea model de los agentes y borra lo guardado.",
   "  status                 Una línea para check-status.",
-  "Opciones: --yes|-y  --target cursor|claude|codex  --set agente=modelo (inherit = sin modelo)  --models id1,id2,... (lista de modelos si la herramienta no la da)  --root RUTA",
+  "Opciones: --yes|-y  --target opencode|cursor|claude|codex  --provider nombre (solo opencode)  --set agente=modelo (inherit = sin modelo)  --models id1,id2,... (lista de modelos si la herramienta no la da)  --root RUTA",
 ].join("\n");
 
 async function resolveRoot(opts) {
@@ -562,16 +671,24 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
   if (!["detect", "apply", "reset"].includes(opts.command)) throw new ConfigureModelsError(USAGE, 2);
   const tools = selectTools(opts, profiles, root);
   if (tools.length === 0) {
-    throw new ConfigureModelsError("No hay carpetas de agentes en este proyecto (.cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
+    throw new ConfigureModelsError("No hay carpetas de agentes en este proyecto (.opencode/agents, .cursor/agents, .claude/agents, .codex/agents). Ejecuta apm install antes.", 3);
   }
   if (opts.command === "apply" && Object.keys(opts.set).length > 0 && tools.length > 1) {
-    throw new ConfigureModelsError("--set vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target cursor|claude|codex.", 2);
+    throw new ConfigureModelsError("--set vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target opencode|cursor|claude|codex.", 2);
   }
   if (opts.models.length > 0 && opts.command !== "reset" && tools.length > 1) {
-    throw new ConfigureModelsError("--models vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target cursor|claude|codex.", 2);
+    throw new ConfigureModelsError("--models vale para una sola herramienta: cada una nombra sus modelos a su manera. Añade --target opencode|cursor|claude|codex.", 2);
+  }
+  const bad = opts.command !== "reset" && opts.models.find((m) => !isModelShape(m.id, tools[0]));
+  if (bad) {
+    const hint = tools[0] === "opencode" ? " En opencode va como proveedor/modelo." : "";
+    throw new ConfigureModelsError(`Modelo no válido en --models: «${bad.id}».${hint}`, 2);
+  }
+  if (opts.provider && !tools.some((t) => profiles.tools[t].providers)) {
+    throw new ConfigureModelsError("--provider solo vale para opencode.", 2);
   }
   if (opts.command === "detect") {
-    return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner, models: opts.models }), null, 2);
+    return JSON.stringify(await detectWithSaved({ profiles, root, tools, runner, models: opts.models, provider: opts.provider }), null, 2);
   }
   const dir = await gitDir(root);
   const state = readState(dir);
@@ -584,18 +701,21 @@ export async function run(argv, { run: runner, profiles = loadProfiles() } = {})
 }
 
 // La propuesta parte de lo guardado (si sigue valiendo) y, si no hay nada guardado, del nivel de cada agente.
-export async function detectWithSaved({ profiles, root, tools, runner, models }) {
+export async function detectWithSaved({ profiles, root, tools, runner, models, provider }) {
   let state = { tools: {} };
   try {
     state = readState(await gitDir(root));
   } catch {
     /* sin repositorio git no hay elecciones guardadas */
   }
-  const detections = await detect({ profiles, root, tools, run: runner, models });
-  return detections.map((d) => {
+  const detections = [];
+  for (const tool of tools) {
+    detections.push(...(await detect({ profiles, root, tools: [tool], run: runner, models, provider, savedProvider: state.tools[tool]?.provider })));
+  }
+  return detections.map(({ proposalModels, ask, ...d }) => {
     const saved = state.tools[d.tool]?.agents ?? null;
     const manual = state.tools[d.tool]?.manual ?? [];
-    const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: d, saved, manual });
+    const { choices, source, notes } = planChoices({ profiles, tool: d.tool, detection: { ...d, proposalModels, ask }, saved, manual, provider: provider && profiles.tools[d.tool].providers ? provider : null });
     return {
       ...d,
       saved: saved !== null && Object.keys(saved).length > 0,
@@ -606,18 +726,26 @@ export async function detectWithSaved({ profiles, root, tools, runner, models })
 }
 
 async function applyOne({ profiles, root, tool, state, opts, runner }) {
-  const [detection] = await detect({ profiles, root, tools: [tool], run: runner, models: opts.models });
+  const provider = profiles.tools[tool].providers ? opts.provider : null;
+  const [detection] = await detect({ profiles, root, tools: [tool], run: runner, models: opts.models, provider, savedProvider: state.tools[tool]?.provider });
   const saved = state.tools[tool]?.agents ?? null;
   const wasManual = state.tools[tool]?.manual ?? [];
-  const { choices, source, notes } = planChoices({ profiles, tool, detection, saved, manual: wasManual, overrides: opts.set });
-  const files = applyToFiles({ profiles, root, tool, choices });
+  const { choices, source, notes } = planChoices({ profiles, tool, detection, saved, manual: wasManual, overrides: opts.set, provider });
+  const stripped = agentsWithSkills({ profiles, root, tool });
+  const files = applyToFiles({ profiles, root, tool, choices, strip: true });
+  if (stripped.length) notes.push(`Se ha quitado «skills:» de ${stripped.length} agentes de ${profiles.tools[tool].name}: cada uno carga sus skills al usarlas.`);
   // Sin modelo propuesto no se guarda nada: «no había qué proponer» no es «elegí heredar» (eso es --set x=inherit).
   const keep = Object.keys(choices).filter((a) => choices[a] !== null || !["propuesta", "reemplazado"].includes(source[a]));
-  if (keep.length === 0) delete state.tools[tool];
+  // En opencode aplicar hace algo aunque no haya modelos (quita «skills:»): se anota, sin elecciones, para que
+  // check-status no diga «sin configurar» y el proveedor elegido no se pierda.
+  const applied = profiles.tools[tool].stripSkills && files.some((f) => f.result !== "ausente");
+  if (keep.length === 0 && !applied) delete state.tools[tool];
   else {
     state.tools[tool] = {
       agents: Object.fromEntries(keep.map((a) => [a, choices[a]])),
       manual: keep.filter((a) => choices[a] !== null && (source[a] === "manual" || (source[a] === "guardado" && wasManual.includes(a)))),
+      // Si esta vez no se pudo detectar, se conserva el proveedor elegido antes.
+      ...(detection.provider ?? state.tools[tool]?.provider ? { provider: detection.provider ?? state.tools[tool].provider } : {}),
     };
   }
   for (const f of files) if (f.result === "ausente") notes.push(`Falta el archivo de ${f.agent}: ejecuta apm install.`);
@@ -660,6 +788,8 @@ export function statusLine({ profiles, root }) {
     return "sin configurar (no es un repositorio git)";
   }
   const state = readState(dir);
+  const pending = tools.filter((tool) => agentsWithSkills({ profiles, root, tool }).length > 0);
+  const pendingNote = pending.length ? `los agentes de ${pending.map((t) => profiles.tools[t].name).join(", ")} aún llevan «skills:»` : null;
   const parts = [];
   let allOk = true;
   let any = false;
@@ -685,8 +815,9 @@ export function statusLine({ profiles, root }) {
     withModel += names.filter((a) => (saved[a] ?? null) !== null).length;
     parts.push(`${tool} ${match}/${names.length}`);
   }
-  if (!any) return "sin configurar (ejecuta /configure-models)";
+  if (!any) return pendingNote ? `sin configurar (ejecuta /configure-models: ${pendingNote})` : "sin configurar (ejecuta /configure-models)";
   const list = parts.join(", ");
+  if (pendingNote) return `desincronizado (${list}; ${pendingNote}): ejecuta /configure-models para volver a aplicarlo`;
   if (allOk && !withModel) return `configurado, pero ningún agente lleva modelo (${list}): heredan el del chat`;
   return allOk && parts.every((p) => /\d+\/\d+$/.test(p))
     ? `configurado (${list})`

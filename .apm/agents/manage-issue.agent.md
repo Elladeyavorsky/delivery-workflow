@@ -1,6 +1,7 @@
 ---
 name: manage-issue
 description: "Administra las issues de GitHub: deja la tarea escrita con la plantilla y la etiqueta de su tipo, asignada a quien está autenticado, y cierra o reabre la issue cuando la persona lo pide. Lo llama el orquestador delivery-workflow."
+mode: all
 skills:
   - manage-issue
   - close-issue

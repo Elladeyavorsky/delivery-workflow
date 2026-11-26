@@ -1,6 +1,7 @@
 ---
 name: concept-tester
 description: "Comprueba que la documentación del proyecto y la spec de la issue dicen lo que el código hace. Compara y reporta sin editar. Lo llama el orquestador delivery-workflow en cada ronda, siempre nuevo."
+mode: all
 skills:
   - issue-spec
   - say-it-straight

@@ -8,7 +8,7 @@ description: "Crea la rama de trabajo número-tipo-descripcion desde la rama bas
 - **Descripción**: Úsala cuando hay que abrir la rama `número-tipo-descripcion`. Sin base, sale de la rama base detectada. Para guardar un commit o abrir la pull request, usa `manage-commit` y `manage-pr`.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/manage-branch.sh" "[NUMERO]" "[TIPO]" "[DESCRIPCION]" "[BASE]"`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/manage-branch`.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-branch`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

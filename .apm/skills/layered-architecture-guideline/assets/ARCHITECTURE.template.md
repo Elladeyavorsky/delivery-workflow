@@ -32,7 +32,9 @@ Si el proyecto tiene varias partes (por ejemplo backend y frontend), repite esta
 
 ## Intensidad y organización
 
-- Intensidad: Por decidir (ligera o completa)
+Una línea por módulo, ligera o completa según «Intensidad y variante».
+- Intensidad:
+  - `<módulo>`: ligera | completa
 - Organización: Por decidir (por módulo y capa, o solo por capa)
 - Nombres de archivo: Por decidir
 - Unidades por archivo: Por decidir

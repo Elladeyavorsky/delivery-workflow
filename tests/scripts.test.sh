@@ -381,6 +381,16 @@ for agent in concept-developer concept-tester; do
 done
 check "delivery-workflow nombra legal-advisor en herramientas" grep -qF '**Subagente `legal-advisor`:**' "$dw"
 
+# setup-discord-notifications: skill instalable y apagada por defecto.
+sd="${skills}/setup-discord-notifications"
+check "setup-discord-notifications declara su name" grep -qx "name: setup-discord-notifications" "${sd}/SKILL.md"
+check "setup-discord-notifications trae una description en español" bash -c "$(declare -f frontmatter); frontmatter '${sd}/SKILL.md' | grep -qE '^description: .*(Activa|Úsala)'"
+check "setup-discord-notifications nombra detect" grep -q 'detect' "${sd}/SKILL.md"
+check "setup-discord-notifications trae el script y las tres plantillas de workflows" bash -c "test -f '${sd}/scripts/setup-discord-notifications.mjs' && for w in discord-pr-trigger discord-pr-confirmation-trigger discord-pr-publish; do test -f '${sd}/assets/workflows/'\$w.yml || exit 1; done"
+check "setup-discord-notifications trae la copia de la acción" test -f "${sd}/assets/discord-pr-notifications/action.yml"
+check "apm.yml no declara workflows ni Discord: instalar no activa nada" bash -c "! grep -qiE 'discord|workflows' '${package}/apm.yml'"
+check "detect no escribe en el proyecto" bash -c "d=\$(mktemp -d) && git -C \$d init -q && git -C \$d remote add origin https://github.com/acme/app.git && node '${sd}/scripts/setup-discord-notifications.mjs' detect --root \$d >/dev/null 2>&1; [[ -z \$(find \$d -mindepth 1 -not -path '*/.git' -not -path '*/.git/*') ]]"
+
 # setup-compliance: skill instalable con sus plantillas.
 sc="${skills}/setup-compliance"
 check "setup-compliance declara su name" grep -qx "name: setup-compliance" "${sc}/SKILL.md"
@@ -469,6 +479,12 @@ check "la guía condensada repite el texto de las reglas de references" node -e 
   }
 ' "$lag"
 check "la plantilla contempla varias partes" grep -qF 'varias partes' "$tpl"
+cd_agent="${package}/.apm/agents/concept-developer.agent.md"
+check "concept-developer elige intensidad por módulo" bash -c 'grep -qF "Elige la intensidad de cada módulo según «Intensidad y variante» de layered-architecture-guideline: ligera si es un CRUD sin reglas de negocio, completa en cuanto hay una; si no está claro y no puedes preguntar, ligera y anotada." "$1" && grep -qF "Lo que no puedas decidir (framework, cómo se entregan los errores de dominio) queda como \`Por decidir\` y va a «Huecos»." "$1" && ! grep -qF "(intensidad, framework" "$1"' _ "$cd_agent"
+check "SKILL.md paso 2 imita forma y hueco sin intensidad" bash -c 'grep -qF "imita la forma de los vecinos, no sus incumplimientos" "$1" && grep -qF "Hueco: framework o fronteras." "$1" && ! grep -qF "Hueco: intensidad" "$1" && test "$(wc -w < "$1")" -le 1500' _ "${lag}/SKILL.md"
+check "plantilla anota intensidad por módulo" bash -c 'grep -qF "Una línea por módulo, ligera o completa según «Intensidad y variante»." "$1" && grep -qF "\`<módulo>\`: ligera | completa" "$1" && ! grep -qF "Intensidad: Por decidir" "$1"' _ "$tpl"
+check "R-AGT-03 imita forma no incumplimientos" bash -c 'grep -qE "^\- \*\*R-AGT-03 \(DEF\)\*\*.*Imita la forma, no los incumplimientos de reglas que tengan\." "$1" && test "$(grep -cE "^\- \*\*R-AGT-03 " "$1")" -eq 1' _ "${lag}/assets/layered-architecture-guide.md"
+check "grep intensidad sin hueco ni Por decidir" bash -c 'hits=$(git -C "$1" grep -n -i "intensidad" -- .apm) && test -n "$hits" && ! git -C "$1" grep -n -i -E "Intensidad:[[:space:]]*Por decidir|\(intensidad,[[:space:]]*framework|Hueco:[[:space:]]*intensidad" -- .apm' _ "$package"
 
 echo
 if [[ $failures -eq 0 ]]; then

@@ -1,6 +1,7 @@
 ---
 name: manage-pr
 description: "Administra las pull requests: la abre contra la rama base, en draft, asignada y con la etiqueta del tipo, sin enlazar la issue; la edita, la saca de draft y pide las revisiones que se le indican. Lo llama el orquestador delivery-workflow."
+mode: all
 skills:
   - manage-pr-base
   - assign-author

@@ -8,7 +8,7 @@ description: "Sube la rama de trabajo actual a origin y fija el upstream, sin fo
 - **Descripción**: Úsala para subir la rama de trabajo actual a `origin` y fijar el upstream, después del commit vacío, del commit final o de un trozo guardado. El commit lo hacen `manage-commit` y la pull request `manage-pr`. Se usa fuera de la rama base y sin force push.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/launch-push.sh"`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/launch-push`.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/launch-push`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 

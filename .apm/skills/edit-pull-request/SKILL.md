@@ -10,7 +10,7 @@ description: "Edita el título o el cuerpo de una pull request que ya existe, co
 - **Título**: `bash "<carpeta de esta skill>/scripts/gh.sh" pr edit N --title "[TITULO]"`.
 - **Cuerpo**: Antes de cambiarlo, léelo con `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json body --jq .body` y escribe el cuerpo nuevo en un fichero temporal. Luego: `bash "<carpeta de esta skill>/scripts/gh.sh" pr edit N --body-file "[FICHERO]"`.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/edit-pull-request`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/edit-pull-request`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
 
 #### Especificación de Argumentos
 
