@@ -11,7 +11,7 @@ Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una ta
 5. **La cierra** con el commit final, el push y la petición de revisión.
 6. **Si la revisión pide cambios**, escribe spec, plan y tasks en un comentario de la misma issue y repite el ciclo.
 
-En GitLab, la pull request es el merge request. **El camino de GitLab no se ha probado en un GitLab real**, solo contra uno simulado: puede fallar con un servidor de verdad.
+En GitLab, la pull request es el merge request.
 
 Se para cuando falta un dato necesario para la spec o para identificar a los revisores, si aparece un secreto o si falla la novena ronda.
 
