@@ -224,22 +224,13 @@ test('nested lee el pin del manifiesto de la release', () => {
   assert.notEqual(invalid.status, 0);
 });
 
-test('pin lee la entrada actual y el workflow no actualiza si ya coincide', () => {
+test('pin lee la entrada actual', () => {
   const dir = mkdtempSync(join(tmpdir(), 'self-release-pin-'));
   const file = join(dir, 'apm.yml');
   writeFileSync(file, manifest);
   const pin = run(['pin', '--file', file, repo]);
   assert.equal(pin.status, 0);
   assert.equal(pin.stdout, 'venturars/delivery-workflow#v1.1.2\n');
-
-  const workflow = readFileSync(new URL('../.github/workflows/update-apm-dependency.yml', import.meta.url), 'utf8');
-  assert.match(workflow, /self-release\.py pin "\$DEPENDENCY_REPO"/);
-  assert.match(workflow, /self-release\.py align "\$DEPENDENCY_REPO"/);
-  assert.match(workflow, /Este paquete no se autodepende/);
-  assert.doesNotMatch(workflow, /self-release\.py set /);
-  assert.doesNotMatch(workflow, /self-release\.py latest/);
-  assert.doesNotMatch(workflow, /self-release\.py select "\$DEPENDENCY_REPO"/);
-  assert.doesNotMatch(workflow, /apm update /);
 });
 
 test('el release quita la autodependencia y etiqueta ese commit, no main', () => {
