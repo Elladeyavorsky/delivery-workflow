@@ -21,7 +21,7 @@ Necesitas `git`, [GitHub CLI](https://cli.github.com), Node, APM y un `.env` con
 - No edites a mano lo que genera `apm` (`apm_modules/`, `apm.lock.yaml`) ni cambies `version` en `apm.yml`: la versión sale de la etiqueta del release.
 - Di que algo funciona solo después de probarlo.
 
-La pull request pasa unas comprobaciones automáticas: base, rama, título, `Closes #N`, commits, `.env`, versión, conflictos y tests. La fuente es [`review-pull-request.mjs`](.github/scripts/review-pull-request.mjs); si una falla, su mensaje dice qué falta. No corren mientras la pull request está en draft.
+La pull request pasa unas comprobaciones automáticas: base, rama, título, `Closes #N`, commits, `.env`, versión, autodependencia, conflictos y tests. En una PR a `staging`, `apm.yml` no lista este paquete en `dependencies.apm`. La fuente es [`review-pull-request.mjs`](.github/scripts/review-pull-request.mjs); si una falla, su mensaje dice qué falta. No corren mientras la pull request está en draft.
 
 ## Qué cambios se aceptan
 
@@ -87,7 +87,7 @@ No hay una guía de estilo aparte. Busca la respuesta en este orden y para en el
 
 1. La issue del cambio: la spec, el plan y las tasks.
 2. [README.md](README.md) y [GLOSSARY.md](GLOSSARY.md).
-3. [CHANGES.md](CHANGES.md) y [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
+3. [CHANGES.md](CHANGES.md), [docs/MAINTENANCE.md](docs/MAINTENANCE.md) y [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 4. El código y los tests que ya existen en el mismo directorio: imita su estilo.
 
 Si ninguno lo cubre, sigue [Cuándo parar y preguntar](#cuándo-parar-y-preguntar).

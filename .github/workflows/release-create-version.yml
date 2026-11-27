@@ -9,7 +9,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write # crear el tag y la release
+  contents: write # crear el tag, la release y el push a staging
 
 # Si se actualiza main dos veces seguidas, las ejecuciones van en fila, no a la vez
 concurrency:
@@ -28,9 +28,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 2. Busca la última versión. Si este commit ya tiene una, no hace nada más
+      # 2. Busca la última versión. Si este commit ya tiene una, no hace nada más.
+      #    Si desde la última etiqueta solo cambian version y/o la autodependencia, tampoco.
       - name: Buscar la última versión
         id: ultima
+        env:
+          REPO: ${{ github.repository }}
         run: |
           if git describe --exact-match --tags HEAD >/dev/null 2>&1; then
             echo "Este commit ya tiene versión, no se crea otra."
@@ -40,6 +43,18 @@ jobs:
           LAST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n 1)
           echo "Última versión: ${LAST_TAG:-ninguna}"
           echo "tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
+          # Sin última etiqueta el changeset no se considera vacío: sigue v0.1.0 si aplica.
+          if [ -n "$LAST_TAG" ]; then
+            git show "$LAST_TAG:apm.yml" > "${RUNNER_TEMP:-/tmp}/apm-old.yml"
+            git diff --name-only "$LAST_TAG" HEAD > "${RUNNER_TEMP:-/tmp}/cambios.txt"
+            mapfile -t CAMBIOS < "${RUNNER_TEMP:-/tmp}/cambios.txt"
+            vacio=$(python3 .github/scripts/self-release.py empty-changeset "$REPO" \
+              "${RUNNER_TEMP:-/tmp}/apm-old.yml" apm.yml "${CAMBIOS[@]}")
+            if [ "$vacio" = si ]; then
+              echo "Solo cambian version y/o la autodependencia: no se crea otra etiqueta."
+              echo "saltar=si" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       # 3. Reúne qué ha cambiado desde la última versión: commits y archivos
       - name: Reunir los cambios
@@ -189,3 +204,27 @@ jobs:
             --notes-file notas.md \
             --generate-notes \
             ${LAST_TAG:+--notes-start-tag "$LAST_TAG"}
+
+      # 8. En staging, version pasa a X.Y.Z (sin v) y se quita la autodependencia.
+      #    Commit y push a staging; no abre pull request.
+      #    Si el checkout o el push falla, el job falla; la etiqueta y la release
+      #    del paso anterior se quedan. set-version o align distinto de 0 no empujan.
+      - name: Actualizar version en staging
+        if: steps.ultima.outputs.saltar != 'si'
+        env:
+          NEXT: ${{ steps.version.outputs.next }}
+          REPO: ${{ github.repository }}
+        run: |
+          git fetch origin staging
+          git checkout staging
+          python3 .github/scripts/self-release.py set-version "${NEXT#v}"
+          python3 .github/scripts/self-release.py align "$REPO"
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "staging ya tiene version ${NEXT#v} y no lista $REPO."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apm.yml
+          git commit -m "chore: set apm.yml version to ${NEXT#v}"
+          git push origin staging
