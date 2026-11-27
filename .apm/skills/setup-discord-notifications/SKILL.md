@@ -8,7 +8,7 @@ description: "Activa los avisos de PR en Discord en el proyecto, apagados por de
 - **Descripción**: Úsala para activar los avisos de PR en Discord con la persona: copiar al proyecto los workflows y la acción, crear el entorno protegido y fijar sus secretos y variables. Sin esta skill no se instala ni se configura nada de Discord. Los workflows son de GitHub Actions: otros forges quedan fuera.
 - **Comando de Terminal**: `node "<carpeta de esta skill>/scripts/setup-discord-notifications.mjs" ORDEN [OPCIONES]`, desde la raíz del repositorio.
 
-La carpeta de esta skill es la que contiene este `SKILL.md`: en Claude Code, `${CLAUDE_SKILL_DIR}`; en Cursor y Codex, `.agents/skills/setup-discord-notifications`. Requiere Node 24+, `gh` y el `GITHUB_TOKEN` del `.env` del proyecto con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`.
+La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/setup-discord-notifications`; en Claude Code, `${CLAUDE_SKILL_DIR}`. Requiere Node 24+, `gh` y el `GITHUB_TOKEN` del `.env` del proyecto con permiso de administración sobre el repositorio: el script lanza `gh` con ese token, no con la sesión de `gh`.
 
 #### Especificación de Argumentos
 

@@ -6,11 +6,20 @@ description: "Edita el título o el cuerpo de una pull request que ya existe, co
 ### Herramienta: EDIT_PULL_REQUEST
 
 - **Descripción**: Úsala para cambiar el título o el cuerpo de una pull request que ya existe. Para crearla, usa `manage-pr-base`. Para enlazar la issue, usa `link-pr-to-issue`.
+- **Forge**: Antes de llamar, `node "<carpeta de esta skill>/scripts/gitlab.mjs" forge` escribe `github` o `gitlab`. Con `github`, usa los comandos de esta skill con `gh.sh`. Con `gitlab`, los de «En GitLab».
 - **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la acción queda a nombre de la cuenta del token.
 - **Título**: `bash "<carpeta de esta skill>/scripts/gh.sh" pr edit N --title "[TITULO]"`.
 - **Cuerpo**: Antes de cambiarlo, léelo con `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json body --jq .body` y escribe el cuerpo nuevo en un fichero temporal. Luego: `bash "<carpeta de esta skill>/scripts/gh.sh" pr edit N --body-file "[FICHERO]"`.
 
 La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/edit-pull-request`; en Claude Code, `${CLAUDE_SKILL_DIR}`.
+
+#### En GitLab
+
+Abajo, `gitlab.mjs` es `node "<carpeta de esta skill>/scripts/gitlab.mjs"`, desde la raíz del repositorio git. Usa el `GITLAB_TOKEN` del `.env` del proyecto. La pull request es el merge request.
+
+- **Título**: `gitlab.mjs mr edit N --title "[TITULO]"`. El comando conserva el estado draft.
+- **Cuerpo**: Léelo en el campo `body` de `gitlab.mjs mr view N`, escribe el cuerpo nuevo en un fichero temporal y guárdalo con `gitlab.mjs mr edit N --body-file "[FICHERO]"`.
+- **Confirmar**: `gitlab.mjs mr view N` escribe el título sin el prefijo de draft.
 
 #### Especificación de Argumentos
 
@@ -22,4 +31,4 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor
 
 - **Closes #N**: El cuerpo nuevo conserva la línea `Closes #N` de la sección Issue. Si el cuerpo que llega pierde esa línea, repónla antes de guardarlo. Si el encargo no trae el número de la issue, pídelo al orquestador.
 - **Solo lo pedido**: Cambia solo el título o el cuerpo que indica el encargo. El borrador, la asignación y las revisiones no se tocan aquí.
-- **Procesamiento de respuestas**: Confirma el título o el cuerpo guardados con `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json title,body`. Si falla, comunica el error y deja el cambio pendiente.
+- **Procesamiento de respuestas**: Confirma el título o el cuerpo guardados leyéndolos de nuevo: en GitHub, `bash "<carpeta de esta skill>/scripts/gh.sh" pr view N --json title,body`. Si falla, comunica el error y deja el cambio pendiente.

@@ -8,7 +8,11 @@ description: "Abre la pull request de la rama de trabajo contra la rama base, en
 - **Descripción**: Úsala desde el subagente `manage-pr` para abrir la pull request contra la rama base, directamente en draft, asignada a la cuenta del token y con la etiqueta del tipo, en una misma invocación. Para enlazar la issue, usa `link-pr-to-issue`.
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/manage-pr-base.sh" "[RAMA]" "[TITULO]" "[CUERPO]" "[TIPO]" "[BASE]"`
 
-El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-pr-base`; en Claude Code, `${CLAUDE_SKILL_DIR}`. Requiere GitHub CLI y el `GITHUB_TOKEN` del `.env` del proyecto: la cuenta del token será el autor de la PR y `--assignee "@me"` la persona asignada. El script usa el token del `.env`, no la sesión de `gh`.
+El comando se lanza desde la raíz del repositorio git. La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor y Codex, `.agents/skills/manage-pr-base`; en Claude Code, `${CLAUDE_SKILL_DIR}`. En GitHub requiere GitHub CLI y el `GITHUB_TOKEN` del `.env` del proyecto: la cuenta del token será el autor de la PR y `--assignee "@me"` la persona asignada. El script usa el token del `.env`, no la sesión de `gh`.
+
+En GitLab el comando es el mismo y abre un merge request, en draft por el prefijo `Draft:` del título, con `curl` y el `GITLAB_TOKEN` del `.env`. Una línea del cuerpo que empiece por un comando de GitLab, como `/close`, se rechaza, también dentro de un bloque de código, porque GitLab la ejecutaría: pon un espacio delante de la barra.
+
+GitLab no admite forks en este flujo: en un fork, el script avisa, y no ve ni abre merge requests hacia el proyecto original. Comunica el aviso.
 
 Fuente de la forma del cuerpo: [github-pr](https://www.skills.sh/gentleman-programming/gentleman-skills/github-pr), adaptada a este paquete.
 

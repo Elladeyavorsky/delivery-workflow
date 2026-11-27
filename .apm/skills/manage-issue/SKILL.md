@@ -1,11 +1,11 @@
 ---
 name: manage-issue
-description: "Crea la issue en GitHub con la plantilla de su tipo, la etiqueta del tipo y asignada a la cuenta del token. Úsala para dejar la tarea escrita."
+description: "Crea la issue en el forge del proyecto con la plantilla de su tipo, la etiqueta del tipo y asignada a la cuenta del token. Úsala para dejar la tarea escrita."
 ---
 
 ### Herramienta: MANAGE_ISSUE
 
-- **Descripción**: Úsala para dejar la tarea escrita en GitHub. La rama y la pull request las abren `manage-branch` y `manage-pr`.
+- **Descripción**: Úsala para dejar la tarea escrita en el forge del proyecto. La rama y la pull request las abren `manage-branch` y `manage-pr`.
 - **GitHub**: `bash "<carpeta de esta skill>/scripts/gh.sh" ARGUMENTOS`, desde la raíz del repositorio git. Lanza `gh` con el `GITHUB_TOKEN` del `.env` del proyecto. Usa siempre este script: así la issue queda a nombre de la cuenta del token.
 - **Issue**: `bash "<carpeta de esta skill>/scripts/manage-issue.sh" "[TITULO]" "[FICHERO]" "[TIPO]"`, desde la raíz del repositorio git. Escribe antes el cuerpo en un fichero temporal. El script comprueba el título con `check-title.sh`, deja lista la etiqueta con `ensure-label.sh` y crea la issue asignada a `@me`, en ese orden. Si el título no pasa, no crea nada.
 
@@ -22,7 +22,8 @@ La carpeta de esta skill es la que contiene este `SKILL.md`: en opencode, Cursor
 #### Reglas de Invocación Críticas
 
 - **Etiqueta**: Si la cuenta no puede crear la etiqueta, el script crea la issue sin ella y lo dice: comunícalo.
-- **Título**: Si el script sale con 1 por el título, corrige el título según su mensaje y vuelve a lanzarlo. Crea la issue solo con `manage-issue.sh`: es el camino que comprueba el título antes de llamar a `gh`.
+- **Título**: Si el script sale con 1 por el título, corrige el título según su mensaje y vuelve a lanzarlo. Crea la issue solo con `manage-issue.sh`: es el camino que comprueba el título antes de llamar al forge.
 - **Otros errores**: Si sale con 1 por el tipo o el cuerpo, o con 3 porque falta el token del `.env`, comunica el error. No se ha creado la issue.
 - **Sin spec**: Deja el cuerpo con la plantilla del tipo. `concept-developer` añade debajo `## Spec`, `## Plan` y `## Tasks`.
-- **Procesamiento de respuestas**: `gh` escribe la URL de la issue: el número es su última parte. Quédate con el número, el título, la URL y la etiqueta. Si `gh` devuelve un error, comunícalo: el número no se supone.
+- **Procesamiento de respuestas**: La última línea es la URL de la issue: el número es su última parte. Quédate con el número, el título, la URL y la etiqueta. Si el comando devuelve un error, comunícalo: el número no se supone.
+- **En GitLab**: El comando es el mismo. `manage-issue.sh` detecta el forge y crea la issue con `gitlab.mjs`, con el `GITLAB_TOKEN` del `.env`. GitLab ejecuta como comando una línea que empiece por uno de sus comandos, como `/close`: el script la rechaza, también dentro de un bloque de código. Pon un espacio delante de la barra.

@@ -21,7 +21,7 @@ Momento en que una parte del trabajo queda en un commit y en el remoto, a petici
 Momento en que la pull request recibe revisores y sale de draft.
 
 **Cambios pedidos**:
-Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. Spec, plan y tasks van en un comentario de la issue y se repite el ciclo.
+Momento en que la pull request abierta tiene `CHANGES_REQUESTED`. En GitLab basta un hilo sin resolver de alguien distinto del autor. Spec, plan y tasks van en un comentario de la issue y se repite el ciclo.
 
 **Revisión** (comentario):
 El comentario de la issue que empieza por `<!-- Revisión N -->` y lleva las plantillas de spec, plan y tasks de lo que pidió la persona revisora.
@@ -31,6 +31,15 @@ Momento en que la persona confirma que el ciclo vuelve a empezar después de que
 
 **Solo git**:
 La forma de dejar la tarea escrita que para con la pull request en draft enlazada, sin ciclo, para trabajar a mano.
+
+## Forge
+
+**Forge**:
+El servicio donde viven las issues y las pull requests del proyecto: GitHub o GitLab.
+_Evitar_: proveedor, plataforma
+
+**Merge request**:
+El nombre que GitLab da a la pull request. El flujo dice pull request para los dos forges.
 
 ## Tarea
 
@@ -43,7 +52,7 @@ La clase de la tarea: `feat`, `fix`, `docs`, `refactor`, `test`, `chore` o `know
 _Evitar_: categoría
 
 **Etiqueta**:
-La marca de GitHub que lleva el nombre exacto del tipo, en la issue y en la pull request.
+La marca del forge que lleva el nombre exacto del tipo, en la issue y en la pull request.
 _Evitar_: label (en español), tag
 
 **Spec**:

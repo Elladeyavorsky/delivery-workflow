@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Crea una PR contra la rama base, en draft, asignada al usuario autenticado y con la etiqueta del tipo.
+# En GitLab crea un merge request con gitlab.mjs.
 
 set -euo pipefail
 
@@ -66,10 +67,47 @@ else
   base=$(detect_base)
 fi
 
-source "${here}/gh.sh"
-load_github_token
+# Sin Node: dice si el repositorio es de GitLab, por GIT_WORKFLOW_FORGE (entorno o .env) o por origin.
+looks_like_gitlab() {
+  local declared=${GIT_WORKFLOW_FORGE:-} top common file line
+  if [[ -z "$declared" ]] && top=$(git rev-parse --show-toplevel 2>/dev/null); then
+    file="${top}/.env"
+    if [[ ! -f "$file" ]]; then
+      common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || common=""
+      file="$(dirname "$common")/.env"
+    fi
+    if [[ -f "$file" ]]; then
+      line=$(grep -E '^[[:space:]]*(export[[:space:]]+)?GIT_WORKFLOW_FORGE[[:space:]]*=' "$file" | tail -n 1) || line=""
+      declared=$(sed -E "s/^[^=]*=//; s/[[:space:]]+#.*$//; s/[\"'[:space:]]//g" <<<"$line")
+    fi
+  fi
+  if [[ -n "$declared" ]]; then
+    grep -qix 'gitlab' <<<"$declared"
+    return
+  fi
+  # El host tiene que ser gitlab.com, no un nombre que lo contenga ni una ruta.
+  git remote get-url origin 2>/dev/null | grep -qiE '^([a-z+]+://)?([^/@]*@)?(altssh\.)?gitlab\.com[:/]'
+}
 
-existing=$(gh pr list --head "$branch" --base "$base" --state open --json url --jq '.[0].url // empty')
+forge=github
+if command -v node >/dev/null 2>&1; then
+  forge=$(node "${here}/gitlab.mjs" forge) || exit $?
+  if [[ "$forge" != github && "$forge" != gitlab ]]; then
+    echo "No se pudo saber si el forge es GitHub o GitLab." >&2
+    exit 1
+  fi
+elif looks_like_gitlab; then
+  echo "Node no está instalado. Hace falta Node 24 o superior para GitLab." >&2
+  exit 1
+fi
+
+if [[ "$forge" == gitlab ]]; then
+  existing=$(node "${here}/gitlab.mjs" mr find "$branch" "$base")
+else
+  source "${here}/gh.sh"
+  load_github_token
+  existing=$(gh pr list --head "$branch" --base "$base" --state open --json url --jq '.[0].url // empty')
+fi
 if [[ -n "$existing" ]]; then
   echo "La pull request de ${branch} hacia ${base} ya existía: ${existing}"
   echo "No se ha tocado su cuerpo."
@@ -82,6 +120,12 @@ bash "${here}/check-title.sh" "$title" >/dev/null || exit 1
 if grep -Eq '#[0-9]' "$body"; then
   echo "El cuerpo no nombra la issue: deja «Closes #» sin número, lo completa link-pr-to-issue." >&2
   exit 1
+fi
+
+if [[ "$forge" == gitlab ]]; then
+  node "${here}/gitlab.mjs" mr create "$branch" "$title" "$body" "$type" "$base"
+  echo "Base: ${base}"
+  exit 0
 fi
 
 label_args=()
