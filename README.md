@@ -36,7 +36,7 @@ brew install gh node apm          # sin Homebrew: curl -sSL https://aka.ms/apm-u
 
 **Windows:** los scripts del paquete son de `bash`, así que hace falta un entorno de tipo Unix.
 
-- **WSL (recomendada, vale para todos los agentes).** En PowerShell como administrador, `wsl --install`, y reinicia. Abre **Ubuntu**, clona el proyecto dentro de WSL (por ejemplo, en `~/proyectos`) e instala las herramientas. Después sigue desde [Instalar el paquete](#instalar-el-paquete) y abre tu agente desde la terminal de Ubuntu (`opencode`, `claude`, `codex` o `cursor .`; Cursor abre el proyecto conectado a WSL). El `.env` va en la raíz del proyecto, dentro de WSL.
+- **WSL (recomendada, vale para todos los agentes).** En PowerShell como administrador, `wsl --install`, y reinicia. Abre **Ubuntu**, clona el proyecto dentro de WSL (por ejemplo, en `~/proyectos`) e instala las herramientas. Después sigue desde [Instalar el paquete](#instalar-el-paquete) y abre tu agente desde la terminal de Ubuntu (por ejemplo, con `opencode`; con `cursor .`, Cursor abre el proyecto conectado a WSL). El `.env` va en la raíz del proyecto, dentro de WSL.
 
   ```bash
   sudo apt update && sudo apt install -y gh
@@ -45,7 +45,7 @@ brew install gh node apm          # sin Homebrew: curl -sSL https://aka.ms/apm-u
   curl -sSL https://aka.ms/apm-unix | sh
   ```
 
-- **Git Bash (para agentes que lanzan sus comandos con él, como Claude Code).** Instala [Git for Windows](https://git-scm.com/download/win), que trae Git Bash. Instala en PowerShell las herramientas. Después abre **Git Bash** y sigue desde [Instalar el paquete](#instalar-el-paquete).
+- **Git Bash (para agentes que lanzan sus comandos con él).** Instala [Git for Windows](https://git-scm.com/download/win), que trae Git Bash. Instala en PowerShell las herramientas. Después abre **Git Bash** y sigue desde [Instalar el paquete](#instalar-el-paquete).
 
   ```powershell
   winget install --id GitHub.cli
@@ -69,7 +69,7 @@ Haz commit de `apm.yml` y `apm.lock.yaml`. Las skills quedan en la carpeta que A
 
 ### El fichero `.env`
 
-El token de tu forge va en el fichero `.env`, en la raíz del proyecto. Añádelo a `.gitignore` (`echo .env >> .gitignore`): sin eso, el flujo no usa el token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
+El token de tu forge va en el fichero `.env`, en la raíz del proyecto. Añádelo a `.gitignore` (`echo .env >> .gitignore`): sin eso, el flujo no usa el token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git. [`.env.example`](.env.example) trae todas las variables que el paquete lee de ese fichero.
 
 ### El token de GitHub
 
@@ -103,7 +103,7 @@ Los forks no se admiten: `check-status` y la creación del merge request avisan.
 
 Con el paquete instalado, el flujo funciona por defecto una vez completada la [Instalación](#instalación): el `.env` y, en opencode, `/configure-models`.
 
-Llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
+Llama al orquestador con `/delivery-workflow` (en opencode 2.x, pide «usa la skill delivery-workflow»; en Codex, `$delivery-workflow`) y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma. En Codex, llámalas todas con `$` en vez de `/`.
 
 | Pide | Qué pasa |
 |---|---|

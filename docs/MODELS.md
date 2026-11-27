@@ -1,8 +1,8 @@
 # Modelos de los agentes
 
-Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` (en Codex, `$configure-models`; en opencode 2.x, pide «usa la skill configure-models»). Elegir modelo es opcional. En opencode hay que ejecutarlo antes de usar el flujo, porque además quita `skills:` de los agentes ([opencode](#notas-por-herramienta)).
+Cada agente puede ejecutarse con un modelo distinto: uno de mayor capacidad para el que redacta la especificación y uno ligero para el que lanza un script. Como cada persona dispone de una suscripción diferente, el paquete no incluye el modelo: se elige con `/configure-models` ([cómo llamar a una skill](../README.md#uso)). Elegir modelo es opcional. En opencode hay que ejecutarlo antes de usar el flujo, porque además quita `skills:` de los agentes ([opencode](#notas-por-herramienta)).
 
-Compatible con **opencode, Claude Code, Cursor y Codex**, en las que tengan carpeta de agentes en el proyecto.
+Funciona con los agentes compatibles que tengan carpeta de agentes en el proyecto.
 
 ## Cómo se usa
 
@@ -10,7 +10,7 @@ Compatible con **opencode, Claude Code, Cursor y Codex**, en las que tengan carp
 2. `/configure-models`: detecta los modelos disponibles, propone uno por agente indicando el motivo y solicita confirmación una sola vez: «¿Los aceptas? [Enter = sí | nombre del agente para cambiarlo]».
 3. Para cambiar uno, indica el nombre del agente y el modelo (de la lista o escrito a mano). Enter equivale a no asignar modelo, de modo que el agente hereda el del chat.
 
-Las elecciones se guardan en `.git/delivery-workflow-models.json`: son personales y git no las registra. Sin la skill, desde la raíz del proyecto (la carpeta es `.claude/skills` en Claude Code y `.agents/skills` en opencode, Cursor y Codex):
+Las elecciones se guardan en `.git/delivery-workflow-models.json`: son personales y git no las registra. Sin la skill, desde la raíz del proyecto (la carpeta es `.agents/skills` en opencode, Cursor y Codex, y `.claude/skills` en Claude Code):
 
 ```bash
 node .agents/skills/configure-models/scripts/configure-models.mjs apply --set code-developer=NOMBRE   # inherit = sin modelo
@@ -30,9 +30,9 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 
 ## Después de `apm install` o `apm update`
 
-`apm install` elimina la línea `model` de los agentes sin avisar (verificado con `apm` 0.35.0 en Claude Code, Cursor y Codex). En opencode, `apm install` y `apm update` reponen además `skills:`. Por ello:
+`apm install` elimina la línea `model` de los agentes sin avisar, y en opencode `apm install` y `apm update` reponen además `skills:`. La eliminación de `model` está verificada con `apm` 0.35.0 en Claude Code, Cursor y Codex. Por ello:
 
-- `check-status` muestra `Modelos: desincronizado (cursor 0/9)`; si ningún agente lleva modelo, muestra `configurado, pero ningún agente lleva modelo`.
+- `check-status` muestra `Modelos: desincronizado (opencode 0/9)`; si ningún agente lleva modelo, muestra `configurado, pero ningún agente lleva modelo`.
 - Si los agentes de opencode llevan `skills:`, `check-status` lo dice y pide ejecutar `/configure-models`.
 - `/configure-models` parte de lo guardado: con Enter (o `--yes`) se restaura. Sin la skill, `apply` sin argumentos lo hace sin preguntar. Un valor guardado se considera válido si el modelo sigue en la lista actual, si no se pudo leer la lista o si se escribió a mano (en este último caso se emite un aviso, pero se conserva). Si no había nada que proponer (herramienta no disponible, lista vacía), no se guarda nada y el siguiente `apply` vuelve a proponer. Solo `--set agente=inherit` registra «heredar».
 - `apm audit` marcará esos agentes como modificados. Es el comportamiento esperado.
