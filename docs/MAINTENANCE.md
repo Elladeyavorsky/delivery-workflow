@@ -167,9 +167,3 @@ La versión que se ve en `staging` es la de ese push. El `apm.yml` de la etiquet
 Las releases estables usan etiquetas `vX.Y.Z`. Una IA decide el tipo de cambio, así que dos ejecuciones sobre los mismos commits pueden dar un resumen distinto.
 
 Los proyectos instalan desde la etiqueta, así que `staging` puede cambiar sin afectarles.
-
-## Autodependencia
-
-El workflow `APM: update dependency` solo corre en este repositorio. Hace checkout de `staging`. Si `apm.yml` pide `venturars/delivery-workflow`, lo quita con `self-release.py align` y abre una PR en draft. Si no hay autodependencia, no hace nada. No pinnea este paquete a una etiqueta ni ejecuta `apm update` de sí mismo.
-
-No es un workflow reutilizable: otro repositorio no puede llamarlo. La pull request la abre `GITHUB_TOKEN`, así que no dispara `PR: check rules`.
