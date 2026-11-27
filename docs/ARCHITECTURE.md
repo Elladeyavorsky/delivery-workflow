@@ -13,7 +13,7 @@ Ruta: `.github/`. Workflows, scripts de release y de comprobación de pull reque
 | Rol | Ruta o glob | Notas |
 | --- | --- | --- |
 | Presentación | `.github/workflows/*.yml`, `.github/scripts/review-pull-request.mjs`, `.github/actions/discord-pr-notifications/` | Recibe eventos de GitHub, valida la forma de la PR y traduce al protocolo del check o del aviso. |
-| Servicios (aplicación + dominio) | `.github/scripts/self-release.py`, `.github/scripts/release-version.sh`, `.github/scripts/release-ia.sh`, `.github/scripts/update-apm-dependency.sh` | Reglas de manifiesto APM, versión y autodependencia. Ligera: sin capa de dominio propia. |
+| Servicios (aplicación + dominio) | `.github/scripts/self-release.py`, `.github/scripts/release-version.sh`, `.github/scripts/release-ia.sh` | Reglas de manifiesto APM, versión y autodependencia. Ligera: sin capa de dominio propia. |
 | Infraestructura | Llamadas a `git`, `gh` y a la API de Groq desde los workflows y scripts | No hay repositorios de persistencia. |
 | Shared | — | No hay shared propio de esta parte. |
 | Platform | `actions/checkout`, `actions/setup-node`, `actions/upload-artifact` | Acciones de GitHub fijadas a SHA. |
