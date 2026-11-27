@@ -11,22 +11,20 @@ Paquete [APM](https://github.com/microsoft/apm) para agentes de IA. Lleva una ta
 5. **La cierra** con el commit final, el push y la petición de revisión.
 6. **Si la revisión pide cambios**, escribe spec, plan y tasks en un comentario de la misma issue y repite el ciclo.
 
-En GitLab, la pull request es el merge request.
-
 Se para cuando falta un dato necesario para la spec o para identificar a los revisores, si aparece un secreto o si falla la novena ronda.
 
 ## Requisitos
 
-- Un proyecto con git y un remoto `origin` en un forge compatible, GitHub o GitLab, en el que puedas escribir.
-- APM y Node 24 o superior. Además, en GitHub, [GitHub CLI](https://cli.github.com) (`gh`), que no necesita sesión; en GitLab, `curl`.
+- Un proyecto con git y un remoto `origin` en un forge compatible, GitHub o [GitLab](docs/GITLAB.md), en el que puedas escribir.
+- APM y Node 24 o superior. En GitHub, además, [GitHub CLI](https://cli.github.com) (`gh`), que no necesita sesión.
 - Uno de estos agentes: opencode (1.x o 2.x), Claude Code, Cursor o Codex.
-- Un `.env` en la raíz del proyecto con el token de tu forge ([GitHub](#el-token-de-github) o [GitLab](#gitlab)). Sin eso, el flujo no arranca.
+- Un `.env` en la raíz del proyecto con el token de tu forge ([GitHub](#el-token-de-github) o [GitLab](docs/GITLAB.md#token-y-forge)). Sin eso, el flujo no arranca.
 
 ## Instalación
 
 ### Preparar el equipo
 
-Una sola vez. Elige tu sistema. Los pasos que instalan `gh` son de GitHub: en GitLab, sáltatelos y comprueba que tienes `curl`.
+Una sola vez. Elige tu sistema.
 
 **macOS y Linux:**
 
@@ -84,20 +82,7 @@ Los agentes usan el token del `.env` para todo lo que hacen en GitHub (issues, p
 
 ### GitLab
 
-El flujo usa GitLab cuando `origin` está en `gitlab.com`.
-
-1. Crea un token propio con el permiso `api`.
-2. Añade al `.env` esta línea:
-
-   ```
-   GITLAB_TOKEN=tu_token
-   ```
-
-La sesión de `glab` y los tokens en variables de la terminal no cuentan.
-
-En una instancia propia, declara `GIT_WORKFLOW_FORGE=gitlab`. Si la web no está en el host de `origin`, añade `GIT_WORKFLOW_FORGE_URL` con su dirección `https://`. Las dos valen en el entorno o en el `.env`.
-
-Los forks no se admiten: `check-status` y la creación del merge request avisan. Las demás diferencias con GitHub están en [docs/GITLAB.md](docs/GITLAB.md).
+Para usar el flujo con GitLab, sigue [docs/GITLAB.md](docs/GITLAB.md): requisitos, token y diferencias con GitHub.
 
 ## Uso
 
@@ -124,8 +109,6 @@ La prosa de issues, spec, pull requests y documentación del ciclo sigue la skil
 
 Según el agente y su configuración, la primera vez que el flujo lanza `bash`, `node`, `git` o `gh` te pide permiso. opencode 1.19.6, con su configuración por defecto, ejecuta los comandos sin preguntar, y el paquete no trae configuración de sandbox para opencode: úsalo solo en proyectos en los que confíes.
 
-En GitLab, si tu sandbox limita los dominios, permite `gitlab.com` o el host de tu instancia.
-
 En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, solo en proyectos en los que confíes:
 
 ```json
@@ -137,12 +120,13 @@ En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, so
 Tras instalar, estos pasos mejoran el resultado.
 
 - **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. `apm install` y `apm update` borran la línea `model` de los agentes: repite el comando después. Ver [docs/MODELS.md](docs/MODELS.md).
-- **Context7:** `/setup-context7`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas, sin instalar nada. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
-- **RAG local:** `/setup-docs-rag`, para lo mismo sin que tus consultas salgan de tu ordenador; necesita Docker, Ollama y `uv` (en Windows con opencode, también `bash`: WSL o Git Bash). Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
+- **Documentación de las dependencias:** para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas. Elige uno de estos dos canales, porque solo puede haber uno activo ([comparación de los canales](docs/DEPENDENCY-DOCS.md#canales-de-documentación)):
+  - **RAG local (recomendado):** `/setup-docs-rag`. Tus consultas no salen de tu ordenador. Necesita Docker, Ollama y `uv` (en Windows con opencode, también `bash`: WSL o Git Bash). Ver [docs/RAG-LOCAL.md](docs/RAG-LOCAL.md).
+  - **Context7:** `/setup-context7`. No pide instalar nada, pero envía el nombre de la librería y tu pregunta a un servicio externo, Upstash. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
 - **Docker:** la skill `docker-best-practices`, para que el `Dockerfile` y el `docker-compose.yml` fijen versiones y se comprueben antes de la pull request. Ver [docs/DOCKER.md](docs/DOCKER.md).
 - **Compliance:** `/setup-compliance`, para tener los documentos del AI Act y el RGPD del proyecto. Es orientativo: no certifica cumplimiento ni es asesoramiento jurídico. Ver [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
-En opencode 2.x, reinicia opencode después de `/setup-context7` o `/setup-docs-rag` para que cargue el MCP.
+En opencode 2.x, reinicia opencode después de `/setup-docs-rag` o `/setup-context7` para que cargue el MCP.
 
 **Opcional:** los avisos de PR en Discord solo funcionan en GitHub y están apagados por defecto. `/setup-discord-notifications` los activa y necesita un token con permiso de administración sobre el repositorio. Ver [docs/DISCORD-PR-NOTIFICATIONS.md](docs/DISCORD-PR-NOTIFICATIONS.md).
 
