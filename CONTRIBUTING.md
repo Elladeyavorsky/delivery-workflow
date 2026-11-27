@@ -4,7 +4,7 @@ Esta guía lleva un cambio desde la issue hasta la pull request. La leen agentes
 
 ## Antes de empezar
 
-delivery-workflow es un paquete [APM](https://github.com/microsoft/apm) con skills y agentes que llevan una tarea de GitHub o GitLab desde la idea hasta la revisión. Lee, en este orden:
+delivery-workflow es un paquete [APM](https://github.com/microsoft/apm) con skills y agentes que llevan una tarea desde la idea hasta la revisión en el forge del proyecto. Lee, en este orden:
 
 1. [README.md](README.md): qué hace el paquete, cómo se instala y cómo se usa.
 2. [GLOSSARY.md](GLOSSARY.md): el vocabulario del flujo.

@@ -5,7 +5,7 @@ El paquete sale de dos piezas de la rama `staging` del repositorio de origen, [v
 - **La plantilla de git**, [`exercises/git-workflow-agent-template`](https://github.com/venturars/neoland-102026/tree/staging/exercises/git-workflow-agent-template), con lo que entró hasta venturars/neoland-102026#1125 (plantillas por tipo, `knowledge`, PR con `gh`, caché de revisores).
 - **El ciclo de agentes**, [`exercises/ChromaDB`](https://github.com/venturars/neoland-102026/tree/staging/exercises/ChromaDB) (`AGENTS.md`, `agents/` y `templates/specs/`).
 
-Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto de GitHub o GitLab, con opencode, Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
+Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto de un forge compatible, con opencode, Claude Code, Cursor o Codex. Lo que no aparece aquí está igual que en `staging`.
 
 ## Estructura
 
@@ -23,7 +23,7 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto 
 | `templates/issues/*_issue.md` | `.apm/skills/create-issue/assets/` | La plantilla viaja con la skill que la usa. |
 | `templates/pull-request/*-pull-request.md` | `.apm/skills/create-pr-base/assets/` | Igual. |
 | `ChromaDB/templates/specs/spec.md`, `plan.md`, `tasks.md` | `.apm/skills/issue-spec/assets/` | Igual, y pasan a ser secciones de la issue (ver Spec en la issue). |
-| `MCPS/github-mcp-server/mcp.txt` | — | Se quita. El paquete no usa el MCP de GitHub: todo va por `gh` con el token del `.env`. |
+| `MCPS/github-mcp-server/mcp.txt` | — | Se quita. El paquete no usa el MCP de GitHub: en GitHub, todo va por `gh` con el token del `.env`. |
 | — | `.apm/skills/<skill>/scripts/gh.sh` | Nuevo, igual en cada skill que llama a GitHub: lanza `gh` con el `GITHUB_TOKEN` del `.env`. |
 | — | `.apm/skills/<skill>/scripts/gitlab.mjs` | Nuevo, igual en cada skill que lleva `gh.sh`: el camino de GitLab, con la API, `curl` y el `GITLAB_TOKEN` del `.env`. |
 | — | `.apm/skills/issue-spec/` | Nueva: lee y escribe la spec en la issue. |
@@ -46,13 +46,13 @@ Estos cambios las juntan en un paquete APM que se instala en cualquier proyecto 
 - **Se mantiene la comprobación del tipo.** `staging` la quitó de los scripts de rama. Aquí se mantiene con los siete tipos, `knowledge` incluido, porque la etiqueta se crea con el nombre del tipo: un tipo mal escrito dejaría una etiqueta suelta en el repositorio. `create-issue` también rechaza un tipo que no sea uno de los siete.
 - **Etiquetas por tipo.** Nuevo. `create-issue` y `create-pr-base` ponen a la issue y a la pull request una etiqueta con el nombre exacto del tipo, y la crean con `ensure-label.sh` si no existe. Si la cuenta no puede crear etiquetas, siguen sin ella y lo dicen.
 - **`create-pr-base.sh`.** Es el `create-pr-base-staging.sh` de `staging` con la base detectada (o la que se le pase), la etiqueta del tipo y la comprobación de una PR abierta de esa rama, que devuelve su URL sin tocarla.
-- **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio de origen; en `.git/` git nunca la ve. Sirve para GitHub y GitLab.
+- **Caché de revisores en `.git/`.** `github-cache.mjs` guarda `.git-workflow-cache.json` en la carpeta de git (`git rev-parse --git-common-dir`) en vez de en la raíz del repositorio. En la raíz solo funciona donde `.gitignore` la ignora, como en el repositorio de origen; en `.git/` git nunca la ve. Sirve para los dos forges.
 - **Revisores desde la issue.** Como en `exercises/ChromaDB`, si la issue nombra revisores (una línea `Revisan:` al final de la parte de arriba), el orquestador los pide al acabar el ciclo. ChromaDB solo los pide si son dos personas; aquí basta con uno. Si la issue no nombra a nadie, la PR sigue en draft hasta «que la revisen», como en la plantilla de git.
 - **`launch-push` es una skill.** En `staging` es un subagente que solo lanza su skill. Aquí el orquestador lanza la skill directamente: un push no hace ninguna pregunta, su salida es una línea y un subagente solo añadía una llamada más.
 - **Nombre de revisor ambiguo.** En `staging`, `create-pr` pide aclaración. Aquí `create-pr` es un subagente y no puede preguntar: devuelve el nombre y los candidatos al orquestador, que pregunta y lo vuelve a llamar.
-- **`check-status.sh`.** Escribe además la rama base, si el `.env` tiene `GITHUB_TOKEN` (sin mostrar su valor), de qué cuenta es el token y la versión de Node. El orquestador para antes de los pasos que los necesitan.
+- **`check-status.sh`.** Escribe además la rama base, si el `.env` tiene el token del forge (sin mostrar su valor), de qué cuenta es el token y la versión de Node. El orquestador para antes de los pasos que los necesitan.
 - **GitLab.** Nuevo. Las skills del flujo detectan el forge: `gitlab.com` es GitLab, y `GIT_WORKFLOW_FORGE` declara una instancia propia. GitHub sigue con `gh`; GitLab usa `gitlab.mjs` con el `GITLAB_TOKEN` del `.env`. En GitLab, `check-status` escribe el forge con su host, el token y la cuenta. El camino de GitLab no se ha probado en un GitLab real. Las diferencias están en [docs/GITLAB.md](docs/GITLAB.md).
-- **Sin MCP de GitHub.** Todo lo que el MCP hacía (crear la issue, asignar, pasar a draft, editar el cuerpo) lo hace `gh` a través de `gh.sh`, que lee el token del `.env` del proyecto.
+- **Sin MCP de GitHub.** En GitHub, todo lo que el MCP hacía (crear la issue, asignar, pasar a draft, editar el cuerpo) lo hace `gh` a través de `gh.sh`, que lee el token del `.env` del proyecto.
 - **Forma del título.** Nuevo. `check-title.sh` comprueba el título de la issue y de la pull request antes de crearlas: menos de 72 caracteres, verbo en mayúscula delante, sin tipo delante, sin número de issue y sin punto final. Solo acepta ASCII imprimible, así que no pasan acentos, eñes ni saltos de línea; que esté en inglés lo piden las skills, porque el script no puede comprobarlo. Las issues se crean con `create-issue.sh`, que lo comprueba antes de llamar a `gh`. En una PR que ya existía, `create-pr-base.sh` devuelve su URL sin mirar el título, y rechaza un cuerpo que nombre la issue. Antes la forma solo estaba en un comentario de la plantilla.
 - **`create-empty-commit.sh`.** Se niega a hacer el commit vacío en la rama base detectada, además de en `staging` y `main`, y también en `master`.
 - **Entrevistas.** Hacen las preguntas en tandas con respuesta recomendada, como en `staging` desde #925, pero esperan las respuestas en la conversación en vez de devolverlas al orquestador. Se llaman tandas para no confundirlas con las rondas del ciclo. Quitan la línea de instalación de las skills de Matt Pocock y la cambian por un enlace de inspiración.
