@@ -193,6 +193,29 @@ check "check-status dice la cuenta del token" grep -q "^GitHub CLI: cuenta ada" 
 check "check-status informa de Node" grep -q "^Node:" <<<"$status"
 check "check-status informa de la pull request" grep -q "^Pull request: #9 CHANGES_REQUESTED issue #1" <<<"$status"
 
+# check-status: pide Node 24. El node falso solo responde la versión.
+mkdir -p "${work}/fake-node"
+cat >"${work}/fake-node/node" <<'NODE'
+#!/usr/bin/env bash
+[[ "$1" == -p ]] && echo "$FAKE_NODE_VERSION" && exit 0
+exit 1
+NODE
+chmod +x "${work}/fake-node/node"
+status=$(PATH="${work}/fake-node:${PATH}" FAKE_NODE_VERSION=23.7.0 "${skills}/check-status/scripts/check-status.sh")
+check "check-status pide Node 24 con una versión anterior" grep -qx "Node: 23.7.0. Hace falta Node 24 o superior." <<<"$status"
+status=$(PATH="${work}/fake-node:${PATH}" FAKE_NODE_VERSION=24.0.0 "${skills}/check-status/scripts/check-status.sh")
+check "check-status acepta Node 24" grep -qx "Node: 24.0.0" <<<"$status"
+# Un PATH solo con lo que el script necesita: así no depende de dónde esté instalado node.
+mkdir -p "${work}/no-node"
+for tool in basename bash cat dirname env git grep mktemp rm sed tail; do
+  ln -s "$(command -v "$tool")" "${work}/no-node/${tool}"
+done
+status=$(PATH="${work}/bin:${work}/no-node" "${skills}/check-status/scripts/check-status.sh" 2>&1)
+check "check-status sin Node lo dice" grep -qx "Node: no instalado. Hace falta Node 24 o superior." <<<"$status"
+check "check-status sin Node dice que no comprueba la pull request" grep -qx "Pull request: no se pudo comprobar (falta Node)" <<<"$status"
+check "check-status sin Node llega al final" grep -q "^Sin seguimiento:" <<<"$status"
+status=$("${skills}/check-status/scripts/check-status.sh")
+
 # check-status: la línea de modelos nunca para el script y pasa por sus tres estados.
 check "check-status avisa de que no hay agentes de Cursor" grep -q "^Modelos: sin configurar" <<<"$status"
 mkdir -p .cursor/agents

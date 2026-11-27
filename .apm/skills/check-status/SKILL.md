@@ -1,11 +1,11 @@
 ---
 name: check-status
-description: "Resume la rama actual, la rama base, si el .env tiene el token de GitHub, la cuenta del token y Node 20+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
+description: "Resume la rama actual, la rama base, si el .env tiene el token de GitHub, la cuenta del token y Node 24+, el remoto y los cambios sin commit. Úsala antes de elegir el momento."
 ---
 
 ### Herramienta: CHECK_STATUS
 
-- **Descripción**: Úsala cuando necesites saber la rama actual, la rama base, si hay cambios sin commit, si la rama sigue a un remoto, si el `.env` del proyecto tiene `GITHUB_TOKEN`, de qué cuenta es, si está Node 20+ y si los agentes tienen modelo.
+- **Descripción**: Úsala cuando necesites saber la rama actual, la rama base, si hay cambios sin commit, si la rama sigue a un remoto, si el `.env` del proyecto tiene `GITHUB_TOKEN`, de qué cuenta es, si está Node 24+ y si los agentes tienen modelo.
 
 - **Comando de Terminal**: `bash "<carpeta de esta skill>/scripts/check-status.sh"`
 
@@ -22,4 +22,4 @@ No recibe argumentos.
 - **Si falta el token de GitHub**: Todo lo que toca GitHub va a fallar. Repite a la persona el error del script: tiene que crear un `.env` en la raíz del proyecto con `GITHUB_TOKEN=su_token`, con un token de su propia cuenta, y tener `.env` en `.gitignore`. No hace falta reiniciar nada: los scripts leen el `.env` en cada llamada. Usa solo el token del `.env`: el inicio de sesión de `gh` y las variables del entorno no cuentan.
 - **Si GitHub rechaza el token**: Pide a la persona que cree otro token y lo cambie en el `.env`.
 - **Si `Modelos:` dice «sin configurar» o «desincronizado»**: No es un error y no bloquea nada. Dilo una vez: los agentes usan el modelo del chat, y para elegir uno la persona ejecuta `/configure-models` (tras `apm install` o `apm update` se vuelven a poner las líneas de modelo que `apm install` borra). Si dice «no se pudo comprobar», sigue. Si la línea dice que los agentes de opencode aún llevan `skills:`, di además que ejecute `/configure-models` antes de usar el flujo: un proveedor `openai-compatible` puede rechazar ese campo.
-- **Si falta `gh` o Node 20+**: La issue, la pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide a la persona que los instale antes de dejar la tarea escrita.
+- **Si falta `gh` o Node 24+**: La issue, la pull request, las etiquetas, la spec en la issue y la caché de revisores van a fallar. Pide a la persona que los instale antes de dejar la tarea escrita.
