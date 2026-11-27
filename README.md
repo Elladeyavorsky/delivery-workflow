@@ -61,6 +61,8 @@ Desde la raíz del proyecto en el que vas a usar el flujo. Para cambiar delivery
 apm install venturars/delivery-workflow --target opencode
 ```
 
+Sin etiqueta, APM instala la rama `staging`, que puede llevar cambios sin publicar. Para una versión publicada, añade `#` y la etiqueta de la [última release](https://github.com/venturars/delivery-workflow/releases/latest) al nombre del paquete.
+
 Haz commit de `apm.yml` y `apm.lock.yaml`. Las skills quedan en la carpeta que APM crea para tu agente. Con opencode, las skills van en `.agents/skills/`, los agentes en `.opencode/agents/` y APM escribe `opencode.json`.
 
 **Con opencode**, ejecuta `/configure-models` antes de usar el flujo y después de cada `apm install` o `apm update`: quita el campo `skills:` de los agentes, que un proveedor `openai-compatible` puede rechazar.
