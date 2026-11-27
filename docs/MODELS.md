@@ -19,7 +19,7 @@ node .agents/skills/configure-models/scripts/configure-models.mjs reset         
 
 ## Niveles
 
-Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los modelos disponibles, el que corresponde. La configuración está en [agent-profiles.json](../.apm/skills/configure-models/assets/agent-profiles.json): para modificar el criterio, edite ese archivo (prevalece el primer patrón que coincide).
+Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los modelos disponibles, el que corresponde. La configuración está en [agent-profiles.json](../.apm/skills/configure-models/assets/agent-profiles.json): para modificar el criterio, edita ese archivo (prevalece el primer patrón que coincide).
 
 | Agente | Nivel | Por qué |
 |---|---|---|
@@ -44,6 +44,8 @@ Cada agente tiene asignado un nivel y cada herramienta selecciona, entre los mod
 El modelo depende de la suscripción de cada persona: si se versionara, quien no lo tuviera recibiría un agente inoperativo. Por ello los agentes del paquete se tratan como resultado de la instalación y la línea `model` se deja fuera de los commits. Gestionar el `.gitignore` queda fuera del alcance de `/configure-models`.
 
 ## Notas por herramienta
+
+Cada comando externo tiene un límite de 10 s, salvo `opencode models`, con 30 s porque la primera llamada puede descargar el catálogo: si no responde (por ejemplo, por falta de sesión iniciada), el resultado es «desconocido» y los agentes heredan el modelo del chat.
 
 **opencode** (verificado con 1.19.6 y 2.4.2, con un modelo simulado)
 - Lista de modelos: `opencode models`, lanzado en la raíz del proyecto. Si `opencode` no está en el PATH, en macOS se usa el comando que trae la app de escritorio (`OpenCode.app`).
@@ -70,5 +72,3 @@ El modelo depende de la suscripción de cada persona: si se versionara, quien no
 **Codex** (**no verificado con un Codex real**: no estaba instalado)
 - Lista de modelos: `codex debug models` y, si falla, `~/.codex/models_cache.json` (o `$CODEX_HOME`). El lector acepta una lista o un objeto con `models` y reconoce `slug`, `id` o `model`. Los fixtures de las pruebas son manuales y los patrones de nivel (`gpt-N-codex`, `…-mini`) son una hipótesis. Se recomienda revisar la propuesta antes de aceptarla.
 - Se escribe `model = "…"` en `.codex/agents/<agente>.toml`, a continuación de `name`. Según su documentación, es la clave que Codex lee como modelo del agente; no se ha comprobado.
-
-Cada comando externo tiene un límite de 10 s, salvo `opencode models`, con 30 s porque la primera llamada puede descargar el catálogo: si no responde (por ejemplo, por falta de sesión iniciada), el resultado es «desconocido» y los agentes heredan el modelo del chat.

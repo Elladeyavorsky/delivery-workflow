@@ -1,6 +1,6 @@
 # Documentación de compliance
 
-`/setup-compliance` (en Codex, `$setup-compliance`) genera en `docs/` del proyecto la base de los documentos que piden el AI Act y el RGPD. Se lanza a mano tras `apm install`; la instalación no la ejecuta. Es orientativa: no certifica cumplimiento ni es asesoramiento jurídico.
+`/setup-compliance` (en Codex, `$setup-compliance`) genera en `docs/` del proyecto la base de los documentos que piden el AI Act y el RGPD. Se lanza a mano tras `apm install`; la instalación no la ejecuta.
 
 ## Documentos que genera
 

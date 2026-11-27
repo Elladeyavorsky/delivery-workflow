@@ -11,6 +11,6 @@ El RAG local es el canal alternativo a Context7. Para comparar los canales y ele
 - **Tras cambiar dependencias:** repite `/setup-docs-rag`. Solo reindexa lo que cambió.
 - **Receta:** troceo por la estructura del Markdown, `nomic-embed-text`, Qdrant y reordenado con MiniLM-L6, medida en [research/rag-documentacion-python-3.15.pdf](research/rag-documentacion-python-3.15.pdf). Cada tipo de documentación (Sphinx, MkDocs, Markdown, Node, TypeDoc, Go y Rust) guarda sus propios metadatos para filtrar.
 
-> **Nota:** Quien no haya lanzado `/setup-docs-rag` verá un MCP que no arranca si subes los ficheros de config a git.
+> **Nota:** Al subir a git esos ficheros de config, quien no haya lanzado `/setup-docs-rag` verá un MCP que no arranca.
 
-> **Nota:** Desde una versión anterior, `/setup-docs-rag` quita el `docs-rag` de la config de usuario y vuelve a indexar todo, porque el índice anterior tenía los metadatos en español. `~/.docs-rag/` ya no se usa: puedes borrarlo.
+> **Nota:** Al actualizar desde una versión anterior, `/setup-docs-rag` quita el `docs-rag` de la config de usuario y vuelve a indexar todo, porque el índice anterior tenía los metadatos en español. `~/.docs-rag/` ya no se usa: puedes borrarlo.

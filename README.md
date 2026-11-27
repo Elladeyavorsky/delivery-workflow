@@ -63,45 +63,43 @@ apm install venturars/delivery-workflow --target opencode
 
 Haz commit de `apm.yml` y `apm.lock.yaml`. Las skills quedan en la carpeta que APM crea para tu agente. Con opencode, las skills van en `.agents/skills/`, los agentes en `.opencode/agents/` y APM escribe `opencode.json`.
 
-**Con opencode**, ejecuta `/configure-models` antes de usar el flujo: quita el campo `skills:` de los agentes, que un proveedor `openai-compatible` puede rechazar.
+**Con opencode**, ejecuta `/configure-models` antes de usar el flujo y después de cada `apm install` o `apm update`: quita el campo `skills:` de los agentes, que un proveedor `openai-compatible` puede rechazar.
+
+### El fichero `.env`
+
+El token de tu forge va en el fichero `.env`, en la raíz del proyecto. Añádelo a `.gitignore` (`echo .env >> .gitignore`): sin eso, el flujo no usa el token. El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ### El token de GitHub
 
 Los agentes usan el token del `.env` para todo lo que hacen en GitHub (issues, pull requests, etiquetas, revisiones). La sesión de `gh` y las variables de tu terminal no entran en el flujo, así que no hace falta abrir tu herramienta desde la terminal: basta con que encuentre `gh` y `node`, y `/check-status` lo comprueba.
 
 1. Crea un token **clásico** con el permiso `repo` en <https://github.com/settings/tokens/new?scopes=repo>. Que sea de tu cuenta: todo lo que haga el flujo aparecerá a tu nombre. Los tokens *fine-grained* no sirven en repositorios personales de otra persona.
-2. En la raíz del proyecto, crea o abre el fichero `.env` y añade esta línea, con tu token:
+2. Añade al `.env` esta línea, con tu token:
 
    ```
    GITHUB_TOKEN=ghp_tu_token
    ```
-
-3. Añade `.env` a `.gitignore`: `echo .env >> .gitignore`.
-
-El `.env` se queda en tu equipo: no lo subas al repositorio. El push sigue usando tus credenciales de git.
 
 ### GitLab
 
 El flujo usa GitLab cuando `origin` está en `gitlab.com`.
 
 1. Crea un token propio con el permiso `api`.
-2. En el `.env` de la raíz del proyecto, añade esta línea:
+2. Añade al `.env` esta línea:
 
    ```
    GITLAB_TOKEN=tu_token
    ```
 
-3. Añade `.env` a `.gitignore`: sin eso, el flujo no usa el token.
-
-La sesión de `glab` y los tokens en variables de la terminal no cuentan. El push sigue usando tus credenciales de git.
+La sesión de `glab` y los tokens en variables de la terminal no cuentan.
 
 En una instancia propia, declara `GIT_WORKFLOW_FORGE=gitlab`. Si la web no está en el host de `origin`, añade `GIT_WORKFLOW_FORGE_URL` con su dirección `https://`. Las dos valen en el entorno o en el `.env`.
 
-Qué cambia respecto a GitHub, como los forks, que no se admiten: [docs/GITLAB.md](docs/GITLAB.md).
+Los forks no se admiten: `check-status` y la creación del merge request avisan. Las demás diferencias con GitHub están en [docs/GITLAB.md](docs/GITLAB.md).
 
 ## Uso
 
-Con el paquete instalado, el flujo funciona por defecto. Antes solo hacen falta el `.env` con tu token, `/configure-models` en opencode y `GIT_WORKFLOW_FORGE=gitlab` en una instancia propia de GitLab.
+Con el paquete instalado, el flujo funciona por defecto una vez completada la [Instalación](#instalación): el `.env` y, en opencode, `/configure-models`.
 
 Llama al orquestador con `/delivery-workflow` (en Codex, `$delivery-workflow`; en opencode 2.x, pide «usa la skill delivery-workflow») y pide lo que quieras con tus palabras. En opencode 2.x las skills no salen en la lista de comandos: pide las demás de la misma forma.
 
@@ -134,7 +132,7 @@ En Claude Code puedes aprobarlos de una vez en `.claude/settings.local.json`, so
 
 ## Recomendado
 
-Tras instalar, estos pasos mejoran el resultado. El único necesario para que el flujo funcione es `/configure-models` en opencode.
+Tras instalar, estos pasos mejoran el resultado.
 
 - **Modelos de los agentes:** `/configure-models` elige el modelo de cada agente según tu suscripción, para no usar uno que no te conviene. `apm install` y `apm update` borran la línea `model` de los agentes: repite el comando después. Ver [docs/MODELS.md](docs/MODELS.md).
 - **Context7:** `/setup-context7`, para que los agentes lean la documentación de la versión que usas y no escriban código para versiones antiguas, sin instalar nada. Ver [docs/CONTEXT7.md](docs/CONTEXT7.md).
@@ -148,7 +146,7 @@ En opencode 2.x, reinicia opencode después de `/setup-context7` o `/setup-docs-
 
 ## Actualizar y desinstalar
 
-- **Actualizar:** `apm update` y haz commit de `apm.yml` y `apm.lock.yaml`. En opencode, ejecuta después `/configure-models`.
+- **Actualizar:** `apm update` y haz commit de `apm.yml` y `apm.lock.yaml`. En opencode, repite además el paso de [Instalar el paquete](#instalar-el-paquete).
 - **Desinstalar:** `apm uninstall venturars/delivery-workflow`. El `.env` es tuyo: bórralo o déjalo.
 
 ## Más información

@@ -1,8 +1,8 @@
 # Documentación de las dependencias
 
-Dos canales dan a los agentes la documentación de la versión que usa tu proyecto: Context7 (por defecto) y un RAG local. Este documento da la visión general y cómo elegir; cada canal tiene su doc: [Context7](CONTEXT7.md) y [RAG local](RAG-LOCAL.md).
+Dos canales dan a los agentes la documentación de la versión que usa tu proyecto: Context7 (por defecto) y un RAG local. Cada canal tiene su doc: [Context7](CONTEXT7.md) y [RAG local](RAG-LOCAL.md).
 
-`code-developer` y `code-tester` consultan la documentación oficial de la versión que usa tu proyecto antes de usar una API de una dependencia. Las dos skills leen las dependencias de `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod` y `Cargo.toml`, en la raíz y en las subcarpetas. En un repositorio git las busca con `git ls-files` (sin `node_modules` ni `dist`), que respeta `.gitignore` y no limita la profundidad; sin git recorre hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build, y piden confirmación una sola vez.
+`code-developer` y `code-tester` consultan la documentación oficial antes de usar una API de una dependencia. `/setup-context7` y `/setup-docs-rag` leen las dependencias de `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod` y `Cargo.toml`, en la raíz y en las subcarpetas. En un repositorio git las buscan con `git ls-files` (sin `node_modules` ni `dist`), que respeta `.gitignore` y no limita la profundidad; sin git recorren hasta 3 niveles. Proponen todas salvo los tipos y las utilidades de build, y piden confirmación una sola vez.
 
 ## Canales de documentación
 

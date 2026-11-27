@@ -1,6 +1,6 @@
 # Protección de datos
 
-`data-protection-guideline` es un checklist del RGPD y la LOPDGDD para cada tarea. Este documento explica cómo activarla y qué hace.
+`data-protection-guideline` es un checklist del RGPD y la LOPDGDD para cada tarea.
 
 La guía la usan `concept-developer`, `concept-tester` y `legal-advisor`. Señala posibles problemas de cada tarea con su artículo. Tanto esta guía como `/setup-compliance` son orientativas: no certifican cumplimiento.
 
