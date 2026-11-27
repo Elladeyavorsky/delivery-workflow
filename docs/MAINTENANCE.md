@@ -157,15 +157,17 @@ Los cambios entran en `staging` por pull request desde su rama de trabajo. Para 
 
 1. Fusiona los cambios de desarrollo en `staging`.
 2. Quien mantiene el paquete abre la pull request de `staging` a `main` y la fusiona.
-3. El push a `main` dispara `release-create-version.yml` («Release: create version»). El workflow busca la última etiqueta `vX.Y.Z`, reúne los commits y los ficheros cambiados desde ella y se los envía a la IA de Groq. La IA decide si el cambio es `major`, `minor` o `patch` y escribe el resumen. El workflow calcula la versión nueva, crea la etiqueta y la release con ese resumen y la lista de PR. No hace falta etiquetar a mano. Si el commit ya tiene etiqueta, no crea otra.
+3. El push a `main` dispara `release-create-version.yml` («Release: create version»). El workflow busca la última etiqueta `vX.Y.Z`. Si `HEAD` ya tiene etiqueta, no crea otra. Si desde la última etiqueta el único cambio es `version` en `apm.yml` y/o quitar la autodependencia, no llama a la IA ni crea otra etiqueta. Si hay trabajo real, reúne los commits y los ficheros, se los envía a la IA de Groq, calcula la versión nueva, crea la etiqueta y la release con ese resumen y la lista de PR. No hace falta etiquetar a mano.
 
-Este paquete no se lista a sí mismo en `dependencies.apm`. El `apm.yml` publicado es como `v1.2.3`: `mcp` (eur-lex) y nada de `venturars/delivery-workflow#…`. Quien mantiene el repo trabaja con `.apm/` local (`apm install --target …`), no con una etiqueta de GitHub.
+Tras crear la etiqueta `vX.Y.Z`, el workflow hace checkout de `staging`, escribe `version` en `apm.yml` con `X.Y.Z` (sin la `v`), quita `venturars/delivery-workflow` de `dependencies.apm` si está, y si hay cambios hace commit y `git push` a `staging`. No abre pull request. Si `staging` ya tiene esa versión y no lista el paquete, no crea commit.
+
+Este paquete no se lista a sí mismo en `dependencies.apm`. El `apm.yml` de la etiqueta es como el de `v1.2.3`: `mcp` (eur-lex) y nada de `venturars/delivery-workflow#…`. Quien mantiene el repo trabaja con `.apm/` local (`apm install --target …`), no con una etiqueta de GitHub.
 
 Si un merge a `main` volviera a traer esa autodependencia, `self-release.py align` la quita y la etiqueta apunta a ese commit, **sin** empujarlo a `main` (otro push a `main` sería otro release).
 
 El workflow necesita el secreto `GROQ_API_KEY` en el repositorio. Si falta, si la IA no responde o si su respuesta no es válida, el workflow falla y no crea etiqueta ni release.
 
-El workflow no cambia `version` en `apm.yml`. La versión publicada es la etiqueta.
+La versión que se ve en `staging` es la de ese push. El `apm.yml` de la etiqueta puede llevar un `version` anterior.
 
 Las releases estables usan etiquetas `vX.Y.Z`. Una IA decide el tipo de cambio, así que dos ejecuciones sobre los mismos commits pueden dar un resumen distinto.
 
