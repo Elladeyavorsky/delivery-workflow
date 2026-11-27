@@ -6,6 +6,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { realpathSync } from "node:fs";
+import {
+  GitLabError, LIMITS, canEditIssue, checkForge, connect, createNote, getIssue, listNotes, listOpenMergeRequests,
+  reviewSummary, updateIssue, updateNote,
+} from "./gitlab.mjs";
 
 const exec = promisify(execFile);
 const SECTIONS = ["spec", "plan", "tasks"];
@@ -17,6 +22,7 @@ export const MAX_BODY = 65536;
 // Formas típicas de credenciales. Solo se informa del tipo, nunca del valor.
 const SECRETS = [
   ["token de GitHub", /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})\b/],
+  ["token de GitLab", /\bglpat-[A-Za-z0-9_.-]{20,}/],
   ["clave de API", /\bsk-[A-Za-z0-9_-]{20,}\b/],
   ["clave de AWS", /\bAKIA[0-9A-Z]{16}\b/],
   ["clave de Google", /\bAIza[0-9A-Za-z_-]{35}\b/],
@@ -134,6 +140,29 @@ function closesIssue(body, number) {
   );
 }
 
+// La revisión del merge request abierto que cierra la issue.
+async function gitlabReviewNotes(api, number) {
+  const found = (await listOpenMergeRequests(api)).find((item) => closesIssue(item.description, number));
+  if (!found) throw new IssueSpecError("No hay un merge request abierto que cierre esta issue.", 1);
+  const review = await reviewSummary(api, found);
+  const lineComments = review.threads.flatMap((thread) => thread.notes.filter((note) => !note.system).map((note) => ({
+    user: { login: note.author.username },
+    path: note.position?.new_path ?? note.position?.old_path,
+    line: note.position?.new_line ?? note.position?.old_line,
+    body: note.body,
+  })));
+  const reviews = review.notes.map((note) => ({
+    state: review.askers.includes(note.author.username) ? "CHANGES_REQUESTED" : "COMMENTED",
+    author: note.author.username,
+    // Un comentario general no se resuelve: la fecha distingue lo de esta vuelta de lo anterior.
+    body: note.created_at ? `${note.created_at.slice(0, 10)}: ${note.body}` : note.body,
+  }));
+  const text = formatReviewNotes({ reviewDecision: review.decision, reviews, lineComments });
+  const extra = [`Piden cambios: ${review.askers.join(", ") || "nadie"}`];
+  if (!review.statesAvailable) extra.push("Esta instancia no dice quién pidió cambios: la decisión sale de los hilos y las aprobaciones.");
+  return `${text}\n${extra.join("\n")}\n`;
+}
+
 function checkTop(parsed, expected) {
   if (!expected) throw new IssueSpecError("Falta --expect-top con la huella de la parte de arriba.", 1);
   if (hashTop(parsed.top) !== expected) {
@@ -141,20 +170,20 @@ function checkTop(parsed, expected) {
   }
 }
 
-function checkWritable(body) {
+function checkWritable(body, limit = MAX_BODY) {
   const secret = findSecret(body);
   if (secret) throw new IssueSpecError(`El texto contiene lo que parece un ${secret}. No se escribe nada.`, 4);
-  if (body.length > MAX_BODY) {
-    throw new IssueSpecError(`El cuerpo tendría ${body.length} caracteres y el límite es ${MAX_BODY}. Acorta el plan.`, 5);
+  if (body.length > limit) {
+    throw new IssueSpecError(`El cuerpo tendría ${body.length} caracteres y el límite es ${limit}. Acorta el plan.`, 5);
   }
 }
 
-export function replaceSections(body, replacements, expected) {
+export function replaceSections(body, replacements, expected, limit = MAX_BODY) {
   const parsed = parseBody(body);
   checkTop(parsed, expected);
   for (const [name, content] of Object.entries(replacements)) parsed.sections[name] = stripHeading(name, content);
   const next = buildBody(parsed);
-  checkWritable(next);
+  checkWritable(next, limit);
   return next;
 }
 
@@ -216,25 +245,58 @@ async function withTemporary(text, action) {
   }
 }
 
-export async function run(args, { run: call = gh(), today = () => new Date().toISOString().slice(0, 10) } = {}) {
+// El cliente de GitLab cuando ese es el forge. En GitHub, null.
+async function gitlabClient(project) {
+  return (await checkForge()).forge === "gitlab" ? connect({ project }) : null;
+}
+
+const NO_EDIT = "No puedes editar el cuerpo de esta issue. Publica la spec con revision y sigue con --revision.";
+
+// Con run se prueba el camino de GitHub y con gitlab el de GitLab. Sin ninguno, decide el forge del repositorio.
+export async function run(args, options = {}) {
+  try {
+    return await execute(args, options);
+  } catch (error) {
+    // Los códigos de salida de GitLabError son otros: aquí el 3 es la parte de arriba cambiada.
+    if (error instanceof GitLabError) throw new IssueSpecError(error.message, 1);
+    throw error;
+  }
+}
+
+async function execute(args, { run: injected, gitlab, today = () => new Date().toISOString().slice(0, 10) }) {
   const { command, number, options } = parseArgs(args);
+  const api = gitlab ?? (injected ? null : await gitlabClient(options.repo));
+  const call = injected ?? gh();
+  const limits = api ? LIMITS : { issue: MAX_BODY, comment: MAX_BODY };
   const repo = options.repo ? ["--repo", options.repo] : [];
   const apiRepo = options.repo ? `repos/${options.repo}` : "repos/{owner}/{repo}";
-  const readIssueBody = async () => JSON.parse(await call(["issue", "view", number, ...repo, "--json", "body"])).body ?? "";
-  const writeIssueBody = (body) =>
-    withTemporary(body, (path) => call(["issue", "edit", number, ...repo, "--body-file", path])).catch((error) => {
+  const readIssueBody = async () => {
+    if (api) return (await getIssue(api, number)).description ?? "";
+    return JSON.parse(await call(["issue", "view", number, ...repo, "--json", "body"])).body ?? "";
+  };
+  const writeIssueBody = async (body) => {
+    if (api) {
+      return updateIssue(api, number, { description: body }).catch((error) => {
+        if (error.status === 403 && !/permiso api/.test(error.message)) throw new IssueSpecError(NO_EDIT, 6);
+        throw error;
+      });
+    }
+    return withTemporary(body, (path) => call(["issue", "edit", number, ...repo, "--body-file", path])).catch((error) => {
       if (/permission|forbidden|403|Resource not accessible/i.test(String(error.message))) {
-        throw new IssueSpecError(
-          "No puedes editar el cuerpo de esta issue. Publica la spec con revision y sigue con --revision.",
-          6,
-        );
+        throw new IssueSpecError(NO_EDIT, 6);
       }
       throw error;
     });
+  };
   const listComments = async () => {
+    if (api) return listNotes(api, number);
     const raw = await call(["api", `${apiRepo}/issues/${number}/comments`, "--paginate"]);
     const parsed = JSON.parse(raw || "[]");
     return Array.isArray(parsed) ? parsed : [parsed];
+  };
+  const postComment = (text) => {
+    if (api) return createNote(api, number, text);
+    return withTemporary(text, (path) => call(["issue", "comment", number, ...repo, "--body-file", path]));
   };
   const source = async () => {
     if (!options.revision) return { id: null, body: await readIssueBody() };
@@ -243,7 +305,8 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
   };
   const persist = async (body, id) => {
     if (id == null) return writeIssueBody(body);
-    checkWritable(body);
+    checkWritable(body, limits.comment);
+    if (api) return updateNote(api, number, id, body);
     await withTemporary(JSON.stringify({ body }), (path) =>
       call(["api", `${apiRepo}/issues/comments/${id}`, "-X", "PATCH", "--input", path]),
     );
@@ -258,6 +321,7 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
     return parsed.sections[options.section] ?? "";
   }
   if (command === "can-edit") {
+    if (api) return (await canEditIssue(api, number)) ? "yes" : "no";
     const [owner, name] = options.repo ? options.repo.split("/") : ["{owner}", "{repo}"];
     const query = "query($owner:String!,$name:String!,$n:Int!){repository(owner:$owner,name:$name){issue(number:$n){viewerCanUpdate}}}";
     const raw = await call(["api", "graphql", "-f", `query=${query}`, "-F", `owner=${owner}`, "-F", `name=${name}`, "-F", `n=${number}`]);
@@ -271,7 +335,8 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
     }
     if (!Object.keys(replacements).length) throw new IssueSpecError("Indica al menos --spec, --plan o --tasks.", 1);
     const { id, body } = await source();
-    await persist(replaceSections(body, replacements, options["expect-top"]), id);
+    const limit = id == null ? limits.issue : limits.comment;
+    await persist(replaceSections(body, replacements, options["expect-top"], limit), id);
     return `Issue #${number}: ${Object.keys(replacements).join(", ")} escritas.`;
   }
   if (command === "tick") {
@@ -292,14 +357,15 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
     const file = options.positional[0];
     if (!file) throw new IssueSpecError("Indica el fichero del comentario.", 1);
     const text = await readFile(file, "utf8");
-    checkWritable(text);
+    checkWritable(text, limits.comment);
     if (isRevisionComment(text)) {
       throw new IssueSpecError("El comentario de ronda no puede ser un comentario de revisión. Usa revision.", 1);
     }
-    await withTemporary(text, (path) => call(["issue", "comment", number, ...repo, "--body-file", path]));
+    await postComment(text);
     return `Issue #${number}: comentario publicado.`;
   }
   if (command === "reviews") {
+    if (api) return gitlabReviewNotes(api, number);
     const prs = JSON.parse(await call(["pr", "list", ...repo, "--state", "open", "--json", "number,body,url,reviewDecision"])) || [];
     const pr = (Array.isArray(prs) ? prs : []).find((item) => closesIssue(item.body, number));
     if (!pr) throw new IssueSpecError("No hay una pull request abierta que cierre esta issue.", 1);
@@ -326,14 +392,15 @@ export async function run(args, { run: call = gh(), today = () => new Date().toI
     if (!file) throw new IssueSpecError("Indica el fichero del comentario.", 1);
     const n = nextRevisionNumber(await listComments());
     const text = ensureRevisionHeader(await readFile(file, "utf8"), n);
-    checkWritable(text);
-    await withTemporary(text, (path) => call(["issue", "comment", number, ...repo, "--body-file", path]));
+    checkWritable(text, limits.comment);
+    await postComment(text);
     return `Issue #${number}: revisión ${n} publicada. Huella: ${hashTop(parseBody(text).top)}`;
   }
   throw new IssueSpecError(`Comando desconocido: ${command}.`, 1);
 }
 
-if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+// Node da en import.meta.url la ruta real: la de la llamada puede pasar por un enlace simbólico.
+if (process.argv[1] && pathToFileURL(realpathSync(process.argv[1])).href === import.meta.url) {
   run(process.argv.slice(2))
     .then((output) => console.log(output))
     .catch((error) => {

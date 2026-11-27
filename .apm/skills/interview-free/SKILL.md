@@ -5,7 +5,7 @@ description: "Entrevista en tandas de preguntas, con respuesta recomendada, para
 
 ### Herramienta: INTERVIEW_FREE
 
-- **Descripción**: Úsala cuando la idea no depende de este repositorio, o cuando `interview-with-repo` ya dejó decisiones que el repositorio no responde. En ese caso va después. Para crear la issue, la rama o la pull request, usa `manage-issue`, `manage-branch` o `manage-pr`. Esta skill no tiene script ni llama a GitHub.
+- **Descripción**: Úsala cuando la idea no depende de este repositorio, o cuando `interview-with-repo` ya dejó decisiones que el repositorio no responde. En ese caso va después. Para crear la issue, la rama o la pull request, usa `manage-issue`, `manage-branch` o `manage-pr`. Esta skill no tiene script ni llama al forge.
 - **Inspiración**: [grill-me](https://www.skills.sh/mattpocock/skills/grill-me), de Matt Pocock. Esta versión pregunta en tandas, cada pregunta con su respuesta recomendada. La original no hace falta instalarla.
 
 #### Cómo entrevistar

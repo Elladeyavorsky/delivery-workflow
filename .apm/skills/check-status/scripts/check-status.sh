@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resume la rama, la rama base, el token del .env, gh, Node, el remoto y los cambios locales.
+# Resume la rama, la rama base, el forge, el token del .env, Node, el remoto y los cambios locales.
 
 set -euo pipefail
 
@@ -75,25 +75,76 @@ else
   echo "Rama base: no detectada. Defínela con GIT_WORKFLOW_BASE."
 fi
 
-source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
+gitlab="$(dirname "${BASH_SOURCE[0]}")/gitlab.mjs"
 token=no
 token_error=$(mktemp)
-trap 'rm -f "$token_error"' EXIT
-if load_github_token 2>"$token_error"; then
-  token=yes
-  echo "Token de GitHub: GITHUB_TOKEN en .env"
-else
-  echo "Token de GitHub: $(cat "$token_error")"
+forge_error=$(mktemp)
+trap 'rm -f "$token_error" "$forge_error"' EXIT
+
+# Sin Node: dice si el repositorio es de GitLab, por GIT_WORKFLOW_FORGE (entorno o .env) o por origin.
+looks_like_gitlab() {
+  local declared=${GIT_WORKFLOW_FORGE:-} top common file line
+  if [[ -z "$declared" ]] && top=$(git rev-parse --show-toplevel 2>/dev/null); then
+    file="${top}/.env"
+    if [[ ! -f "$file" ]]; then
+      common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || common=""
+      file="$(dirname "$common")/.env"
+    fi
+    if [[ -f "$file" ]]; then
+      line=$(grep -E '^[[:space:]]*(export[[:space:]]+)?GIT_WORKFLOW_FORGE[[:space:]]*=' "$file" | tail -n 1) || line=""
+      declared=$(sed -E "s/^[^=]*=//; s/[[:space:]]+#.*$//; s/[\"'[:space:]]//g" <<<"$line")
+    fi
+  fi
+  if [[ -n "$declared" ]]; then
+    grep -qix 'gitlab' <<<"$declared"
+    return
+  fi
+  # El host tiene que ser gitlab.com, no un nombre que lo contenga ni una ruta.
+  git remote get-url origin 2>/dev/null | grep -qiE '^([a-z+]+://)?([^/@]*@)?(altssh\.)?gitlab\.com[:/]'
+}
+
+# El forge decide qué token y qué cuenta se comprueban. Con "ninguno" no se comprueba ninguno.
+forge=github
+if command -v node >/dev/null 2>&1; then
+  forge_status=0
+  forge=$(node "$gitlab" forge 2>"$forge_error") || forge_status=$?
+  if [[ $forge_status -eq 3 ]]; then
+    # Falta GITHUB_TOKEN en un host propio: se dice cómo declarar GitLab y se sigue como en GitHub.
+    echo "Forge: $(cat "$forge_error")"
+    forge=github
+  elif [[ $forge_status -ne 0 || ( "$forge" != github && "$forge" != gitlab ) ]]; then
+    reason=$(cat "$forge_error")
+    echo "Forge: ${reason:-no se pudo comprobar.}"
+    forge=ninguno
+  fi
+elif looks_like_gitlab; then
+  forge=gitlab
 fi
 
-if ! command -v gh >/dev/null 2>&1; then
-  echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
-elif [[ "$token" == no ]]; then
-  echo "GitHub CLI: instalado, sin token"
-elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
-  echo "GitHub CLI: cuenta ${login}"
-else
-  echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+if [[ "$forge" == gitlab ]]; then
+  if command -v node >/dev/null 2>&1; then
+    node "$gitlab" status 2>&1 || true
+  else
+    echo "Forge: GitLab. No se puede comprobar el token ni la cuenta sin Node."
+  fi
+elif [[ "$forge" == github ]]; then
+  source "$(dirname "${BASH_SOURCE[0]}")/gh.sh"
+  if load_github_token 2>"$token_error"; then
+    token=yes
+    echo "Token de GitHub: GITHUB_TOKEN en .env"
+  else
+    echo "Token de GitHub: $(cat "$token_error")"
+  fi
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "GitHub CLI: no instalado. Hace falta para la issue, la pull request, las etiquetas y la spec."
+  elif [[ "$token" == no ]]; then
+    echo "GitHub CLI: instalado, sin token"
+  elif login=$(gh api user --jq .login 2>/dev/null) && [[ -n "$login" ]]; then
+    echo "GitHub CLI: cuenta ${login}"
+  else
+    echo "GitHub CLI: GitHub rechaza el token del .env. Crea otro y cámbialo."
+  fi
 fi
 
 if ! command -v node >/dev/null 2>&1; then
@@ -130,7 +181,15 @@ else
   echo "Último commit: todavía no hay commits"
 fi
 
-if [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
+if [[ "$forge" == gitlab ]]; then
+  if command -v node >/dev/null 2>&1; then
+    if pr_line=$(node "$gitlab" mr status "$branch" 2>"$forge_error"); then
+      echo "$pr_line"
+    else
+      echo "Pull request: no se pudo consultar. $(cat "$forge_error")"
+    fi
+  fi
+elif [[ "$token" == yes ]] && command -v gh >/dev/null 2>&1; then
   pr_json=$(gh pr view --json number,reviewDecision,body 2>/dev/null || true)
   if ! echo "$pr_json" | grep -q '"number"'; then
     echo "Pull request: ninguna abierta en esta rama"

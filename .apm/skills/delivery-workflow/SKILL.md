@@ -14,12 +14,12 @@ description: "Orquestador del flujo de entrega: reconoce el momento (pensar la t
 ## 2. Contexto y Alcance
 
 - **Cuándo actuar:** En cuanto la persona pide pensar una tarea, dejarla escrita, guardar un trozo, que la revisen, cambios pedidos u otra pasada. Para hacer cambios en un proyecto, se hacen desde una rama nueva y una pull request nueva en draft, salvo los cambios pedidos sobre una PR ya abierta.
-- **Límites de conocimiento:** Ejecuta git y llama a GitHub solo a través de las skills y los subagentes. Deja el código, la spec, el plan y las tasks a los subagentes que los escriben. El merge a la rama base lo hace la persona. Solo el orquestador lanza subagentes: un subagente que necesita otro devuelve la petición aquí.
+- **Límites de conocimiento:** Ejecuta git y llama al forge solo a través de las skills y los subagentes. En GitLab, la pull request es el merge request. Deja el código, la spec, el plan y las tasks a los subagentes que los escriben. El merge a la rama base lo hace la persona. Solo el orquestador lanza subagentes: un subagente que necesita otro devuelve la petición aquí.
 
 ## 3. Flujo de Trabajo (Paso a Paso)
 
 1. **Recepción:** Lee lo que pide la persona y el estado que devuelva la skill `check-status`, incluida la rama base.
-2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token del `.env`, que GitHub lo rechaza, o que faltan `gh` o Node 24+, para antes de cualquier paso que los use. Si la línea `Modelos:` dice «sin configurar» o «desincronizado», dilo una sola vez en toda la conversación (tras `apm install` o `apm update` hay que ejecutar `/configure-models`) y sigue: nunca bloquea. Antes de crear la issue:
+2. **Validación:** Elige un solo momento según el estado real de la tarea, no por la formulación del prompt. Si `check-status` dice que falta el token del `.env`, que el forge lo rechaza, o que faltan `gh` (en GitHub), `curl` (en GitLab) o Node 24+, para antes de cualquier paso que los use. Si la línea `Modelos:` dice «sin configurar» o «desincronizado», dilo una sola vez en toda la conversación (tras `apm install` o `apm update` hay que ejecutar `/configure-models`) y sigue: nunca bloquea. Antes de crear la issue:
    - Si el problema, el resultado esperado, el alcance, cómo comprobarlo y el tipo están claros y son coherentes con el proyecto, créala y explica brevemente por qué.
    - Si quedan dudas o contradicciones, usa la skill `help-me-to-think`. Repite una entrevista resuelta solo si hay cambios o decisiones nuevas.
 
@@ -78,7 +78,7 @@ Cada subagente del ciclo se lanza en limpio. El encargo lleva solo el número de
 ## 4. Herramientas y APIs Asignadas
 
 - **Skill `help-me-to-think`:** Pensar la tarea antes de dejarla escrita.
-- **Skill `check-status`:** Saber la rama, la rama base, si hay token, `gh` y Node, si los agentes tienen modelo (`Modelos:`), si hay cambios, y si la rama tiene PR abierta con `reviewDecision` e issue, antes de elegir el momento.
+- **Skill `check-status`:** Saber la rama, la rama base, si hay token, `gh` o `curl`, y Node, si los agentes tienen modelo (`Modelos:`), si hay cambios, y si la rama tiene PR abierta con `reviewDecision` e issue, antes de elegir el momento.
 - **Skill `configure-models`:** Elegir el modelo de cada agente con la persona. Solo la nombras si la línea `Modelos:` lo pide; la ejecuta la persona con `/configure-models`.
 - **Skill `pull-changes`:** Adelantar la rama base antes de abrir la rama de trabajo.
 - **Skill `launch-push`:** Subir la rama de trabajo después de cada commit.
