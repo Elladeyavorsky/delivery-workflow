@@ -68,7 +68,7 @@ Ruta: `.apm/`. Skills, agentes y sus scripts, que `apm install` copia a la herra
 | Servicios (aplicación + dominio) | `.apm/skills/*/scripts/*.{mjs,sh,py}` | Cada skill lanza su script. Ligera. |
 | Infraestructura | Llamadas a `gh`, `git`, APIs y ficheros desde esos scripts | |
 | Shared | `.apm/skills/*/assets/` | Plantillas y copias, sin negocio. |
-| Platform | Node 20+, `gh`, APM | |
+| Platform | Node 24+, `gh`, APM | |
 | Raíz de composición | `apm.yml` | Manifiesto del paquete. |
 | Pruebas | `tests/*.mjs`, `tests/scripts.test.sh`, `tests/docs_rag/` | |
 

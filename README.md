@@ -30,7 +30,7 @@ El comentario es opcional. Si alguien no está en Discord o nadie confirma la re
 ## Requisitos
 
 - Un proyecto con git y un remoto `origin` en GitHub en el que puedas escribir.
-- [GitHub CLI](https://cli.github.com) (`gh`), Node 20 o superior y APM. `gh` no necesita sesión. El MCP de EUR-Lex necesita Node 24 o superior ([Protección de datos](#protección-de-datos)).
+- [GitHub CLI](https://cli.github.com) (`gh`), Node 24 o superior y APM. `gh` no necesita sesión. El MCP de EUR-Lex necesita Node 24 o superior ([Protección de datos](#protección-de-datos)).
 - **Un `.env` en la raíz del proyecto con tu token de GitHub**, y `.env` en `.gitignore`. Sin eso, el flujo no arranca.
 
 ## El token de GitHub
@@ -166,7 +166,7 @@ Lo que `legal-advisor` no resuelve es un hueco y el orquestador te lo pregunta. 
 
 El MCP es `@cyanheads/eur-lex-mcp-server`, fijado a la versión 0.21.0, y corre en local con `npx`. No necesita clave. Viene con el paquete: `apm install` escribe el servidor `eur-lex` en `.mcp.json`, `.cursor/mcp.json` o `.codex/config.toml`, según tus herramientas, sin tocar otros MCP. No hay que configurar nada. Recarga el editor o la sesión después de instalar.
 
-**Necesita Node 24 o superior.** Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete funciona con Node 20.
+**Necesita Node 24 o superior.** Sin él, `legal-advisor` responde solo con la guía y el comentario dice que no usó EUR-Lex. El resto del paquete también pide Node 24 o superior: sus scripts lo comprueban.
 
 ## Documentación de compliance
 
