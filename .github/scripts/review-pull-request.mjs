@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,6 +15,8 @@ const TITLE_SCRIPT = fileURLToPath(new URL(
   '../../.apm/skills/manage-pr-base/scripts/check-title.sh',
   import.meta.url,
 ));
+const SELF_RELEASE = fileURLToPath(new URL('./self-release.py', import.meta.url));
+const SELF_PIN_ERROR = 'apm.yml no lista este paquete en dependencies.apm.';
 
 export function reviewPullRequest(facts) {
   const errors = [];
@@ -36,6 +39,9 @@ export function reviewPullRequest(facts) {
     }
     if ((facts.versionBefore ?? null) !== (facts.versionAfter ?? null)) {
       errors.push('version en apm.yml no cambia en una pull request hacia staging.');
+    }
+    if (String(facts.selfPin ?? '').trim()) {
+      errors.push(SELF_PIN_ERROR);
     }
   }
 
@@ -112,6 +118,26 @@ function versionAt(sha) {
   return match ? match[1] : null;
 }
 
+function selfPinAt(sha, repo) {
+  if (!repo) return '';
+  const shown = spawnSync('git', ['show', `${sha}:apm.yml`], { encoding: 'utf8' });
+  if (shown.status !== 0) return '';
+  const dir = mkdtempSync(path.join(tmpdir(), 'review-pr-'));
+  const file = path.join(dir, 'apm.yml');
+  try {
+    writeFileSync(file, shown.stdout);
+    const pin = spawnSync('python3', [SELF_RELEASE, 'pin', repo, '--file', file], {
+      encoding: 'utf8',
+    });
+    if (pin.status !== 0) {
+      throw new Error((pin.stderr || pin.error?.message || 'self-release.py pin').trim());
+    }
+    return pin.stdout.trim();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 function commitsBetween(baseSha, headSha) {
   const raw = git(['log', '--reverse', '--format=%s%x1e%b%x1d', `${baseSha}..${headSha}`]);
   return raw.split('\x1d').filter((record) => record.trim()).map((record) => {
@@ -159,6 +185,7 @@ async function factsFromGit() {
     paths,
     versionBefore: versionAt(baseSha),
     versionAfter: versionAt(headSha),
+    selfPin: selfPinAt(headSha, process.env.REPO),
     commits: commitsBetween(baseSha, headSha),
   };
 }
